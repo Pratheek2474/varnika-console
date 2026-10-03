@@ -240,9 +240,9 @@ async function uploadToR2(
       } = supabase.storage.from(supabaseBucket).getPublicUrl(path);
       return publicUrl;
     }
-    throw new Error(json.error || "Upload failed");
+    throw new Error(json.error ?? "Upload failed");
   }
-  return json.url;
+  return json.url ?? "";
 }
 
 /** Upload a photo to R2 (customerdata/images) and link it to the order. */

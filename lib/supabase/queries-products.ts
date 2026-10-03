@@ -70,7 +70,7 @@ export async function uploadProductImage(file: File): Promise<string> {
       } = supabase.storage.from("order-photos").getPublicUrl(path);
       return publicUrl;
     }
-    throw new Error(json.error || "Upload failed");
+    throw new Error(json.error ?? "Upload failed");
   }
-  return json.url;
+  return json.url ?? "";
 }
