@@ -155,7 +155,7 @@ lib/
 | Skeleton | `@/components/ui/skeleton` |
 | Timeline | `@/components/ui/timeline` |
 | Page skeletons | `@/components/ui/page-skeletons` |
-| Kanban board | `@/components/ui/kanban` (vendored reui primitive: dnd-kit mouse/touch/keyboard sensors, live preview + single commit with rollback) |
+| Kanban board | `@/components/reui/kanban` (reui primitive: dnd-kit mouse/touch/keyboard sensors, live preview + single commit with rollback) |
 | Textarea | `@/components/ui/textarea` |
 
 ## Audit Trail (Employees + Updates)

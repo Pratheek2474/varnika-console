@@ -31,7 +31,7 @@ import {
   KanbanItemHandle,
   KanbanOverlay,
   type KanbanCommitMeta,
-} from "@/components/ui/kanban";
+} from "@/components/reui/kanban";
 import { Kanban as KanbanIcon, List, Search, ExternalLink, History, Plus, Pencil } from "lucide-react";
 import { OrderFormDialog } from "@/components/forms/OrderFormDialog";
 import { useActor } from "@/lib/context/actor-context";
