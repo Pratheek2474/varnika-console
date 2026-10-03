@@ -26,7 +26,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6] text-[#141414] flex flex-col font-sans antialiased selection:bg-neutral-900 selection:text-white">
+    <div className="h-[100dvh] bg-[#FAF9F6] text-[#141414] flex flex-col font-sans antialiased selection:bg-neutral-900 selection:text-white overflow-hidden">
       {/* Instant navigation feedback (shows on link click, before route loads) */}
       <NavigationProgress />
 
