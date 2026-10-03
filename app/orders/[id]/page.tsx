@@ -97,6 +97,9 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
   const canShip = permissions.includes("delivery.write");
   const showRevenue = permissions.includes("revenue.read");
 
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const docInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     (async () => {
       try {
@@ -304,8 +307,6 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
     }
   };
 
-  const photoInputRef = useRef<HTMLInputElement>(null);
-  const docInputRef = useRef<HTMLInputElement>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(false);
 
