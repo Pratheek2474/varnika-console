@@ -29,15 +29,12 @@ import type {
   UniqueIdentifier,
 } from "@dnd-kit/core"
 import {
-  closestCenter,
   defaultDropAnimationSideEffects,
   DndContext,
   DragOverlay,
-  getFirstCollision,
   KeyboardSensor,
   MeasuringStrategy,
   MouseSensor,
-  pointerWithin,
   rectIntersection,
   TouchSensor,
   useSensor,
@@ -645,47 +642,13 @@ function Kanban<T>({
     [columns, columnIds, getItemValue, isColumn]
   )
 
-  // The droppable under the pointer, not the one the dragged rect overlaps
-  // most: in the gap between columns that overlap flips with every live-preview
-  // move, and each flip re-runs dragOver until React bails out.
+  // Stock rect-intersection collision: predictable for multi-column
+  // vertical-card boards. (The pointer-precision variant silently
+  // produces no target on some drops, which looks like "can't drop".)
   const lastOverIdRef = useRef<UniqueIdentifier | null>(null)
   const collisionDetection = useCallback<CollisionDetection>(
-    (args) => {
-      if (isColumn(args.active.id)) {
-        return closestCenter({
-          ...args,
-          droppableContainers: args.droppableContainers.filter((container) =>
-            isColumn(container.id)
-          ),
-        })
-      }
-
-      // Keyboard drags carry no pointer.
-      if (!args.pointerCoordinates) return rectIntersection(args)
-
-      let overId = getFirstCollision(pointerWithin(args), "id")
-      if (overId != null) {
-        // Over a column's empty space: resolve to its closest item, if any.
-        if (isColumn(overId)) {
-          const itemIds = new Set(columns[overId as string].map(getItemValue))
-          overId =
-            closestCenter({
-              ...args,
-              droppableContainers: args.droppableContainers.filter(
-                (container) => itemIds.has(container.id as string)
-              ),
-            })[0]?.id ?? overId
-        }
-        lastOverIdRef.current = overId
-        return [{ id: overId }]
-      }
-
-      // Between droppables: hold the last target so the preview stays put.
-      return lastOverIdRef.current != null
-        ? [{ id: lastOverIdRef.current }]
-        : rectIntersection(args)
-    },
-    [columns, getItemValue, isColumn]
+    (args) => rectIntersection(args),
+    []
   )
 
   const commitChange = useCallback(
