@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { RouteGuard } from "@/components/layout/RouteGuard";
 import { useAuth } from "@/lib/context/auth-context";
@@ -23,38 +23,35 @@ import {
 } from "@/components/ui/dialog";
 import { TableListSkeleton } from "@/components/ui/page-skeletons";
 import {
+  Kanban,
   KanbanBoard,
-  KanbanBoardColumn,
-  KanbanBoardColumnHeader,
-  KanbanBoardColumnList,
-  KanbanBoardColumnListItem,
-  KanbanBoardColumnTitle,
-  KanbanBoardExtraMargin,
-  KanbanBoardProvider,
-  KanbanBoardCard,
-  KanbanColorCircle,
+  KanbanColumn,
+  KanbanColumnContent,
+  KanbanItem,
+  KanbanItemHandle,
+  KanbanOverlay,
+  type KanbanCommitMeta,
 } from "@/components/ui/kanban";
-import type {
-  KanbanBoardCircleColor,
-  KanbanBoardDropDirection,
-} from "@/components/ui/kanban";
-import { Kanban, List, Search, ExternalLink, History, Plus, Pencil } from "lucide-react";
+import { Kanban as KanbanIcon, List, Search, ExternalLink, History, Plus, Pencil } from "lucide-react";
 import { OrderFormDialog } from "@/components/forms/OrderFormDialog";
 import { useActor } from "@/lib/context/actor-context";
 import { logActivity } from "@/lib/supabase/activity";
+import { toast } from "sonner";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
-const PIPELINE_COLUMNS: {
-  key: OrderWithCustomer["status"];
-  label: string;
-  dot: KanbanBoardCircleColor;
-}[] = [
-  { key: "new", label: "New", dot: "gray" },
-  { key: "active", label: "Active", dot: "blue" },
-  { key: "hold", label: "Hold", dot: "yellow" },
-  { key: "dispatched", label: "Dispatched", dot: "violet" },
-  { key: "delivered", label: "Delivered", dot: "green" },
+type Status = OrderWithCustomer["status"];
+
+const PIPELINE_COLUMNS: { key: Status; label: string; dot: string }[] = [
+  { key: "new", label: "New", dot: "bg-neutral-300" },
+  { key: "active", label: "Active", dot: "bg-blue-500" },
+  { key: "hold", label: "Hold", dot: "bg-yellow-500" },
+  { key: "dispatched", label: "Dispatched", dot: "bg-violet-500" },
+  { key: "delivered", label: "Delivered", dot: "bg-green-600" },
 ];
+
+function flattenColumns(board: Record<string, OrderWithCustomer[]>): OrderWithCustomer[] {
+  return PIPELINE_COLUMNS.flatMap((c) => board[c.key] ?? []);
+}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -70,6 +67,7 @@ export default function OrdersPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<OrderWithCustomer | null>(null);
+  const draggingRef = useRef(false);
 
   const showRevenue = permissions.includes("revenue.read");
   const canWrite = permissions.includes("orders.write");
@@ -96,10 +94,14 @@ export default function OrdersPage() {
     refresh();
   }, []);
 
-  const persistStatus = async (orderId: string, status: OrderWithCustomer["status"]) => {
+  const persistStatus = async (
+    orderId: string,
+    status: Status,
+    fromOverride?: string
+  ): Promise<boolean> => {
     const current = orders.find((o) => o.id === orderId);
-    if (!current || !current.customer_id) return;
-    const from = current.status;
+    if (!current || !current.customer_id) return false;
+    const from = fromOverride ?? current.status;
     try {
       await updateOrder(orderId, {
         customer_id: current.customer_id,
@@ -122,56 +124,11 @@ export default function OrdersPage() {
         orderId,
         orderNumber: current.order_number,
       });
+      return true;
     } catch (e) {
       console.error(e);
       refresh();
-    }
-  };
-
-  const moveOrderToStatus = (orderId: string, toStatus: OrderWithCustomer["status"]) => {
-    const current = orders.find((o) => o.id === orderId);
-    if (!current || current.status === toStatus) return;
-    setOrders((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, status: toStatus } : o))
-    );
-    persistStatus(orderId, toStatus);
-  };
-
-  const handleDropOnColumn = (dataJson: string, columnKey: OrderWithCustomer["status"]) => {
-    try {
-      const { id } = JSON.parse(dataJson) as { id: string };
-      moveOrderToStatus(id, columnKey);
-    } catch {
-      // Ignore malformed drops
-    }
-  };
-
-  const handleDropOnItem = (
-    dataJson: string,
-    direction: KanbanBoardDropDirection,
-    overCardId: string,
-    columnKey: OrderWithCustomer["status"]
-  ) => {
-    try {
-      const { id } = JSON.parse(dataJson) as { id: string };
-      if (id === overCardId) return;
-      const dragged = orders.find((o) => o.id === id);
-      if (!dragged) return;
-
-      setOrders((prev) => {
-        const without = prev.filter((o) => o.id !== id);
-        const overIdx = without.findIndex((o) => o.id === overCardId);
-        if (overIdx === -1) return prev;
-        const insertAt = direction === "top" ? overIdx : overIdx + 1;
-        const moved = { ...dragged, status: columnKey };
-        return [...without.slice(0, insertAt), moved, ...without.slice(insertAt)];
-      });
-
-      if (dragged.status !== columnKey) {
-        persistStatus(id, columnKey);
-      }
-    } catch {
-      // Ignore malformed drops
+      return false;
     }
   };
 
@@ -181,6 +138,51 @@ export default function OrdersPage() {
       (o.customers?.customer_name ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       o.item_summary.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Board state grouped by status (always contains every column)
+  const board = useMemo(() => {
+    const grouped: Record<string, OrderWithCustomer[]> = {};
+    for (const col of PIPELINE_COLUMNS) {
+      grouped[col.key] = filteredOrders.filter((o) => o.status === col.key);
+    }
+    return grouped;
+  }, [filteredOrders]);
+
+  const applyBoard = (next: Record<string, OrderWithCustomer[]>) => {
+    setOrders(flattenColumns(next));
+  };
+
+  const handleValueCommit = async (
+    next: Record<string, OrderWithCustomer[]>,
+    meta: KanbanCommitMeta<OrderWithCustomer>
+  ) => {
+    if (meta.kind !== "item") return;
+
+    // Find the order whose column changed between preview start and drop
+    const prevContainerOf = new Map<string, string>();
+    for (const [col, items] of Object.entries(meta.previousValue)) {
+      for (const item of items) prevContainerOf.set(item.id, col);
+    }
+    let movedId: string | null = null;
+    let to: string | null = null;
+    for (const [col, items] of Object.entries(next)) {
+      for (const item of items) {
+        if (prevContainerOf.get(item.id) !== col) {
+          movedId = item.id;
+          to = col;
+          break;
+        }
+      }
+      if (movedId) break;
+    }
+    if (!movedId || !to) return; // pure reorder — nothing to persist
+
+    const ok = await persistStatus(movedId, to as Status, prevContainersGet(meta, movedId));
+    if (!ok) {
+      setOrders(flattenColumns(meta.previousValue));
+      toast.error("Could not save move. Board restored.");
+    }
+  };
 
   const advanceOrderStatus = async (orderId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -265,7 +267,7 @@ export default function OrdersPage() {
                   viewMode === "kanban" ? "bg-white text-black shadow-xs" : "text-neutral-500 hover:text-black"
                 }`}
               >
-                <Kanban className="w-3.5 h-3.5" />
+                <KanbanIcon className="w-3.5 h-3.5" />
                 <span>Kanban</span>
               </button>
               <button
@@ -305,90 +307,124 @@ export default function OrdersPage() {
         {/* Kanban Board */}
         {viewMode === "kanban" ? (
           <div className="overflow-x-auto pb-4">
-            <KanbanBoardProvider>
-              <KanbanBoard className="min-w-[900px] lg:min-w-0">
+            <Kanban
+              value={board}
+              onValueChange={applyBoard}
+              getItemValue={(item) => item.id}
+              onValueCommit={handleValueCommit}
+              restoreOnCancel
+              onDragStart={() => {
+                draggingRef.current = true;
+              }}
+              onDragEnd={() => {
+                setTimeout(() => {
+                  draggingRef.current = false;
+                }, 0);
+              }}
+              onDragCancel={() => {
+                draggingRef.current = false;
+              }}
+            >
+              <KanbanBoard className="flex items-start gap-3">
                 {PIPELINE_COLUMNS.map((column) => {
-                  const columnOrders = filteredOrders.filter(
-                    (o) => o.status === column.key
-                  );
+                  const columnOrders = board[column.key] ?? [];
                   return (
-                    <KanbanBoardColumn
+                    <KanbanColumn
                       key={column.key}
-                      columnId={column.key}
-                      onDropOverColumn={(data) => handleDropOnColumn(data, column.key)}
-                      className="w-[240px] rounded-xs bg-[#FAF9F6]"
+                      value={column.key}
+                      className="w-[240px] shrink-0 bg-[#FAF9F6] border border-[#E6E3DB] rounded-xs"
                     >
-                      <KanbanBoardColumnHeader>
-                        <KanbanBoardColumnTitle
-                          columnId={column.key}
-                          className="text-black text-xs"
-                        >
-                          <KanbanColorCircle color={column.dot} />
+                      <div className="px-3 py-2.5 border-b border-[#E6E3DB] flex items-center justify-between bg-white rounded-t-xs">
+                        <span className="text-xs font-medium text-black flex items-center gap-1.5">
+                          <span className={`w-2 h-2 rounded-full ${column.dot}`} />
                           {column.label}
-                          <span className="ml-1.5 text-[11px] font-mono px-1.5 py-0.5 bg-[#F4F2ED] text-neutral-600 rounded-xs">
-                            {columnOrders.length}
-                          </span>
-                        </KanbanBoardColumnTitle>
-                      </KanbanBoardColumnHeader>
+                        </span>
+                        <span className="text-[11px] font-mono px-1.5 py-0.5 bg-[#F4F2ED] text-neutral-600 rounded-xs">
+                          {columnOrders.length}
+                        </span>
+                      </div>
 
-                      <KanbanBoardColumnList>
+                      <KanbanColumnContent
+                        value={column.key}
+                        className="p-2 gap-2 overflow-y-auto max-h-[600px]"
+                      >
                         {columnOrders.length === 0 ? (
-                          <div className="mx-2 my-1 h-24 flex items-center justify-center text-xs text-neutral-400 italic border border-dashed border-[#E6E3DB] rounded-xs bg-white">
+                          <div className="h-24 flex items-center justify-center text-xs text-neutral-400 italic border border-dashed border-[#E6E3DB] rounded-xs bg-white">
                             Drop here
                           </div>
                         ) : (
                           columnOrders.map((order) => (
-                            <KanbanBoardColumnListItem
-                              key={order.id}
-                              cardId={order.id}
-                              onDropOverListItem={(data, direction) =>
-                                handleDropOnItem(data, direction, order.id, column.key)
-                              }
-                            >
-                              <KanbanBoardCard
-                                data={{ id: order.id }}
-                                onClick={() => setSelectedTicket(order)}
-                                className="rounded-xs bg-white text-left space-y-1.5"
-                              >
-                                <div className="flex items-center justify-between gap-2">
-                                  <span className="font-mono text-xs font-medium text-black">
-                                    {order.order_number}
-                                  </span>
-                                  <Badge variant="secondary" className="text-[10px] capitalize shrink-0">
-                                    {order.priority}
-                                  </Badge>
-                                </div>
-
-                                <div className="text-xs font-medium text-black truncate flex items-center gap-1">
-                                  <span className="truncate">
-                                    {order.customers?.customer_name ?? "No customer"}
-                                  </span>
-                                  <ExternalLink className="w-3 h-3 text-neutral-400 shrink-0" />
-                                </div>
-
-                                <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed">
-                                  {order.item_summary}
-                                </p>
-
-                                <div className="pt-2 border-t border-[#F0ECE1] flex items-center justify-between text-xs font-mono">
-                                  <span className="text-neutral-500">{order.delivery_date ?? "—"}</span>
-                                  {showRevenue && (
-                                    <span className="text-black font-medium">
-                                      {formatCurrency(Number(order.total))}
+                            <KanbanItem key={order.id} value={order.id}>
+                              <KanbanItemHandle>
+                                <div
+                                  onClick={() => {
+                                    if (!draggingRef.current) setSelectedTicket(order);
+                                  }}
+                                  className="p-3 bg-white border border-[#E6E3DB] hover:border-black/40 transition-colors space-y-2 rounded-xs select-none cursor-grab active:cursor-grabbing"
+                                >
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="font-mono text-xs font-medium text-black">
+                                      {order.order_number}
                                     </span>
-                                  )}
+                                    <Badge variant="secondary" className="text-[10px] capitalize shrink-0">
+                                      {order.priority}
+                                    </Badge>
+                                  </div>
+
+                                  <div className="text-xs font-medium text-black truncate flex items-center gap-1">
+                                    {order.customers ? (
+                                      <Link
+                                        href={`/customers/${order.customers.id}`}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="hover:underline truncate"
+                                      >
+                                        {order.customers.customer_name}
+                                      </Link>
+                                    ) : (
+                                      <span className="text-neutral-400">No customer</span>
+                                    )}
+                                    <ExternalLink className="w-3 h-3 text-neutral-400 shrink-0" />
+                                  </div>
+
+                                  <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed">
+                                    {order.item_summary}
+                                  </p>
+
+                                  <div className="pt-2 border-t border-[#F0ECE1] flex items-center justify-between text-xs font-mono">
+                                    <span className="text-neutral-500">{order.delivery_date ?? "—"}</span>
+                                    {showRevenue && (
+                                      <span className="text-black font-medium">
+                                        {formatCurrency(Number(order.total))}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
-                              </KanbanBoardCard>
-                            </KanbanBoardColumnListItem>
+                              </KanbanItemHandle>
+                            </KanbanItem>
                           ))
                         )}
-                      </KanbanBoardColumnList>
-                    </KanbanBoardColumn>
+                      </KanbanColumnContent>
+                    </KanbanColumn>
                   );
                 })}
-                <KanbanBoardExtraMargin />
               </KanbanBoard>
-            </KanbanBoardProvider>
+              <KanbanOverlay>
+                {({ value }) => {
+                  const ghost = orders.find((o) => o.id === String(value));
+                  if (!ghost) return null;
+                  return (
+                    <div className="p-3 bg-white border border-black shadow-lg rounded-xs opacity-95 w-[240px] space-y-2 rotate-1">
+                      <span className="font-mono text-xs font-medium text-black">
+                        {ghost.order_number}
+                      </span>
+                      <div className="text-xs text-black truncate">
+                        {ghost.customers?.customer_name}
+                      </div>
+                    </div>
+                  );
+                }}
+              </KanbanOverlay>
+            </Kanban>
           </div>
         ) : (
           /* Ticket List */
@@ -551,4 +587,14 @@ export default function OrdersPage() {
       </div>
     </RouteGuard>
   );
+}
+
+function prevContainersGet(
+  meta: KanbanCommitMeta<OrderWithCustomer>,
+  id: string
+): string {
+  for (const [col, items] of Object.entries(meta.previousValue)) {
+    if (items.some((item) => item.id === id)) return col;
+  }
+  return "";
 }

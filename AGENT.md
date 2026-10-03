@@ -155,7 +155,7 @@ lib/
 | Skeleton | `@/components/ui/skeleton` |
 | Timeline | `@/components/ui/timeline` |
 | Page skeletons | `@/components/ui/page-skeletons` |
-| Kanban board | `@/components/ui/kanban` (vendored from shadcn-kanban-board, native HTML5 DnD — no dnd-kit) |
+| Kanban board | `@/components/ui/kanban` (vendored reui primitive: dnd-kit mouse/touch/keyboard sensors, live preview + single commit with rollback) |
 | Textarea | `@/components/ui/textarea` |
 
 ## Audit Trail (Employees + Updates)

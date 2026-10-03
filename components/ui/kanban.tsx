@@ -1,11 +1,8 @@
-import type {
-  ChangeEvent,
-  ComponentProps,
-  KeyboardEvent,
-  MutableRefObject,
-  Ref,
-  RefObject,
-} from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client"
+
+import * as React from "react"
+import type { ComponentProps, CSSProperties, ReactNode } from "react"
 import {
   createContext,
   useCallback,
@@ -13,115 +10,203 @@ import {
   useEffect,
   useId,
   useImperativeHandle,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
-} from 'react';
-import { createPortal } from 'react-dom';
+  useSyncExternalStore,
+} from "react"
+import { mergeProps } from "@base-ui/react/merge-props"
+import { useRender } from "@base-ui/react/use-render"
+import type {
+  CollisionDetection,
+  DragCancelEvent,
+  DragEndEvent,
+  DragOverEvent,
+  DragStartEvent,
+  DropAnimation,
+  Modifiers,
+  UniqueIdentifier,
+} from "@dnd-kit/core"
+import {
+  closestCenter,
+  defaultDropAnimationSideEffects,
+  DndContext,
+  DragOverlay,
+  getFirstCollision,
+  KeyboardSensor,
+  MeasuringStrategy,
+  MouseSensor,
+  pointerWithin,
+  rectIntersection,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DraggableAttributes,
+  type DraggableSyntheticListeners,
+} from "@dnd-kit/core"
+import {
+  arrayMove,
+  defaultAnimateLayoutChanges,
+  rectSortingStrategy,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+  type AnimateLayoutChanges,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
+import { createPortal } from "react-dom"
 
-import { Button, buttonVariants } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Textarea } from '@/components/ui/textarea';
+import { Button, buttonVariants } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
-
-/*
-Accessibility
-*/
+} from "@/components/ui/tooltip"
+import { cn } from "@/lib/utils"
 
 export type KanbanBoardDndMonitorEventHandler = {
-  onDragStart?: (activeId: string) => void;
-  onDragMove?: (activeId: string, overId?: string) => void;
-  onDragOver?: (activeId: string, overId?: string) => void;
-  onDragEnd?: (activeId: string, overId?: string) => void;
-  onDragCancel?: (activeId: string) => void;
-};
+  onDragStart?: (activeId: string) => void
+  onDragMove?: (activeId: string, overId?: string) => void
+  onDragOver?: (activeId: string, overId?: string) => void
+  onDragEnd?: (activeId: string, overId?: string) => void
+  onDragCancel?: (activeId: string) => void
+}
 
-export type KanbanBoardDndEventType = keyof KanbanBoardDndMonitorEventHandler;
+export type KanbanBoardDndEventType = keyof KanbanBoardDndMonitorEventHandler
 
 export type KanbanBoardDndMonitorContextValue = {
-  activeIdRef: MutableRefObject<string>;
-  draggableDescribedById: string;
-  registerMonitor: (monitor: KanbanBoardDndMonitorEventHandler) => void;
-  unregisterMonitor: (monitor: KanbanBoardDndMonitorEventHandler) => void;
+  activeIdRef: React.MutableRefObject<string>
+  draggableDescribedById: string
+  registerMonitor: (monitor: KanbanBoardDndMonitorEventHandler) => void
+  unregisterMonitor: (monitor: KanbanBoardDndMonitorEventHandler) => void
   triggerEvent: (
     eventType: KanbanBoardDndEventType,
     activeId: string,
-    overId?: string,
-  ) => void;
-};
+    overId?: string
+  ) => void
+}
+
+interface KanbanContextProps<T> {
+  columns: Record<string, T[]>
+  setColumns: (columns: Record<string, T[]>) => void
+  getItemId: (item: T) => string
+  columnIds: string[]
+  activeId: UniqueIdentifier | null
+  setActiveId: (id: UniqueIdentifier | null) => void
+  activeIdRef: React.MutableRefObject<string>
+  findContainer: (id: UniqueIdentifier) => string | undefined
+  isColumn: (id: UniqueIdentifier) => boolean
+  modifiers?: Modifiers
+}
 
 export const KanbanBoardContext = createContext<
   KanbanBoardDndMonitorContextValue | undefined
->(undefined);
+>(undefined)
+
+const KanbanContext = createContext<KanbanContextProps<any>>({
+  columns: {},
+  setColumns: () => {},
+  getItemId: () => "",
+  columnIds: [],
+  activeId: null,
+  setActiveId: () => {},
+  activeIdRef: { current: "" },
+  findContainer: () => undefined,
+  isColumn: () => false,
+  modifiers: undefined,
+})
+
+const ColumnContext = createContext<{
+  attributes: DraggableAttributes
+  listeners: DraggableSyntheticListeners | undefined
+  isDragging?: boolean
+  disabled?: boolean
+}>({
+  attributes: {} as DraggableAttributes,
+  listeners: undefined,
+  isDragging: false,
+  disabled: false,
+})
+
+const ItemContext = createContext<{
+  listeners: DraggableSyntheticListeners | undefined
+  isDragging?: boolean
+  disabled?: boolean
+}>({
+  listeners: undefined,
+  isDragging: false,
+  disabled: false,
+})
+
+const IsOverlayContext = createContext(false)
 
 function useDndMonitor(monitor: KanbanBoardDndMonitorEventHandler) {
-  const context = useContext(KanbanBoardContext);
+  const context = useContext(KanbanBoardContext)
   if (!context) {
-    throw new Error('useDndMonitor must be used within a DndMonitorProvider');
+    throw new Error('useDndMonitor must be used within a DndMonitorProvider')
   }
 
-  const { registerMonitor, unregisterMonitor } = context;
+  const { registerMonitor, unregisterMonitor } = context
 
   useEffect(() => {
-    registerMonitor(monitor);
+    registerMonitor(monitor)
     return () => {
-      unregisterMonitor(monitor);
-    };
-  }, [monitor, registerMonitor, unregisterMonitor]);
+      unregisterMonitor(monitor)
+    }
+  }, [monitor, registerMonitor, unregisterMonitor])
 }
 
 export function useDndEvents() {
-  const context = useContext(KanbanBoardContext);
+  const context = useContext(KanbanBoardContext)
 
   if (!context) {
-    throw new Error('useDndEvents must be used within a DndMonitorProvider');
+    throw new Error('useDndEvents must be used within a DndMonitorProvider')
   }
 
-  const { activeIdRef, draggableDescribedById, triggerEvent } = context;
+  const { activeIdRef, draggableDescribedById, triggerEvent } = context
 
   const onDragStart = useCallback(
     (activeId: string) => {
-      activeIdRef.current = activeId;
-      triggerEvent('onDragStart', activeId);
+      activeIdRef.current = activeId
+      triggerEvent('onDragStart', activeId)
     },
-    [triggerEvent, activeIdRef],
-  );
+    [triggerEvent, activeIdRef]
+  )
 
   const onDragMove = useCallback(
     (activeId: string, overId?: string) => {
-      triggerEvent('onDragMove', activeId, overId);
+      triggerEvent('onDragMove', activeId, overId)
     },
-    [triggerEvent],
-  );
+    [triggerEvent]
+  )
 
   const onDragOver = useCallback(
     (activeId: string, overId?: string) => {
       // If the activeId is not provided, use the activeId from the ref.
-      const actualActiveId = activeId || activeIdRef.current;
-      triggerEvent('onDragOver', actualActiveId, overId);
+      const actualActiveId = activeId || activeIdRef.current
+      triggerEvent('onDragOver', actualActiveId, overId)
     },
-    [triggerEvent, activeIdRef],
-  );
+    [triggerEvent, activeIdRef]
+  )
 
   const onDragEnd = useCallback(
     (activeId: string, overId?: string) => {
-      triggerEvent('onDragEnd', activeId, overId);
+      triggerEvent('onDragEnd', activeId, overId)
     },
-    [triggerEvent],
-  );
+    [triggerEvent]
+  )
 
   const onDragCancel = useCallback(
     (activeId: string, overId?: string) => {
-      triggerEvent('onDragCancel', activeId, overId);
+      triggerEvent('onDragCancel', activeId, overId)
     },
-    [triggerEvent],
-  );
+    [triggerEvent]
+  )
 
   return {
     draggableDescribedById,
@@ -130,51 +215,51 @@ export function useDndEvents() {
     onDragOver,
     onDragEnd,
     onDragCancel,
-  };
+  }
 }
 
 export const defaultScreenReaderInstructions = `
 To pick up a draggable item, press the space bar.
 While dragging, use the arrow keys to move the item.
 Press space again to drop the item in its new position, or press escape to cancel.
-`;
+`
 
 export type KanbanBoardAnnouncements = {
-  onDragStart: (activeId: string) => string;
-  onDragMove?: (activeId: string, overId?: string) => string | undefined;
-  onDragOver: (activeId: string, overId?: string) => string;
-  onDragEnd: (activeId: string, overId?: string) => string;
-  onDragCancel: (activeId: string) => string;
-};
+  onDragStart: (activeId: string) => string
+  onDragMove?: (activeId: string, overId?: string) => string | undefined
+  onDragOver: (activeId: string, overId?: string) => string
+  onDragEnd: (activeId: string, overId?: string) => string
+  onDragCancel: (activeId: string) => string
+}
 
 export const defaultAnnouncements: KanbanBoardAnnouncements = {
   onDragStart(activeId) {
-    return `Picked up draggable item ${activeId}.`;
+    return `Picked up draggable item ${activeId}.`
   },
   onDragOver(activeId, overId) {
     if (overId) {
-      return `Draggable item ${activeId} was moved over droppable area ${overId}.`;
+      return `Draggable item ${activeId} was moved over droppable area ${overId}.`
     }
 
-    return `Draggable item ${activeId} is no longer over a droppable area.`;
+    return `Draggable item ${activeId} is no longer over a droppable area.`
   },
   onDragEnd(activeId, overId) {
     if (overId) {
-      return `Draggable item ${activeId} was dropped over droppable area ${overId}`;
+      return `Draggable item ${activeId} was dropped over droppable area ${overId}`
     }
 
-    return `Draggable item ${activeId} was dropped.`;
+    return `Draggable item ${activeId} was dropped.`
   },
   onDragCancel(activeId) {
-    return `Dragging was cancelled. Draggable item ${activeId} was dropped.`;
+    return `Dragging was cancelled. Draggable item ${activeId} was dropped.`
   },
-};
+}
 
 export type KanbanBoardLiveRegionProps = {
-  id: string;
-  announcement: string;
-  ariaLiveType?: 'polite' | 'assertive' | 'off';
-};
+  id: string
+  announcement: string
+  ariaLiveType?: 'polite' | 'assertive' | 'off'
+}
 
 export function KanbanBoardLiveRegion({
   announcement,
@@ -190,7 +275,7 @@ export function KanbanBoardLiveRegion({
       aria-atomic
       className={cn(
         'clip-[rect(0_0_0_0)] clip-path-[inset(100%)] fixed top-0 left-0 -m-px h-px w-px overflow-hidden border-0 p-0 whitespace-nowrap',
-        className,
+        className
       )}
       id={id}
       ref={ref}
@@ -199,13 +284,13 @@ export function KanbanBoardLiveRegion({
     >
       {announcement}
     </div>
-  );
+  )
 }
 
 export type KanbanBoardHiddenTextProps = {
-  id: string;
-  value: string;
-};
+  id: string
+  value: string
+}
 
 export function KanbanBoardHiddenText({
   id,
@@ -218,26 +303,26 @@ export function KanbanBoardHiddenText({
     <div id={id} className={cn('hidden', className)} ref={ref} {...props}>
       {value}
     </div>
-  );
+  )
 }
 
 export function useAnnouncement() {
-  const [announcement, setAnnouncement] = useState('');
+  const [announcement, setAnnouncement] = useState('')
   const announce = useCallback((value: string | undefined) => {
     if (value != undefined) {
-      setAnnouncement(value);
+      setAnnouncement(value)
     }
-  }, []);
+  }, [])
 
-  return { announce, announcement } as const;
+  return { announce, announcement } as const
 }
 
 export type KanbanBoardAccessibilityProps = {
-  announcements?: KanbanBoardAnnouncements;
-  container?: Element;
-  screenReaderInstructions?: string;
-  hiddenTextDescribedById: string;
-};
+  announcements?: KanbanBoardAnnouncements
+  container?: Element
+  screenReaderInstructions?: string
+  hiddenTextDescribedById: string
+}
 
 export const KanbanBoardAccessibility = ({
   announcements = defaultAnnouncements,
@@ -245,41 +330,41 @@ export const KanbanBoardAccessibility = ({
   hiddenTextDescribedById,
   screenReaderInstructions = defaultScreenReaderInstructions,
 }: KanbanBoardAccessibilityProps) => {
-  const { announce, announcement } = useAnnouncement();
-  const liveRegionId = useId();
-  const [mounted, setMounted] = useState(false);
+  const { announce, announcement } = useAnnouncement()
+  const liveRegionId = useId()
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    setMounted(true)
+  }, [])
 
   useDndMonitor(
     useMemo(
       () => ({
         onDragStart(activeId) {
-          announce(announcements.onDragStart(activeId));
+          announce(announcements.onDragStart(activeId))
         },
         onDragMove(activeId, overId) {
           if (announcements.onDragMove) {
-            announce(announcements.onDragMove(activeId, overId));
+            announce(announcements.onDragMove(activeId, overId))
           }
         },
         onDragOver(activeId, overId) {
-          announce(announcements.onDragOver(activeId, overId));
+          announce(announcements.onDragOver(activeId, overId))
         },
         onDragEnd(activeId, overId) {
-          announce(announcements.onDragEnd(activeId, overId));
+          announce(announcements.onDragEnd(activeId, overId))
         },
         onDragCancel(activeId) {
-          announce(announcements.onDragCancel(activeId));
+          announce(announcements.onDragCancel(activeId))
         },
       }),
-      [announce, announcements],
-    ),
-  );
+      [announce, announcements]
+    )
+  )
 
   if (!mounted) {
-    return null;
+    return null
   }
 
   const markup = (
@@ -290,17 +375,17 @@ export const KanbanBoardAccessibility = ({
       />
       <KanbanBoardLiveRegion id={liveRegionId} announcement={announcement} />
     </>
-  );
+  )
 
-  return container ? createPortal(markup, container) : markup;
-};
+  return container ? createPortal(markup, container) : markup
+}
 
 export type KanbanBoardProviderProps = {
-  announcements?: KanbanBoardAnnouncements;
-  screenReaderInstructions?: string;
-  container?: Element;
-  children: React.ReactNode;
-};
+  announcements?: KanbanBoardAnnouncements
+  screenReaderInstructions?: string
+  container?: Element
+  children: React.ReactNode
+}
 
 export const KanbanBoardProvider = ({
   announcements,
@@ -308,62 +393,58 @@ export const KanbanBoardProvider = ({
   container,
   children,
 }: KanbanBoardProviderProps) => {
-  const draggableDescribedById = useId();
-  const monitorsReference = useRef<KanbanBoardDndMonitorEventHandler[]>([]);
+  const draggableDescribedById = useId()
+  const monitorsReference = useRef<KanbanBoardDndMonitorEventHandler[]>([])
   // Store the activeId in a ref to avoid re-rendering when it changes.
-  // This is useful for announcing the drag start and end when you lack access
-  // to the active ID, e.g. because you're using `onDragOver` from the
-  // DataTransfer API. When trying to access data during the dragover event
-  // using getData(), it will always return an empty string. This is a security
-  // restriction in the HTML5 Drag and Drop API - you cannot access the data
-  // during the dragover event, only during the drop event.
-  // @see https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer
-  const activeIdReference = useRef<string>('');
+  const providerActiveIdReference = useRef<string>('')
 
   const registerMonitor = useCallback(
     (monitor: KanbanBoardDndMonitorEventHandler) => {
-      monitorsReference.current.push(monitor);
+      monitorsReference.current.push(monitor)
     },
-    [],
-  );
+    []
+  )
 
   const unregisterMonitor = useCallback(
     (monitor: KanbanBoardDndMonitorEventHandler) => {
       monitorsReference.current = monitorsReference.current.filter(
-        m => m !== monitor,
-      );
+        (m) => m !== monitor
+      )
     },
-    [],
-  );
+    []
+  )
 
   const triggerEvent = useCallback(
-    (eventType: KanbanBoardDndEventType, activeId: string, overId?: string) => {
+    (
+      eventType: KanbanBoardDndEventType,
+      activeId: string,
+      overId?: string
+    ) => {
       for (const monitor of monitorsReference.current) {
-        const handler = monitor[eventType];
+        const handler = monitor[eventType]
         if (handler) {
-          handler(activeId, overId);
+          handler(activeId, overId)
         }
       }
     },
-    [],
-  );
+    []
+  )
 
   const contextValue = useMemo(
     () => ({
-      activeIdRef: activeIdReference,
+      activeIdRef: providerActiveIdReference,
       draggableDescribedById,
       registerMonitor,
       unregisterMonitor,
       triggerEvent,
     }),
     [
-      activeIdReference,
       draggableDescribedById,
       registerMonitor,
       unregisterMonitor,
       triggerEvent,
-    ],
-  );
+    ]
+  )
 
   return (
     <TooltipProvider>
@@ -377,563 +458,930 @@ export const KanbanBoardProvider = ({
         />
       </KanbanBoardContext.Provider>
     </TooltipProvider>
-  );
-};
+  )
+}
 
-/*
-Constants
-*/
+const animateLayoutChanges: AnimateLayoutChanges = (args) =>
+  defaultAnimateLayoutChanges({ ...args, wasDragging: true })
 
-/**
- * Event data transfer types
- * @see https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer
- */
-const DATA_TRANSFER_TYPES = {
-  CARD: 'kanban-board-card',
-};
-
-const KANBAN_BOARD_CIRCLE_COLORS_MAP = {
-  primary: 'bg-kanban-board-circle-primary',
-  gray: 'bg-kanban-board-circle-gray',
-  red: 'bg-kanban-board-circle-red',
-  yellow: 'bg-kanban-board-circle-yellow',
-  green: 'bg-kanban-board-circle-green',
-  cyan: 'bg-kanban-board-circle-cyan',
-  blue: 'bg-kanban-board-circle-blue',
-  indigo: 'bg-kanban-board-circle-indigo',
-  violet: 'bg-kanban-board-circle-violet',
-  purple: 'bg-kanban-board-circle-purple',
-  pink: 'bg-kanban-board-circle-pink',
-};
-
-export type KanbanBoardCircleColor =
-  keyof typeof KANBAN_BOARD_CIRCLE_COLORS_MAP;
-
-export const KANBAN_BOARD_CIRCLE_COLORS = Object.keys(
-  KANBAN_BOARD_CIRCLE_COLORS_MAP,
-) as KanbanBoardCircleColor[];
-
-/*
-Board
-*/
-
-export function KanbanBoard({
-  className,
-  ref,
-  ...props
-}: ComponentProps<'div'>) {
-  return (
-    <div
-      className={cn(
-        'flex h-full flex-grow items-start gap-x-2 overflow-x-auto py-1',
-        className,
-      )}
-      ref={ref}
-      {...props}
-    />
-  );
+const dropAnimationConfig: DropAnimation = {
+  sideEffects: defaultDropAnimationSideEffects({
+    styles: {
+      active: {
+        opacity: "0.4",
+      },
+    },
+  }),
 }
 
 /**
- * Add some extra margin to the right of the container to allow for scrolling
- * when adding a new column.
+ * Client-mount gate for the `createPortal` call in KanbanOverlay, which needs
+ * `document.body` and so must not run on the server or during hydration.
  */
-export function KanbanBoardExtraMargin({
-  className,
-  ref,
-  ...props
-}: ComponentProps<'div'>) {
-  return (
-    <div
-      className={cn('h-1 w-8 flex-shrink-0', className)}
-      ref={ref}
-      {...props}
-    />
-  );
+const subscribeToNothing = () => () => {}
+const getIsMounted = () => true
+const getIsMountedOnServer = () => false
+
+const MOUSE_SENSOR_OPTIONS = { activationConstraint: { distance: 10 } }
+const TOUCH_SENSOR_OPTIONS = {
+  activationConstraint: { delay: 250, tolerance: 5 },
+}
+const KEYBOARD_SENSOR_OPTIONS = {
+  coordinateGetter: sortableKeyboardCoordinates,
+}
+const MEASURING_CONFIG = {
+  droppable: { strategy: MeasuringStrategy.Always },
 }
 
-/*
-Column
-*/
-
-export type KanbanBoardColumnProps = {
-  columnId: string;
-  onDropOverColumn?: (dataTransferData: string) => void;
-};
-
-export const kanbanBoardColumnClassNames =
-  'w-64 flex-shrink-0 rounded-lg border flex flex-col border-border bg-sidebar py-2 max-h-full';
-
-export function KanbanBoardColumn({
-  className,
-  columnId,
-  onDropOverColumn,
-  ref,
-  ...props
-}: ComponentProps<'section'> & KanbanBoardColumnProps) {
-  const [isDropTarget, setIsDropTarget] = useState(false);
-  const { onDragEnd, onDragOver } = useDndEvents();
-
-  return (
-    <section
-      aria-labelledby={`column-${columnId}-title`}
-      className={cn(
-        kanbanBoardColumnClassNames,
-        isDropTarget && 'border-primary',
-        className,
-      )}
-      onDragLeave={() => {
-        setIsDropTarget(false);
-      }}
-      onDragOver={event => {
-        if (event.dataTransfer.types.includes(DATA_TRANSFER_TYPES.CARD)) {
-          event.preventDefault();
-          setIsDropTarget(true);
-          onDragOver('', columnId);
-        }
-      }}
-      onDrop={event => {
-        const data = event.dataTransfer.getData(DATA_TRANSFER_TYPES.CARD);
-        onDropOverColumn?.(data);
-        onDragEnd(JSON.parse(data).id as string, columnId);
-        setIsDropTarget(false);
-      }}
-      ref={ref}
-      {...props}
-    />
-  );
+export interface KanbanMoveEvent {
+  event: DragEndEvent
+  activeContainer: string
+  activeIndex: number
+  overContainer: string
+  overIndex: number
 }
 
-export function KanbanBoardColumnSkeleton() {
-  return (
-    <section className={cn(kanbanBoardColumnClassNames, 'h-full py-0')}>
-      <Skeleton className="h-full w-full" />
-    </section>
-  );
+export interface KanbanCommitMeta<T> {
+  kind: "item" | "column"
+  event: DragEndEvent
+  activeContainer: string
+  activeIndex: number
+  overContainer: string
+  overIndex: number
+  previousValue: Record<string, T[]>
 }
 
-export function KanbanBoardColumnHeader({
-  className,
-  ref,
-  ...props
-}: ComponentProps<'div'>) {
-  return (
-    <div
-      className={cn('flex items-center justify-between px-2 py-1', className)}
-      ref={ref}
-      {...props}
-    />
-  );
+export interface KanbanRootProps<T> extends Omit<
+  useRender.ComponentProps<"div">,
+  "children" | "onDragStart" | "onDragEnd"
+> {
+  value: Record<string, T[]>
+  onValueChange: (value: Record<string, T[]>) => void
+  getItemValue: (item: T) => string
+  children: ReactNode
+  onMove?: (event: KanbanMoveEvent) => void
+  onValueCommit?: (
+    value: Record<string, T[]>,
+    meta: KanbanCommitMeta<T>
+  ) => void
+  restoreOnCancel?: boolean
+  onDragStart?: (event: DragStartEvent) => void
+  onDragEnd?: (event: DragEndEvent) => void
+  onDragCancel?: (event: DragCancelEvent) => void
+  accessibility?: React.ComponentProps<typeof DndContext>["accessibility"]
+  modifiers?: Modifiers
 }
 
-export type KanbanBoardColumnTitleProps = {
-  columnId: string;
-};
-
-export function KanbanBoardColumnTitle({
-  className,
-  columnId,
-  ref,
-  ...props
-}: ComponentProps<'h2'> & KanbanBoardColumnTitleProps) {
-  return (
-    <h2
-      className={cn(
-        'text-muted-foreground inline-flex items-center text-sm font-medium',
-        className,
-      )}
-      ref={ref}
-      id={`column-${columnId}-title`}
-      {...props}
-    />
-  );
-}
-
-export function KanbanBoardColumnIconButton({
-  className,
-  ref,
-  ...props
-}: ComponentProps<typeof Button>) {
-  return (
-    <Button
-      className={cn('text-muted-foreground size-6', className)}
-      variant="ghost"
-      size="icon"
-      ref={ref}
-      {...props}
-    />
-  );
-}
-
-export type KanbanBoardColorCircleProps = {
-  color?: KanbanBoardCircleColor;
-};
-
-export function KanbanColorCircle({
-  className,
-  color = 'primary',
-  ref,
-  ...props
-}: ComponentProps<'div'> & KanbanBoardColorCircleProps) {
-  return (
-    <div
-      className={cn(
-        'mr-2 size-2 rounded-full',
-        KANBAN_BOARD_CIRCLE_COLORS_MAP[color],
-        className,
-      )}
-      ref={ref}
-      {...props}
-    />
-  );
-}
-
-export function KanbanBoardColumnList({
-  className,
-  ref,
-  ...props
-}: ComponentProps<'ul'>) {
-  return (
-    <ul
-      className={cn('min-h-0.5 flex-grow overflow-y-auto', className)}
-      ref={ref}
-      {...props}
-    />
-  );
-}
-
-export type KanbanBoardDropDirection = 'none' | 'top' | 'bottom';
-
-export type KanbanBoardColumnListItemProps = {
-  cardId: string;
-  onDropOverListItem?: (
-    dataTransferData: string,
-    dropDirection: KanbanBoardDropDirection,
-  ) => void;
-};
-
-export const kanbanBoardColumnListItemClassNames =
-  '-mb-[2px] border-b-2 border-t-2 border-b-transparent border-t-transparent px-2 py-1 last:mb-0';
-
-export function KanbanBoardColumnListItem({
-  cardId,
-  className,
-  onDropOverListItem,
-  ref,
-  ...props
-}: ComponentProps<'li'> & KanbanBoardColumnListItemProps) {
-  const [dropDirection, setDropDirection] =
-    useState<KanbanBoardDropDirection>('none');
-  const { onDragOver, onDragEnd } = useDndEvents();
-
-  return (
-    <li
-      className={cn(
-        kanbanBoardColumnListItemClassNames,
-        dropDirection === 'top' && 'border-t-primary',
-        dropDirection === 'bottom' && 'border-b-primary',
-        className,
-      )}
-      onDragLeave={() => {
-        setDropDirection('none');
-      }}
-      onDragOver={event => {
-        if (event.dataTransfer.types.includes(DATA_TRANSFER_TYPES.CARD)) {
-          event.preventDefault();
-          event.stopPropagation();
-          const rect = event.currentTarget.getBoundingClientRect();
-          const midpoint = (rect.top + rect.bottom) / 2;
-          setDropDirection(event.clientY <= midpoint ? 'top' : 'bottom');
-          onDragOver('', cardId);
-        }
-      }}
-      onDrop={event => {
-        event.stopPropagation();
-        const data = event.dataTransfer.getData(DATA_TRANSFER_TYPES.CARD);
-        onDropOverListItem?.(data, dropDirection);
-
-        onDragEnd(JSON.parse(data).id as string, cardId);
-        setDropDirection('none');
-      }}
-      ref={ref}
-      {...props}
-    />
-  );
-}
-
-export function KanbanBoardColumnFooter({
-  className,
-  ref,
-  ...props
-}: ComponentProps<'div'>) {
-  return (
-    <div
-      className={cn('flex items-center justify-between px-2 pt-1', className)}
-      ref={ref}
-      {...props}
-    />
-  );
-}
-
-export function KanbanBoardColumnButton({
-  className,
-  ref,
-  ...props
-}: ComponentProps<typeof Button>) {
-  return (
-    <Button
-      className={cn(
-        'bg-sidebar text-primary hover:text-primary/80 w-full justify-start',
-        className,
-      )}
-      variant="outline"
-      size="sm"
-      ref={ref}
-      {...props}
-    />
-  );
-}
-
-/*
-Card
-*/
-
-export type KanbanBoardCardProps<T extends { id: string } = { id: string }> = {
-  /**
-   * A string representing the data to add to the DataTransfer.
-   * @see https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer/setData#data
-   */
-  data: T;
-  /**
-   * Whether the card is being moved with the keyboard.
-   */
-  isActive?: boolean;
-};
-
-const kanbanBoardCardClassNames =
-  'rounded-lg border border-border bg-background p-3 text-start text-foreground shadow-sm';
-
-export function KanbanBoardCard({
-  className,
-  data,
-  isActive = false,
-  ref,
-  ...props
-}: ComponentProps<'button'> & KanbanBoardCardProps) {
-  const [isDragging, setIsDragging] = useState(false);
-  const { draggableDescribedById, onDragStart } = useDndEvents();
-
-  return (
-    <button
-      aria-describedby={draggableDescribedById}
-      aria-roledescription="draggable"
-      className={cn(
-        kanbanBoardCardClassNames,
-        'focus-visible:ring-ring inline-flex w-full cursor-grab touch-manipulation flex-col gap-1 focus-visible:ring-1 focus-visible:outline-none',
-        isDragging
-          ? 'cursor-grabbing active:cursor-grabbing'
-          : 'group relative',
-        isActive && 'rotate-1 transform shadow-lg',
-        className,
-      )}
-      draggable
-      onDragStart={event => {
-        setIsDragging(true);
-        event.dataTransfer.effectAllowed = 'move';
-        event.dataTransfer.setData(
-          DATA_TRANSFER_TYPES.CARD,
-          JSON.stringify(data),
-        );
-        // Remove outline from the card when dragging.
-        event.currentTarget.blur();
-
-        onDragStart(data.id);
-      }}
-      onDragEnd={() => {
-        setIsDragging(false);
-      }}
-      ref={ref}
-      {...props}
-    />
-  );
-}
-
-export function KanbanBoardCardTitle({
-  className,
-  ref,
-  ...props
-}: ComponentProps<'h3'>) {
-  return (
-    <h3 className={cn('text-sm font-medium', className)} ref={ref} {...props} />
-  );
-}
-
-export function KanbanBoardCardDescription({
-  className,
-  ref,
-  ...props
-}: ComponentProps<'p'>) {
-  return (
-    <p
-      className={cn(
-        'text-card-foreground text-xs leading-5 whitespace-pre-wrap',
-        className,
-      )}
-      ref={ref}
-      {...props}
-    />
-  );
-}
-
-export function KanbanBoardCardTextarea({
-  className,
-  onChange,
+function Kanban<T>({
   value,
-  ref: externalReference,
+  onValueChange,
+  getItemValue,
+  children,
+  className,
+  render,
+  onMove,
+  onValueCommit,
+  restoreOnCancel = false,
+  onDragStart,
+  onDragEnd,
+  onDragCancel,
+  accessibility,
+  modifiers,
   ...props
-}: Omit<ComponentProps<'textarea'>, 'ref'> & {
-  ref?: Ref<HTMLTextAreaElement>;
-}) {
-  const internalReference = useRef<HTMLTextAreaElement | null>(null);
+}: KanbanRootProps<T>) {
+  const columns = value
+  const setColumns = onValueChange
+  const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null)
 
-  /**
-   * Adjusts the height of the textarea to handle cases where the text exceeds
-   * the width of the textarea and wraps around to the next line.
-   * This prevents a bug where the text area is too short when the component
-   * mounts and has long text.
-   */
-  const adjustTextareaHeight = () => {
-    if (internalReference.current) {
-      internalReference.current.style.height = 'auto'; // Reset height to recalculate.
-      internalReference.current.style.height = `${internalReference.current.scrollHeight}px`;
+  // Always-current mirrors so the drag handlers can read fresh values without
+  // widening their dependency arrays (keeps handler identity stable).
+  const valueRef = useRef(value)
+  const getItemValueRef = useRef(getItemValue)
+  useLayoutEffect(() => {
+    valueRef.current = value
+    getItemValueRef.current = getItemValue
+  })
+  const dragOriginRef = useRef<{
+    value: Record<string, T[]>
+    container: string | undefined
+    index: number
+  } | null>(null)
+
+  const sensors = useSensors(
+    useSensor(MouseSensor, MOUSE_SENSOR_OPTIONS),
+    useSensor(TouchSensor, TOUCH_SENSOR_OPTIONS),
+    useSensor(KeyboardSensor, KEYBOARD_SENSOR_OPTIONS)
+  )
+
+  const draggableDescribedById = useId()
+  const monitorsReference = useRef<KanbanBoardDndMonitorEventHandler[]>([])
+  // Store the activeId in a ref to avoid re-rendering when it changes.
+  const activeIdReference = useRef<string>('')
+
+  const registerMonitor = useCallback(
+    (monitor: KanbanBoardDndMonitorEventHandler) => {
+      monitorsReference.current.push(monitor)
+    },
+    []
+  )
+
+  const unregisterMonitor = useCallback(
+    (monitor: KanbanBoardDndMonitorEventHandler) => {
+      monitorsReference.current = monitorsReference.current.filter(
+        (m) => m !== monitor
+      )
+    },
+    []
+  )
+
+  const triggerEvent = useCallback(
+    (
+      eventType: KanbanBoardDndEventType,
+      activeId: string,
+      overId?: string
+    ) => {
+      for (const monitor of monitorsReference.current) {
+        const handler = monitor[eventType]
+        if (handler) {
+          handler(activeId, overId)
+        }
+      }
+    },
+    []
+  )
+
+  const columnIds = useMemo(() => {
+    const keys = Object.keys(columns)
+    if (process.env.NODE_ENV !== "production") {
+      const seen = new Set<string>()
+      for (const key of keys) {
+        for (const item of columns[key]) {
+          const itemId = getItemValue(item)
+          if (seen.has(itemId)) {
+            console.warn(
+              `[Kanban] Duplicate item id "${itemId}". Item ids must be unique across all columns, or drag and drop will misbehave.`
+            )
+            break
+          }
+          seen.add(itemId)
+        }
+      }
     }
-  };
+    return keys
+  }, [columns, getItemValue])
 
-  useEffect(() => {
-    // When the component mounts, adjust the height of the textarea. This
-    // prevents a bug where the text area is too short when the component
-    // mounts and has long text.
-    adjustTextareaHeight();
-  }, []);
+  const isColumn = useCallback(
+    (id: UniqueIdentifier) => columnIds.includes(id as string),
+    [columnIds]
+  )
 
-  useEffect(() => {
-    // When the value is emptied, adjust the height of the textarea. This
-    // prevents a bug where the text area is too short when the component
-    // is emptied and had long text before being emptied.
-    if (value === '') {
-      adjustTextareaHeight();
-    }
-  }, [value]);
+  const findContainer = useCallback(
+    (id: UniqueIdentifier) => {
+      if (isColumn(id)) return id as string
+      return columnIds.find((key) =>
+        columns[key].some((item) => getItemValue(item) === id)
+      )
+    },
+    [columns, columnIds, getItemValue, isColumn]
+  )
 
-  function handleChange(event: ChangeEvent<HTMLTextAreaElement>) {
-    onChange?.(event);
-    adjustTextareaHeight();
+  // The droppable under the pointer, not the one the dragged rect overlaps
+  // most: in the gap between columns that overlap flips with every live-preview
+  // move, and each flip re-runs dragOver until React bails out.
+  const lastOverIdRef = useRef<UniqueIdentifier | null>(null)
+  const collisionDetection = useCallback<CollisionDetection>(
+    (args) => {
+      if (isColumn(args.active.id)) {
+        return closestCenter({
+          ...args,
+          droppableContainers: args.droppableContainers.filter((container) =>
+            isColumn(container.id)
+          ),
+        })
+      }
+
+      // Keyboard drags carry no pointer.
+      if (!args.pointerCoordinates) return rectIntersection(args)
+
+      let overId = getFirstCollision(pointerWithin(args), "id")
+      if (overId != null) {
+        // Over a column's empty space: resolve to its closest item, if any.
+        if (isColumn(overId)) {
+          const itemIds = new Set(columns[overId as string].map(getItemValue))
+          overId =
+            closestCenter({
+              ...args,
+              droppableContainers: args.droppableContainers.filter(
+                (container) => itemIds.has(container.id as string)
+              ),
+            })[0]?.id ?? overId
+        }
+        lastOverIdRef.current = overId
+        return [{ id: overId }]
+      }
+
+      // Between droppables: hold the last target so the preview stays put.
+      return lastOverIdRef.current != null
+        ? [{ id: lastOverIdRef.current }]
+        : rectIntersection(args)
+    },
+    [columns, getItemValue, isColumn]
+  )
+
+  const commitChange = useCallback(
+    (
+      finalValue: Record<string, T[]>,
+      event: DragEndEvent,
+      kind: "item" | "column"
+    ) => {
+      if (!onValueCommit) return
+      const origin = dragOriginRef.current
+      if (!origin) return
+
+      const id = event.active.id
+
+      if (kind === "column") {
+        const keys = Object.keys(finalValue)
+        const overIndex = keys.indexOf(id as string)
+        if (overIndex === -1 || overIndex === origin.index) return
+        onValueCommit(finalValue, {
+          kind: "column",
+          event,
+          activeContainer: id as string,
+          activeIndex: origin.index,
+          overContainer: String(event.over?.id ?? id),
+          overIndex,
+          previousValue: origin.value,
+        })
+        return
+      }
+
+      const getId = getItemValueRef.current
+      let overContainer: string | undefined
+      let overIndex = -1
+      for (const key of Object.keys(finalValue)) {
+        const found = finalValue[key].findIndex((item) => getId(item) === id)
+        if (found !== -1) {
+          overContainer = key
+          overIndex = found
+          break
+        }
+      }
+      if (overContainer === undefined) return
+      if (overContainer === origin.container && overIndex === origin.index) {
+        return
+      }
+      onValueCommit(finalValue, {
+        kind: "item",
+        event,
+        activeContainer: origin.container ?? overContainer,
+        activeIndex: origin.index,
+        overContainer,
+        overIndex,
+        previousValue: origin.value,
+      })
+    },
+    [onValueCommit]
+  )
+
+  const handleDragStart = useCallback(
+    (event: DragStartEvent) => {
+      lastOverIdRef.current = null
+      setActiveId(event.active.id)
+      onDragStart?.(event)
+
+      if (onValueCommit || restoreOnCancel) {
+        const snapshot = valueRef.current
+        const id = event.active.id
+        const keys = Object.keys(snapshot)
+        if (keys.includes(id as string)) {
+          dragOriginRef.current = {
+            value: snapshot,
+            container: id as string,
+            index: keys.indexOf(id as string),
+          }
+        } else {
+          const getId = getItemValueRef.current
+          let container: string | undefined
+          let index = -1
+          for (const key of keys) {
+            const found = snapshot[key].findIndex((item) => getId(item) === id)
+            if (found !== -1) {
+              container = key
+              index = found
+              break
+            }
+          }
+          dragOriginRef.current = { value: snapshot, container, index }
+        }
+      }
+    },
+    [onDragStart, onValueCommit, restoreOnCancel]
+  )
+
+  const handleDragOver = useCallback(
+    (event: DragOverEvent) => {
+      if (onMove) {
+        return
+      }
+
+      const { active, over } = event
+      if (!over) return
+
+      if (isColumn(active.id)) return
+
+      const activeContainer = findContainer(active.id)
+      const overContainer = findContainer(over.id)
+
+      if (!activeContainer || !overContainer) {
+        return
+      }
+
+      if (activeContainer !== overContainer) {
+        const activeItems = columns[activeContainer]
+        const overItems = columns[overContainer]
+
+        const activeIndex = activeItems.findIndex(
+          (item: T) => getItemValue(item) === active.id
+        )
+        let overIndex = overItems.findIndex(
+          (item: T) => getItemValue(item) === over.id
+        )
+
+        // If dropping on the column itself, not an item
+        if (isColumn(over.id)) {
+          overIndex = overItems.length
+        }
+
+        const newActiveItems = [...activeItems]
+        const newOverItems = [...overItems]
+        const [movedItem] = newActiveItems.splice(activeIndex, 1)
+        newOverItems.splice(overIndex, 0, movedItem)
+
+        setColumns({
+          ...columns,
+          [activeContainer]: newActiveItems,
+          [overContainer]: newOverItems,
+        })
+      } else {
+        const container = activeContainer
+        const activeIndex = columns[container].findIndex(
+          (item: T) => getItemValue(item) === active.id
+        )
+        const overIndex = columns[container].findIndex(
+          (item: T) => getItemValue(item) === over.id
+        )
+
+        if (activeIndex !== overIndex) {
+          setColumns({
+            ...columns,
+            [container]: arrayMove(columns[container], activeIndex, overIndex),
+          })
+        }
+      }
+    },
+    [findContainer, getItemValue, isColumn, setColumns, columns, onMove]
+  )
+
+  const handleDragCancel = useCallback(
+    (event: DragCancelEvent) => {
+      const origin = dragOriginRef.current
+
+      if (restoreOnCancel && origin && !onMove) {
+        // Escape/cancel: undo the live-preview reshuffle applied during dragOver.
+        setColumns(origin.value)
+      } else if (onValueCommit && origin && !onMove) {
+        // No restore requested: the live preview stays visible, so commit it.
+        commitChange(valueRef.current, event, "item")
+      }
+
+      dragOriginRef.current = null
+      lastOverIdRef.current = null
+      setActiveId(null)
+      onDragCancel?.(event)
+    },
+    [
+      restoreOnCancel,
+      onMove,
+      onValueCommit,
+      setColumns,
+      onDragCancel,
+      commitChange,
+    ]
+  )
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event
+      lastOverIdRef.current = null
+      setActiveId(null)
+      onDragEnd?.(event)
+
+      if (!over) {
+        // Released over nothing. In default mode the live preview during
+        // dragOver may have already moved the item, so commit the current value.
+        commitChange(valueRef.current, event, "item")
+        dragOriginRef.current = null
+        return
+      }
+
+      // Handle item move callback
+      if (onMove && !isColumn(active.id)) {
+        const activeContainer = findContainer(active.id)
+        const overContainer = findContainer(over.id)
+
+        if (activeContainer && overContainer) {
+          const activeIndex = columns[activeContainer].findIndex(
+            (item: T) => getItemValue(item) === active.id
+          )
+          const overIndex = isColumn(over.id)
+            ? columns[overContainer].length
+            : columns[overContainer].findIndex(
+                (item: T) => getItemValue(item) === over.id
+              )
+
+          onMove({
+            event,
+            activeContainer,
+            activeIndex,
+            overContainer,
+            overIndex,
+          })
+        }
+        // In onMove mode the consumer owns applying the item move, so do not
+        // fire onValueCommit for item moves; column reorders still commit below.
+        dragOriginRef.current = null
+        return
+      }
+
+      // Handle column reordering
+      if (isColumn(active.id) && isColumn(over.id)) {
+        const activeIndex = columnIds.indexOf(active.id as string)
+        const overIndex = columnIds.indexOf(over.id as string)
+        if (activeIndex !== overIndex) {
+          const newOrder = arrayMove(
+            Object.keys(columns),
+            activeIndex,
+            overIndex
+          )
+          const newColumns: Record<string, T[]> = {}
+          newOrder.forEach((key) => {
+            newColumns[key] = columns[key]
+          })
+          setColumns(newColumns)
+          commitChange(newColumns, event, "column")
+        }
+        dragOriginRef.current = null
+        return
+      }
+
+      // A column drag that ends over a non-column droppable is not an item move.
+      if (isColumn(active.id)) {
+        dragOriginRef.current = null
+        return
+      }
+
+      const activeContainer = findContainer(active.id)
+      const overContainer = findContainer(over.id)
+
+      // Handle item reordering within the same column
+      if (
+        activeContainer &&
+        overContainer &&
+        activeContainer === overContainer
+      ) {
+        const container = activeContainer
+        const activeIndex = columns[container].findIndex(
+          (item: T) => getItemValue(item) === active.id
+        )
+        const overIndex = columns[container].findIndex(
+          (item: T) => getItemValue(item) === over.id
+        )
+
+        if (activeIndex !== overIndex) {
+          const newColumns = {
+            ...columns,
+            [container]: arrayMove(columns[container], activeIndex, overIndex),
+          }
+          setColumns(newColumns)
+          commitChange(newColumns, event, "item")
+        } else {
+          // Cross-column moves are applied during dragOver, so the current
+          // value is already final.
+          commitChange(columns, event, "item")
+        }
+      } else {
+        commitChange(columns, event, "item")
+      }
+      dragOriginRef.current = null
+    },
+    [
+      columnIds,
+      columns,
+      findContainer,
+      getItemValue,
+      isColumn,
+      setColumns,
+      onMove,
+      onDragEnd,
+      commitChange,
+    ]
+  )
+
+  const contextValue = useMemo(
+    () => ({
+      columns,
+      setColumns,
+      getItemId: getItemValue,
+      columnIds,
+      activeId,
+      setActiveId,
+      activeIdRef: activeIdReference,
+      findContainer,
+      isColumn,
+      modifiers,
+    }),
+    [
+      columns,
+      setColumns,
+      getItemValue,
+      columnIds,
+      activeId,
+      findContainer,
+      isColumn,
+      modifiers,
+    ]
+  )
+
+  const defaultProps = {
+    "data-slot": "kanban",
+    "data-dragging": activeId !== null,
+    className: cn(activeId !== null && "cursor-grabbing!", className),
+    children,
   }
 
-  // Expose the internal ref to the possible external ref.
-  useImperativeHandle(externalReference, () => internalReference.current!);
-
   return (
-    <Textarea
-      className={cn(
-        kanbanBoardCardClassNames,
-        'min-h-min resize-none overflow-hidden text-xs leading-5',
-        className,
-      )}
-      onChange={handleChange}
-      rows={1}
-      value={value}
-      ref={internalReference}
-      {...props}
-    />
-  );
+    <KanbanContext.Provider value={contextValue}>
+      <DndContext
+        sensors={sensors}
+        modifiers={modifiers}
+        accessibility={accessibility}
+        measuring={MEASURING_CONFIG}
+        collisionDetection={collisionDetection}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
+        {useRender({
+          defaultTagName: "div",
+          render,
+          props: mergeProps<"div">(defaultProps, props),
+        })}
+      </DndContext>
+    </KanbanContext.Provider>
+  )
 }
 
-export type KanbanBoardCardButtonGroupProps = {
-  disabled?: boolean;
-};
+export type KanbanBoardProps = useRender.ComponentProps<"div">
 
-export function KanbanBoardCardButtonGroup({
-  className,
-  disabled = false,
-  ref,
-  ...props
-}: ComponentProps<'div'> & KanbanBoardCardButtonGroupProps) {
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        'bg-background absolute top-2.5 right-2.5 z-40 hidden items-center',
-        !disabled && 'group-focus-within:flex group-hover:flex',
-        className,
-      )}
-      {...props}
-    />
-  );
-}
+function KanbanBoard({ className, render, ...props }: KanbanBoardProps) {
+  const { columnIds } = useContext(KanbanContext)
 
-export type KanbanBoardCardButtonProps = {
-  tooltip?: string;
-};
-
-/**
- * A button that can be used within a KanbanBoardCard.
- * It's a div under the hood because you shouldn't nest buttons within buttons,
- * and the card is a button.
- */
-export function KanbanBoardCardButton({
-  className,
-  tooltip,
-  ref: externalReference,
-  ...props
-}: Omit<ComponentProps<'div'>, 'ref'> &
-  KanbanBoardCardButtonProps & {
-    ref?: Ref<HTMLDivElement>;
-  }) {
-  const internalReference = useRef<HTMLDivElement | null>(null);
-
-  useImperativeHandle(externalReference, () => internalReference.current!);
-
-  // Handler for keydown events to emulate button behavior.
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    // Check if the pressed key is 'Enter' or 'Space'.
-    if (event.key === 'Enter' || event.key === ' ') {
-      // Prevent default behavior (like scrolling on Space).
-      event.preventDefault();
-      // Prevent the event from bubbling up to parent elements.
-      event.stopPropagation();
-
-      // Simulate a click on the div.
-      internalReference.current?.click();
-    }
-  };
-
-  const button = (
-    <div
-      className={cn(
-        buttonVariants({ size: 'icon', variant: 'ghost' }),
-        'border-border size-5 border hover:cursor-default [&_svg]:size-3.5',
-        className,
-      )}
-      onKeyDown={handleKeyDown}
-      role="button"
-      tabIndex={0}
-      ref={internalReference}
-      {...props}
-    />
-  );
-
-  if (!tooltip) {
-    return button;
+  const defaultProps = {
+    "data-slot": "kanban-board",
+    className: cn("grid auto-rows-fr gap-4 sm:grid-cols-3", className),
+    children: props.children,
   }
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>{button}</TooltipTrigger>
+    <SortableContext items={columnIds} strategy={rectSortingStrategy}>
+      {useRender({
+        defaultTagName: "div",
+        render,
+        props: mergeProps<"div">(defaultProps, props),
+      })}
+    </SortableContext>
+  )
+}
 
-      <TooltipContent align="center" side="bottom">
-        {tooltip}
-      </TooltipContent>
-    </Tooltip>
-  );
+export interface KanbanColumnProps extends useRender.ComponentProps<"div"> {
+  value: string
+  disabled?: boolean
+}
+
+function KanbanColumn({
+  value,
+  className,
+  render,
+  disabled,
+  ...props
+}: KanbanColumnProps) {
+  const isOverlay = useContext(IsOverlayContext)
+
+  const {
+    setNodeRef,
+    transform,
+    transition,
+    attributes,
+    listeners,
+    isDragging: isSortableDragging,
+  } = useSortable({
+    id: value,
+    disabled: disabled || isOverlay,
+    animateLayoutChanges,
+  })
+
+  // Hooks must run unconditionally; the derived value below is used only in the non-overlay branch.
+  const { activeId, isColumn } = useContext(KanbanContext)
+  const isColumnDragging = activeId ? isColumn(activeId) : false
+
+  const style = {
+    transition,
+    transform: CSS.Transform.toString(transform),
+  } as CSSProperties
+
+  const defaultProps = isOverlay
+    ? {
+        "data-slot": "kanban-column",
+        "data-value": value,
+        "data-dragging": true,
+        className: cn("group/kanban-column flex flex-col", className),
+        children: props.children,
+      }
+    : {
+        "data-slot": "kanban-column",
+        "data-value": value,
+        "data-dragging": isSortableDragging,
+        "data-disabled": disabled,
+        ref: setNodeRef,
+        style,
+        className: cn(
+          "group/kanban-column flex flex-col",
+          isSortableDragging && "opacity-50 z-50",
+          disabled && "opacity-50",
+          className
+        ),
+        children: props.children,
+      }
+
+  return (
+    <ColumnContext.Provider
+      value={
+        isOverlay
+          ? {
+              attributes: {} as DraggableAttributes,
+              listeners: undefined,
+              isDragging: true,
+              disabled: false,
+            }
+          : { attributes, listeners, isDragging: isColumnDragging, disabled }
+      }
+    >
+      {useRender({
+        defaultTagName: "div",
+        render,
+        props: mergeProps<"div">(defaultProps, props),
+      })}
+    </ColumnContext.Provider>
+  )
+}
+
+export interface KanbanColumnHandleProps extends useRender.ComponentProps<"div"> {
+  cursor?: boolean
+}
+
+function KanbanColumnHandle({
+  className,
+  render,
+  cursor = true,
+  ...props
+}: KanbanColumnHandleProps) {
+  const { attributes, listeners, isDragging, disabled } =
+    useContext(ColumnContext)
+
+  const defaultProps = {
+    "data-slot": "kanban-column-handle",
+    "data-dragging": isDragging,
+    "data-disabled": disabled,
+    ...attributes,
+    ...listeners,
+    className: cn(
+      "opacity-0 transition-opacity group-hover/kanban-column:opacity-100",
+      cursor && (isDragging ? "cursor-grabbing!" : "cursor-grab!"),
+      className
+    ),
+    children: props.children,
+  }
+
+  return useRender({
+    defaultTagName: "div",
+    render,
+    props: mergeProps<"div">(defaultProps, props),
+  })
+}
+
+export interface KanbanItemProps extends useRender.ComponentProps<"div"> {
+  value: string
+  disabled?: boolean
+}
+
+function KanbanItem({
+  value,
+  className,
+  render,
+  disabled,
+  ...props
+}: KanbanItemProps) {
+  const isOverlay = useContext(IsOverlayContext)
+
+  const {
+    setNodeRef,
+    transform,
+    transition,
+    attributes,
+    listeners,
+    isDragging: isSortableDragging,
+  } = useSortable({
+    id: value,
+    disabled: disabled || isOverlay,
+    animateLayoutChanges,
+  })
+
+  // Hooks must run unconditionally; the derived value below is used only in the non-overlay branch.
+  const { activeId, isColumn } = useContext(KanbanContext)
+  const isItemDragging = activeId ? !isColumn(activeId) : false
+
+  const style = {
+    transition,
+    transform: CSS.Transform.toString(transform),
+  } as CSSProperties
+
+  const defaultProps = isOverlay
+    ? {
+        "data-slot": "kanban-item",
+        "data-value": value,
+        "data-dragging": true,
+        className: cn(className),
+        children: props.children,
+      }
+    : {
+        "data-slot": "kanban-item",
+        "data-value": value,
+        "data-dragging": isSortableDragging,
+        "data-disabled": disabled,
+        ref: setNodeRef,
+        style,
+        ...attributes,
+        className: cn(
+          isSortableDragging && "opacity-50 z-50",
+          disabled && "opacity-50",
+          className
+        ),
+        children: props.children,
+      }
+
+  return (
+    <ItemContext.Provider
+      value={
+        isOverlay
+          ? { listeners: undefined, isDragging: true, disabled: false }
+          : { listeners, isDragging: isItemDragging, disabled }
+      }
+    >
+      {useRender({
+        defaultTagName: "div",
+        render,
+        props: mergeProps<"div">(defaultProps, props),
+      })}
+    </ItemContext.Provider>
+  )
+}
+
+export interface KanbanItemHandleProps extends useRender.ComponentProps<"div"> {
+  cursor?: boolean
+}
+
+function KanbanItemHandle({
+  className,
+  render,
+  cursor = true,
+  ...props
+}: KanbanItemHandleProps) {
+  const { listeners, isDragging, disabled } = useContext(ItemContext)
+
+  const defaultProps = {
+    "data-slot": "kanban-item-handle",
+    "data-dragging": isDragging,
+    "data-disabled": disabled,
+    ...listeners,
+    className: cn(
+      cursor && (isDragging ? "cursor-grabbing!" : "cursor-grab!"),
+      className
+    ),
+    children: props.children,
+  }
+
+  return useRender({
+    defaultTagName: "div",
+    render,
+    props: mergeProps<"div">(defaultProps, props),
+  })
+}
+
+export interface KanbanColumnContentProps extends useRender.ComponentProps<"div"> {
+  value: string
+}
+
+function KanbanColumnContent({
+  value,
+  className,
+  render,
+  ...props
+}: KanbanColumnContentProps) {
+  const { columns, getItemId } = useContext(KanbanContext)
+
+  const itemIds = useMemo(() => {
+    const items = columns[value]
+    if (!items) {
+      throw new Error(
+        `KanbanColumnContent: column "${value}" was not found in the Kanban value. ` +
+          `Available columns: ${Object.keys(columns).join(", ") || "(none)"}.`
+      )
+    }
+    return items.map(getItemId)
+  }, [columns, getItemId, value])
+
+  const defaultProps = {
+    "data-slot": "kanban-column-content",
+    className: cn("flex flex-col gap-2", className),
+    children: props.children,
+  }
+
+  return (
+    <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
+      {useRender({
+        defaultTagName: "div",
+        render,
+        props: mergeProps<"div">(defaultProps, props),
+      })}
+    </SortableContext>
+  )
+}
+
+export interface KanbanOverlayProps extends Omit<
+  React.ComponentProps<typeof DragOverlay>,
+  "children"
+> {
+  children?:
+    | ReactNode
+    | ((params: {
+        value: UniqueIdentifier
+        variant: "column" | "item"
+      }) => ReactNode)
+}
+
+function KanbanOverlay({ children, className, ...props }: KanbanOverlayProps) {
+  const { activeId, isColumn, modifiers } = useContext(KanbanContext)
+  const mounted = useSyncExternalStore(
+    subscribeToNothing,
+    getIsMounted,
+    getIsMountedOnServer
+  )
+
+  const variant = activeId ? (isColumn(activeId) ? "column" : "item") : "item"
+
+  const content =
+    activeId && children
+      ? typeof children === "function"
+        ? children({ value: activeId, variant })
+        : children
+      : null
+
+  if (!mounted) return null
+
+  return createPortal(
+    <DragOverlay
+      dropAnimation={dropAnimationConfig}
+      modifiers={modifiers}
+      className={cn("z-50", activeId && "cursor-grabbing", className)}
+      {...props}
+    >
+      <IsOverlayContext.Provider value={true}>
+        {content}
+      </IsOverlayContext.Provider>
+    </DragOverlay>,
+    document.body
+  )
+}
+
+export {
+  Kanban,
+  KanbanBoard,
+  KanbanColumn,
+  KanbanColumnHandle,
+  KanbanItem,
+  KanbanItemHandle,
+  KanbanColumnContent,
+  KanbanOverlay,
 }

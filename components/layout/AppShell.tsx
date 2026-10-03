@@ -8,6 +8,7 @@ import { MobileBottomNav } from "./MobileBottomNav";
 import { MobileMoreMenu } from "./MobileMoreMenu";
 import { CommandPalette } from "./CommandPalette";
 import { NavigationProgress } from "./NavigationProgress";
+import { Toaster } from "sonner";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -41,6 +42,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Global Command Search (⌘K) */}
       <CommandPalette />
+
+      {/* Toast notifications (drag-and-drop errors, etc.) */}
+      <Toaster position="bottom-right" />
     </div>
   );
 }
