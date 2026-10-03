@@ -5,54 +5,42 @@ import { cn } from "@/lib/utils";
 
 interface MessageProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: "default" | "own";
+  senderName?: string;
+  timestamp?: string;
 }
 
 const Message = React.forwardRef<HTMLDivElement, MessageProps>(
-  ({ className, variant = "default", children, ...props }, ref) => {
+  ({ className, variant = "default", senderName, timestamp, children, ...props }, ref) => {
     return (
       <div
         ref={ref}
         className={cn(
-          "flex w-full gap-3",
-          variant === "own" ? "flex-row-reverse" : "flex-row"
+          "flex w-full",
+          variant === "own" ? "justify-end" : "justify-start"
         )}
         {...props}
       >
-        <div
-          className={cn(
-            "flex max-w-[70%] flex-col gap-1",
-            variant === "own" ? "items-end" : "items-start"
+        <div className={cn("flex max-w-[75%] flex-col gap-0.5", variant === "own" ? "items-end" : "items-start")}>
+          {senderName && (
+            <div className={cn("text-[11px] font-medium", variant === "own" ? "text-neutral-500" : "text-neutral-600")}>
+              {senderName}
+            </div>
           )}
-        >
           <div
             className={cn(
-              "rounded-2xl px-4 py-2 text-sm",
+              "rounded-xl px-3.5 py-2 text-sm leading-relaxed",
               variant === "own"
-                ? "bg-black text-white rounded-tr-none"
-                : "bg-[#F4F2ED] text-black rounded-tl-none"
+                ? "bg-black text-white rounded-br-sm"
+                : "bg-[#F4F2ED] text-black rounded-bl-sm border border-[#E6E3DB]"
             )}
           >
             {children}
           </div>
-          <div className="flex items-center gap-1 text-[10px] text-neutral-400">
-            <time dateTime={new Date().toISOString()}>
-              {new Date().toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
+          {timestamp && (
+            <time className="text-[10px] text-neutral-400 font-mono mt-0.5">
+              {timestamp}
             </time>
-            {variant === "own" && (
-              <svg
-                className="w-3.5 h-3.5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
-            )}
-          </div>
+          )}
         </div>
       </div>
     );

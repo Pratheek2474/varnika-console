@@ -39,6 +39,7 @@ import {
   Send,
   Paperclip,
   FileText,
+  RefreshCw,
 } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -47,6 +48,17 @@ import { Message } from "@/components/ui/message";
 import { MessageScroller } from "@/components/ui/message-scroller";
 
 type ThreadMessage = ChatMessageRow & { chat_attachments: ChatAttachmentRow[] };
+
+const AVATAR_COLORS = [
+  "bg-rose-500", "bg-blue-500", "bg-emerald-500", "bg-amber-500",
+  "bg-violet-500", "bg-pink-500", "bg-teal-500", "bg-orange-500",
+  "bg-indigo-500", "bg-cyan-500",
+];
+function avatarColor(name: string) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
 
 function AttachmentView({ att }: { att: ChatAttachmentRow }) {
   const isPhoto = att.kind === "photo" || /\.(png|jpe?g|gif|webp|avif)$/i.test(att.url);
@@ -87,13 +99,11 @@ export default function ChatPage() {
   // "Message" dialog — pick who to message.
   const [msgOpen, setMsgOpen] = useState(false);
   const [msgCustomerId, setMsgCustomerId] = useState("");
-  const [msgOrderId, setMsgOrderId] = useState("");
   const [msgBody, setMsgBody] = useState("");
   const [msgSending, setMsgSending] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [sending, setSending] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
 
   const canWrite = permissions.includes("chat.write");
 
@@ -145,10 +155,6 @@ export default function ChatPage() {
     })();
   }, [selectedId]);
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [thread]);
-
   const selected = conversations.find((c) => c.id === selectedId) ?? null;
   const latestOrderForCustomer = selected?.customer_id
     ? (orders.find((o) => o.customer_id === selected.customer_id) ?? null)
@@ -195,29 +201,18 @@ export default function ChatPage() {
 
   const openMessageDialog = () => {
     const firstCustomer = allCustomers[0];
-    const firstId = firstCustomer?.id ?? "";
-    const latestOrder = firstId
-      ? orders.find((o) => o.customer_id === firstId) ?? null
-      : null;
-    setMsgCustomerId(firstId);
-    setMsgOrderId(latestOrder?.id ?? "");
+    setMsgCustomerId(firstCustomer?.id ?? "");
     setMsgBody("");
     setMsgOpen(true);
   };
-
-  const msgCustomerOrders = msgCustomerId
-    ? orders.filter((o) => o.customer_id === msgCustomerId)
-    : [];
 
   const handleMessageSubmit = async () => {
     if (!msgCustomerId) return;
     setMsgSending(true);
     try {
-      const orderId = msgOrderId || null;
+      // One chat per customer — find existing or create new
       const existing = conversations.find(
-        (c) =>
-          c.customer_id === msgCustomerId &&
-          (c.order_id ?? null) === orderId
+        (c) => c.customer_id === msgCustomerId
       );
       const customerName =
         allCustomers.find((c) => c.id === msgCustomerId)?.customer_name ?? "";
@@ -238,7 +233,7 @@ export default function ChatPage() {
       }
       const conv = await createConversation({
         customer_id: msgCustomerId,
-        order_id: orderId,
+        order_id: null,
         subject: `Chat with ${customerName}`,
       });
       if (msgBody.trim()) {
@@ -257,8 +252,8 @@ export default function ChatPage() {
         entityLabel: conv.subject,
         customerId: msgCustomerId,
         customerName,
-        orderId,
-        orderNumber: orders.find((o) => o.id === orderId)?.order_number ?? "",
+        orderId: null,
+        orderNumber: "",
       });
       setMsgOpen(false);
       setMsgBody("");
@@ -276,84 +271,105 @@ export default function ChatPage() {
 
   return (
     <RouteGuard requiredPermission="chat.read" requiredFeature="chat" moduleName="Customer Chat">
-      <div className="h-[calc(100dvh-4rem)] lg:h-[calc(100dvh-8rem)] flex flex-col bg-[#FAF9F6]">
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#E6E3DB] bg-white">
-          <h1 className="text-lg font-semibold text-black">Chats</h1>
-          {canWrite && (
-            <Button variant="default" size="sm" className="h-8 text-xs" onClick={openMessageDialog}>
-              <Plus className="w-3.5 h-3.5 mr-1.5" />
-              Message
-            </Button>
-          )}
-        </div>
+      <div className="h-[calc(100dvh-4rem)] lg:h-[calc(100dvh-7rem)] flex flex-col bg-[#FAF9F6] overflow-hidden">
 
-        {loadError && (
-          <div className="mx-4 mt-3 p-3 bg-red-50 border border-red-200 text-xs text-red-700 rounded-xs">
-            {loadError}{" "}
-            <button onClick={refreshList} className="underline font-medium">Retry</button>
-          </div>
-        )}
-
-        <div className="flex-1 flex overflow-hidden">
-          {/* Conversation list */}
-          <div className={cn("w-full lg:w-80 border-r border-[#E6E3DB] bg-white overflow-y-auto", selectedId && "hidden lg:block")}>
-            {conversations.map((conv) => {
-              const last = conv.chat_messages[conv.chat_messages.length - 1];
-              const isActive = conv.id === selectedId;
-              const latestOrder = conv.orders ?? orders.find((o) => o.customer_id === conv.customer_id);
-              return (
+        <div className="flex-1 flex overflow-hidden min-h-0">
+          {/* ─── Conversation list ─── */}
+          <div className={cn("w-full lg:w-80 border-r border-[#E6E3DB] bg-white flex flex-col overflow-hidden min-h-0", selectedId && "hidden lg:flex")}>
+            {/* List header: "Chats" + search + refresh + new */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[#E6E3DB] shrink-0">
+              <h1 className="text-lg font-semibold text-black">Chats</h1>
+              <div className="flex items-center gap-1.5">
                 <button
-                  key={conv.id}
-                  onClick={() => setSelectedId(conv.id)}
-                  className={cn(
-                    "w-full text-left px-4 py-3 border-b border-[#F0ECE1] hover:bg-[#FAF9F6] transition-colors",
-                    isActive && "bg-[#F4F2ED]"
-                  )}
+                  onClick={() => { refreshList(); if (selectedId) getConversation(selectedId).then(d => setThread(d?.messages ?? [])); }}
+                  className="p-1.5 border border-[#E6E3DB] hover:border-black rounded-full text-neutral-500 hover:text-black transition-colors"
+                  title="Refresh"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className={cn("text-sm font-medium truncate", isActive ? "text-black" : "text-neutral-700")}>
-                      {conv.customers?.customer_name ?? "Unknown"}
-                    </span>
-                    {last && (
-                      <span className="text-[10px] text-neutral-400 shrink-0 ml-2 font-mono">
-                        {new Date(last.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between mt-0.5">
-                    <span className="text-xs text-neutral-500 truncate flex-1">
-                      {last ? `${last.sender_name}: ${last.body}` : "No messages yet"}
-                    </span>
-                    {latestOrder && (
-                      <span className="text-[10px] text-neutral-400 shrink-0 ml-2 font-mono">
-                        {latestOrder.order_number}
-                      </span>
-                    )}
-                  </div>
+                  <RefreshCw className="w-3.5 h-3.5" />
                 </button>
-              );
-            })}
-            {conversations.length === 0 && !loadError && (
-              <div className="text-center py-12 text-xs text-neutral-400">
-                No conversations yet.
+                {canWrite && (
+                  <button
+                    onClick={openMessageDialog}
+                    className="p-1.5 bg-black text-white rounded-full hover:bg-neutral-800 transition-colors"
+                    title="New chat"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {loadError && (
+              <div className="mx-3 mt-2 p-2.5 bg-red-50 border border-red-200 text-xs text-red-700 rounded-xs shrink-0">
+                {loadError} <button onClick={refreshList} className="underline font-medium">Retry</button>
               </div>
             )}
+
+            {/* Scrollable list */}
+            <div className="flex-1 overflow-y-auto min-h-0">
+              {conversations.map((conv) => {
+                const last = conv.chat_messages[conv.chat_messages.length - 1];
+                const isActive = conv.id === selectedId;
+                const latestOrder = conv.orders ?? orders.find((o) => o.customer_id === conv.customer_id);
+                const name = conv.customers?.customer_name ?? "Unknown";
+                return (
+                  <button
+                    key={conv.id}
+                    onClick={() => setSelectedId(conv.id)}
+                    className={cn(
+                      "w-full text-left px-4 py-3 border-b border-[#F0ECE1] hover:bg-[#FAF9F6] transition-colors flex items-center gap-3",
+                      isActive && "bg-[#F4F2ED]"
+                    )}
+                  >
+                    <div className={cn("w-10 h-10 rounded-full flex items-center justify-center text-white font-medium text-sm shrink-0", avatarColor(name))}>
+                      {name.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className={cn("text-sm font-medium truncate", isActive ? "text-black" : "text-neutral-700")}>
+                          {name}
+                        </span>
+                        {last && (
+                          <span className="text-[10px] text-neutral-400 shrink-0 ml-2 font-mono">
+                            {new Date(last.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between mt-0.5">
+                        <span className="text-xs text-neutral-500 truncate flex-1">
+                          {last ? `${last.sender_name}: ${last.body}` : "No messages yet"}
+                        </span>
+                        {latestOrder && (
+                          <span className="text-[10px] text-neutral-400 shrink-0 ml-2 font-mono">
+                            {latestOrder.order_number}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+              {conversations.length === 0 && !loadError && (
+                <div className="text-center py-12 text-xs text-neutral-400">
+                  No conversations yet.
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Chat thread */}
-          <div className={cn("flex-1 flex flex-col bg-[#FAF9F6]", !selectedId && "hidden lg:flex")}>
+          {/* ─── Chat thread ─── */}
+          <div className={cn("flex-1 flex flex-col bg-[#F0EDE6] min-h-0", !selectedId && "hidden lg:flex")}>
             {selected ? (
               <>
-                {/* Thread header */}
-                <div className="px-4 py-2.5 border-b border-[#E6E3DB] bg-white flex items-center gap-3">
+                {/* Thread header — fixed to top */}
+                <div className="px-3 py-2 border-b border-[#E6E3DB] bg-white flex items-center gap-3 shrink-0">
                   <button
                     onClick={() => setSelectedId(null)}
                     className="lg:hidden p-1.5 text-neutral-500 hover:text-black"
                   >
                     <ArrowLeft className="w-4 h-4" />
                   </button>
-                  <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-white font-medium text-sm shrink-0">
+                  <div className={cn("w-10 h-10 rounded-full flex items-center justify-center text-white font-medium text-sm shrink-0", avatarColor(selected.customers?.customer_name ?? "?"))}>
                     {selected.customers?.customer_name.charAt(0) ?? "?"}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -380,14 +396,18 @@ export default function ChatPage() {
                   </div>
                 </div>
 
-                {/* Messages */}
+                {/* Messages — only this scrolls */}
                 <MessageScroller onLoadMore={() => {}}>
                   {threadLoading ? (
                     <div className="text-center py-8 text-xs text-neutral-400">Loading…</div>
                   ) : (
                     thread.map((msg) => (
-                      <Message key={msg.id} variant={msg.sender === "staff" ? "own" : "default"}>
-                        <div className="text-[10px] font-mono opacity-70 mb-1">{msg.sender_name}</div>
+                      <Message
+                        key={msg.id}
+                        variant={msg.sender === "staff" ? "own" : "default"}
+                        senderName={msg.sender_name}
+                        timestamp={new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      >
                         {msg.body && <div>{msg.body}</div>}
                         {msg.chat_attachments.length > 0 && (
                           <div className="flex flex-wrap gap-2 mt-2">
@@ -401,11 +421,11 @@ export default function ChatPage() {
                   )}
                 </MessageScroller>
 
-                {/* Composer */}
+                {/* Composer — fixed to bottom */}
                 {canWrite && (
-                  <div className="p-3 border-t border-[#E6E3DB] bg-white space-y-2">
+                  <div className="px-3 py-2.5 border-t border-[#E6E3DB] bg-white shrink-0">
                     {pendingFiles.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex flex-wrap gap-1.5 mb-2">
                         {pendingFiles.map((f, i) => (
                           <span key={i} className="text-[11px] font-mono bg-[#F4F2ED] border border-[#E6E3DB] px-2 py-1 rounded-xs flex items-center gap-1.5">
                             {f.name}
@@ -437,21 +457,21 @@ export default function ChatPage() {
                         value={reply}
                         onChange={(e) => setReply(e.target.value)}
                         onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                        placeholder={effectiveOrderId ? "Message… (attachments also go to the customer + latest order)" : "Message…"}
-                        className="flex-1 px-3 py-2 bg-[#F4F2ED] border border-[#E6E3DB] text-sm focus:outline-none focus:border-black rounded-full"
+                        placeholder="Message…"
+                        className="flex-1 px-3.5 py-2 bg-[#F4F2ED] border border-[#E6E3DB] text-sm focus:outline-none focus:border-black rounded-full"
                       />
-                      <Button variant="default" size="sm" className="h-9 w-9 p-0 rounded-full" disabled={sending || (!reply.trim() && pendingFiles.length === 0)} onClick={handleSend}>
+                      <Button variant="default" size="sm" className="h-9 w-9 p-0 rounded-full shrink-0" disabled={sending || (!reply.trim() && pendingFiles.length === 0)} onClick={handleSend}>
                         <Send className="w-4 h-4" />
                       </Button>
                     </div>
-                    <div className="text-[10px] text-neutral-400">
-                      {effectiveOrderId ? "Attachments also appear on the customer page and the latest order." : "No order for this customer yet — attachments stay in chat."}
+                    <div className="text-[10px] text-neutral-400 mt-1.5 text-center">
+                      {effectiveOrderId ? "Attachments also appear on the customer page and the latest order." : "Attachments stay in chat."}
                     </div>
                   </div>
                 )}
               </>
             ) : (
-              <div className="flex-1 flex bg-white border border-[#E6E3DB] rounded-xs min-h-[480px] items-center justify-center text-xs text-neutral-400">
+              <div className="flex-1 flex bg-white items-center justify-center text-xs text-neutral-400">
                 Select a conversation.
               </div>
             )}
@@ -471,23 +491,11 @@ export default function ChatPage() {
                   <select
                     className={selectCls}
                     value={msgCustomerId}
-                    onChange={(e) => {
-                      const id = e.target.value;
-                      setMsgCustomerId(id);
-                      setMsgOrderId(orders.find((o) => o.customer_id === id)?.id ?? "");
-                    }}
+                    onChange={(e) => setMsgCustomerId(e.target.value)}
                   >
                     <option value="">Select…</option>
                     {allCustomers.map((c) => (
                       <option key={c.id} value={c.id}>{c.customer_name}</option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Order" className="col-span-2">
-                  <select className={selectCls} value={msgOrderId} onChange={(e) => setMsgOrderId(e.target.value)}>
-                    <option value="">No order — chat only</option>
-                    {msgCustomerOrders.map((o) => (
-                      <option key={o.id} value={o.id}>{o.order_number}</option>
                     ))}
                   </select>
                 </Field>
