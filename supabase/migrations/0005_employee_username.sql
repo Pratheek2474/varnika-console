@@ -1,7 +1,5 @@
 -- ============================================================================
--- 0005 — Username login (no emails).
--- Run this in the Supabase SQL Editor.
--- Usernames map to synthetic login emails (username@varnika.local).
+-- 0005 — SUPERSEDED by 0006. Do not run (assumed employees.email existed).
 -- ============================================================================
 
 alter table employees

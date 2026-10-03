@@ -1,9 +1,5 @@
 -- ============================================================================
--- 0004 — Employee login linkage.
--- Run this in the Supabase SQL Editor.
--- Links employees to Supabase Auth users by email (login matches on email).
--- Anyone with a dashboard-created login defaults to staff; promote to
--- admin via the employees table (app_role).
+-- 0004 — SUPERSEDED by 0006. Do not run (assumed employees.email existed).
 -- ============================================================================
 
 -- Give pre-existing rows (seeded with blank emails) unique placeholders
