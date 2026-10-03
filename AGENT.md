@@ -154,6 +154,14 @@ lib/
 | Timeline | `@/components/ui/timeline` |
 | Page skeletons | `@/components/ui/page-skeletons` |
 
+## Deployment (Cloudflare Workers via OpenNext)
+
+- Adapter: `@opennextjs/cloudflare@1.14.10` (exact-pinned; newer majors dropped Next 14)
+- Config: `wrangler.jsonc` (worker `varnika-console`, `nodejs_compat`, assets from `.open-next/`), `open-next.config.ts` (defaults — MUST exist or builds hang on an interactive prompt)
+- Dynamic `[id]` routes run on the Node.js runtime — do NOT add `export const runtime = "edge"` (unsupported by the adapter)
+- Dashboard (reuse the `varnika-console` Worker): build `npx opennextjs-cloudflare build`, deploy `npx wrangler deploy`, env vars `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (+ `NODE_VERSION=22`)
+- `npm run preview` = local worker preview; `npm run deploy`/`upload` = CLI deploy
+
 ## Route Loading States (Skeletons)
 
 Every list/detail route has a `loading.tsx` that renders instantly on `<Link>` navigation while the destination page loads — without it, the app feels "stuck" on the old page:
