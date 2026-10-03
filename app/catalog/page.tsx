@@ -17,9 +17,12 @@ import { Button } from "@/components/ui/button";
 import { CardsListSkeleton } from "@/components/ui/page-skeletons";
 import { Search, Plus, Pencil } from "lucide-react";
 import { ProductFormDialog } from "@/components/forms/ProductFormDialog";
+import { useActor } from "@/lib/context/actor-context";
+import { logActivity } from "@/lib/supabase/activity";
 
 export default function CatalogPage() {
   const { permissions } = useAuth();
+  const { actor } = useActor();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [products, setProducts] = useState<ProductRow[]>([]);
@@ -63,10 +66,24 @@ export default function CatalogPage() {
   const handleSave = async (values: ProductInput) => {
     if (editing) {
       await updateProduct(editing.id, values);
+      await logActivity({
+        actor,
+        action: "edited",
+        entityType: "product",
+        entityId: editing.id,
+        entityLabel: values.name,
+      });
       setEditing(null);
       if (selectedProduct?.id === editing.id) setSelectedProduct(null);
     } else {
-      await createProduct(values);
+      const created = await createProduct(values);
+      await logActivity({
+        actor,
+        action: "added",
+        entityType: "product",
+        entityId: created.id,
+        entityLabel: created.name,
+      });
     }
     await refresh();
   };

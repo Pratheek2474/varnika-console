@@ -24,6 +24,8 @@ import {
 import { TableListSkeleton } from "@/components/ui/page-skeletons";
 import { Kanban, List, Search, ExternalLink, History, Plus, Pencil } from "lucide-react";
 import { OrderFormDialog } from "@/components/forms/OrderFormDialog";
+import { useActor } from "@/lib/context/actor-context";
+import { logActivity } from "@/lib/supabase/activity";
 import { formatCurrency } from "@/lib/utils";
 import {
   DndContext,
@@ -188,6 +190,7 @@ function KanbanColumn({
 
 export default function OrdersPage() {
   const { permissions } = useAuth();
+  const { actor } = useActor();
   const [viewMode, setViewMode] = useState<"kanban" | "tickets">("kanban");
   const [orders, setOrders] = useState<OrderWithCustomer[]>([]);
   const [customerOptions, setCustomerOptions] = useState<{ id: string; customer_name: string }[]>([]);
@@ -227,6 +230,7 @@ export default function OrdersPage() {
   const persistStatus = async (orderId: string, status: OrderWithCustomer["status"]) => {
     const current = orders.find((o) => o.id === orderId);
     if (!current || !current.customer_id) return;
+    const from = current.status;
     try {
       await updateOrder(orderId, {
         customer_id: current.customer_id,
@@ -236,6 +240,18 @@ export default function OrdersPage() {
         priority: current.priority,
         delivery_date: current.delivery_date ?? "",
         notes: current.notes,
+      });
+      await logActivity({
+        actor,
+        action: "status_changed",
+        entityType: "order",
+        entityId: orderId,
+        entityLabel: current.order_number,
+        detail: `from ${from} to ${status}`,
+        customerId: current.customers?.id ?? current.customer_id,
+        customerName: current.customers?.customer_name ?? "",
+        orderId,
+        orderNumber: current.order_number,
       });
     } catch (e) {
       console.error(e);
@@ -330,10 +346,32 @@ export default function OrdersPage() {
       const updated = await updateOrder(editing.id, values);
       setOrders((prev) => prev.map((o) => (o.id === editing.id ? updated : o)));
       if (selectedTicket?.id === editing.id) setSelectedTicket(updated);
+      await logActivity({
+        actor,
+        action: "edited",
+        entityType: "order",
+        entityId: editing.id,
+        entityLabel: updated.order_number,
+        customerId: updated.customers?.id ?? updated.customer_id,
+        customerName: updated.customers?.customer_name ?? "",
+        orderId: editing.id,
+        orderNumber: updated.order_number,
+      });
       setEditing(null);
     } else {
       const created = await createOrder(values);
       setOrders((prev) => [created, ...prev]);
+      await logActivity({
+        actor,
+        action: "added",
+        entityType: "order",
+        entityId: created.id,
+        entityLabel: created.order_number,
+        customerId: created.customers?.id ?? created.customer_id,
+        customerName: created.customers?.customer_name ?? "",
+        orderId: created.id,
+        orderNumber: created.order_number,
+      });
     }
   };
 

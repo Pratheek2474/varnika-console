@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import { AuthProvider } from "@/lib/context/auth-context";
 import { FeatureFlagsProvider } from "@/lib/context/feature-flags-context";
 import { NavigationProvider } from "@/lib/context/navigation-context";
+import { ActorProvider } from "@/lib/context/actor-context";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   // Register Service Worker on non-desktop devices / mobile browsers
@@ -31,7 +32,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     <AuthProvider>
       <FeatureFlagsProvider>
         <NavigationProvider>
-          {children}
+          <ActorProvider>{children}</ActorProvider>
         </NavigationProvider>
       </FeatureFlagsProvider>
     </AuthProvider>

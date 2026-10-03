@@ -154,6 +154,14 @@ lib/
 | Timeline | `@/components/ui/timeline` |
 | Page skeletons | `@/components/ui/page-skeletons` |
 
+## Audit Trail (Employees + Updates)
+
+- `employees` table + `/employees` page (add/edit/deactivate, `employees.read/write` permissions)
+- "Acting as" selector in `TopNavBar` (via `ActorProvider`, persisted to localStorage) — every mutation stamps this name
+- `activity_log` table (actor, action, entity snapshots + customer/order links, timestamp). Writes go through `logActivity()` in `lib/supabase/activity.ts`, which never throws
+- `/updates` page renders the feed with always-underlined customer/order links; filter chips per entity type
+- Every create/update/status-change/milestone/resolve across customers, orders, transactions, shipments, tickets, products, employees logs an entry
+
 ## Deployment (Cloudflare Workers via OpenNext)
 
 - Adapter: `@opennextjs/cloudflare@1.14.10` (exact-pinned; newer majors dropped Next 14)

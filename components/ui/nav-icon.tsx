@@ -24,6 +24,9 @@ import {
   Plus,
   Filter,
   Compass,
+  ArrowLeftRight,
+  Bell,
+  Contact,
   LucideProps,
 } from "lucide-react";
 
@@ -56,6 +59,9 @@ const ICON_MAP: Record<string, React.ComponentType<LucideProps>> = {
   Plus,
   Filter,
   Compass,
+  ArrowLeftRight,
+  Bell,
+  Contact,
 };
 
 export function NavIcon({ name, ...props }: NavIconProps) {

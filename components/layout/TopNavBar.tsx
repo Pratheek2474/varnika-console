@@ -4,11 +4,13 @@ import React from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/context/auth-context";
 import { useNavigation } from "@/lib/context/navigation-context";
+import { useActor } from "@/lib/context/actor-context";
 import { Search, Menu, X } from "lucide-react";
 
 export function TopNavBar() {
   const { user, role } = useAuth();
   const { setCommandPaletteOpen, sidebarCollapsed, toggleSidebar } = useNavigation();
+  const { actor, setActor, employees } = useActor();
 
   return (
     <nav className="hidden lg:flex fixed top-0 left-0 right-0 h-14 bg-[#FAF9F6] border-b border-[#E6E3DB] items-center px-5 gap-3 z-40 select-none">
@@ -49,8 +51,28 @@ export function TopNavBar() {
         </button>
       </div>
 
-      {/* Right: Profile */}
+      {/* Right: Acting-as + Profile */}
       <div className="flex items-center gap-2.5 shrink-0">
+        {employees.length > 0 && (
+          <label className="flex items-center gap-1.5 text-[11px] text-neutral-500">
+            <span className="hidden xl:inline">Acting as</span>
+            <select
+              value={employees.some((e) => e.name === actor) ? actor : ""}
+              onChange={(e) => setActor(e.target.value)}
+              className="max-w-[140px] px-2 py-1.5 bg-white border border-[#E6E3DB] text-xs text-black focus:outline-none focus:border-black rounded-xs"
+              title="Changes you make are recorded under this name"
+            >
+              {!employees.some((e) => e.name === actor) && (
+                <option value="">{actor}</option>
+              )}
+              {employees.map((e) => (
+                <option key={e.id} value={e.name}>
+                  {e.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <div className="text-right hidden sm:block">
           <div className="text-xs font-medium text-black leading-tight">{user.name}</div>
           <div className="text-[10px] text-neutral-600 uppercase tracking-wider font-mono">{role}</div>

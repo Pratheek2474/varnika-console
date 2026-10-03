@@ -29,6 +29,8 @@ import {
 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { OrderFormDialog } from "@/components/forms/OrderFormDialog";
+import { useActor } from "@/lib/context/actor-context";
+import { logActivity } from "@/lib/supabase/activity";
 
 const DOCUMENT_ICONS: Record<DocumentKind, string> = {
   invoice: "📄",
@@ -41,6 +43,7 @@ const DOCUMENT_ICONS: Record<DocumentKind, string> = {
 
 export default function OrderDetailPage({ params }: { params: { id: string } }) {
   const { permissions } = useAuth();
+  const { actor } = useActor();
   const [detail, setDetail] = useState<OrderDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -71,6 +74,17 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
     if (!detail) return;
     const updated = await updateOrder(detail.order.id, values);
     setDetail({ ...detail, order: { ...detail.order, ...updated } });
+    await logActivity({
+      actor,
+      action: "edited",
+      entityType: "order",
+      entityId: detail.order.id,
+      entityLabel: updated.order_number,
+      customerId: updated.customers?.id ?? updated.customer_id,
+      customerName: updated.customers?.customer_name ?? "",
+      orderId: detail.order.id,
+      orderNumber: updated.order_number,
+    });
   };
 
   if (loading) return <OrderDetailSkeleton />;

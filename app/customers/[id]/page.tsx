@@ -22,6 +22,8 @@ import { CustomerDetailSkeleton } from "@/components/ui/page-skeletons";
 import { ArrowLeft, Ruler, Mail, Phone, ShoppingBag, ExternalLink, Pencil } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { CustomerFormDialog } from "@/components/forms/CustomerFormDialog";
+import { useActor } from "@/lib/context/actor-context";
+import { logActivity } from "@/lib/supabase/activity";
 
 const MEASUREMENT_FIELDS: { key: string; label: string }[] = [
   { key: "blouse_length", label: "Blouse Length" },
@@ -37,6 +39,7 @@ const MEASUREMENT_FIELDS: { key: string; label: string }[] = [
 
 export default function CustomerDetailPage({ params }: { params: { id: string } }) {
   const { permissions } = useAuth();
+  const { actor } = useActor();
   const [customer, setCustomer] = useState<CustomerWithMeasurement | null>(null);
   const [orders, setOrders] = useState<OrderWithCustomer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,6 +83,16 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
       values.measurement
     );
     setCustomer(updated);
+    await logActivity({
+      actor,
+      action: "edited",
+      entityType: "customer",
+      entityId: customer.id,
+      entityLabel: values.customer_name,
+      customerId: customer.id,
+      customerName: values.customer_name,
+      detail: "profile + measurements",
+    });
   };
 
   if (loading) return <CustomerDetailSkeleton />;

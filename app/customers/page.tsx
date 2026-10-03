@@ -17,9 +17,12 @@ import { TableListSkeleton } from "@/components/ui/page-skeletons";
 import { Search, ChevronRight, Plus, Pencil } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { CustomerFormDialog } from "@/components/forms/CustomerFormDialog";
+import { useActor } from "@/lib/context/actor-context";
+import { logActivity } from "@/lib/supabase/activity";
 
 export default function CustomersPage() {
   const { permissions } = useAuth();
+  const { actor } = useActor();
   const [searchQuery, setSearchQuery] = useState("");
   const [customers, setCustomers] = useState<CustomerWithMeasurement[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,12 +68,30 @@ export default function CustomersPage() {
         values.measurement
       );
       setCustomers((prev) => prev.map((c) => (c.id === editing.id ? updated : c)));
+      await logActivity({
+        actor,
+        action: "edited",
+        entityType: "customer",
+        entityId: editing.id,
+        entityLabel: values.customer_name,
+        customerId: editing.id,
+        customerName: values.customer_name,
+      });
       setEditing(null);
     } else {
       const created = await createCustomer(values);
       setCustomers((prev) =>
         [...prev, created].sort((a, b) => a.customer_name.localeCompare(b.customer_name))
       );
+      await logActivity({
+        actor,
+        action: "added",
+        entityType: "customer",
+        entityId: created.id,
+        entityLabel: created.customer_name,
+        customerId: created.id,
+        customerName: created.customer_name,
+      });
     }
   };
 

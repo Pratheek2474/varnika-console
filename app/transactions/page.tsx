@@ -19,6 +19,8 @@ import { TableListSkeleton } from "@/components/ui/page-skeletons";
 import { Search, ExternalLink, Plus, Pencil } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { TransactionFormDialog } from "@/components/forms/TransactionFormDialog";
+import { useActor } from "@/lib/context/actor-context";
+import { logActivity } from "@/lib/supabase/activity";
 
 const PAYMENT_MODE_LABELS: Record<string, string> = {
   credit_card: "Credit Card",
@@ -30,6 +32,7 @@ const PAYMENT_MODE_LABELS: Record<string, string> = {
 
 export default function TransactionsPage() {
   const { permissions } = useAuth();
+  const { actor } = useActor();
   const [searchQuery, setSearchQuery] = useState("");
   const [transactions, setTransactions] = useState<TransactionWithLinks[]>([]);
   const [customerOptions, setCustomerOptions] = useState<{ id: string; customer_name: string }[]>([]);
@@ -80,11 +83,38 @@ export default function TransactionsPage() {
   );
 
   const handleSave = async (values: TransactionInput) => {
+    const customerName =
+      customerOptions.find((c) => c.id === values.customer_id)?.customer_name ?? "";
+    const orderNumber =
+      orderOptions.find((o) => o.id === values.order_id)?.order_number ?? "";
     if (editing) {
       await updateTransaction(editing.id, values);
+      await logActivity({
+        actor,
+        action: "edited",
+        entityType: "transaction",
+        entityId: editing.id,
+        entityLabel: values.payment_ref,
+        customerId: values.customer_id,
+        customerName,
+        orderId: values.order_id,
+        orderNumber,
+      });
       setEditing(null);
     } else {
-      await createTransaction(values);
+      const created = await createTransaction(values);
+      await logActivity({
+        actor,
+        action: "added",
+        entityType: "transaction",
+        entityId: created.id,
+        entityLabel: values.payment_ref,
+        detail: `${values.amount} USD`,
+        customerId: values.customer_id,
+        customerName,
+        orderId: values.order_id,
+        orderNumber,
+      });
     }
     await refresh();
   };

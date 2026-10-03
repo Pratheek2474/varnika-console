@@ -204,3 +204,37 @@ export interface TicketWithLinks extends TicketRow {
   customers: { id: string; customer_name: string } | null;
   orders: { id: string; order_number: string } | null;
 }
+
+export interface EmployeeRow {
+  id: string;
+  name: string;
+  phone: string;
+  role: string;
+  is_active: boolean;
+  avatar_url: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type ActivityAction =
+  | "added"
+  | "edited"
+  | "status_changed"
+  | "resolved"
+  | "raised"
+  | "milestone";
+
+export interface ActivityRow {
+  id: string;
+  actor_name: string;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  entity_label: string;
+  detail: string;
+  customer_id: string | null;
+  customer_name: string;
+  order_id: string | null;
+  order_number: string;
+  created_at: string;
+}

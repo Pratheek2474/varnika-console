@@ -11,8 +11,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { CardsListSkeleton } from "@/components/ui/page-skeletons";
 import { ExternalLink } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { useActor } from "@/lib/context/actor-context";
+import { logActivity } from "@/lib/supabase/activity";
 
 export default function TicketsPage() {
+  const { actor } = useActor();
   const [tickets, setTickets] = useState<TicketWithLinks[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<TicketWithLinks | null>(null);
   const [replyText, setReplyText] = useState("");
@@ -35,12 +38,26 @@ export default function TicketsPage() {
   }, []);
 
   const resolveTicket = async (id: string) => {
+    const target = tickets.find((t) => t.id === id);
     await updateTicketStatus(id, "resolved");
     setTickets((prev) =>
       prev.map((t) => (t.id === id ? { ...t, status: "resolved" } : t))
     );
     if (selectedTicket?.id === id) {
       setSelectedTicket((prev) => (prev ? { ...prev, status: "resolved" } : null));
+    }
+    if (target) {
+      await logActivity({
+        actor,
+        action: "resolved",
+        entityType: "ticket",
+        entityId: id,
+        entityLabel: target.ticket_number,
+        customerId: target.customer_id,
+        customerName: target.customers?.customer_name ?? "",
+        orderId: target.order_id,
+        orderNumber: target.orders?.order_number ?? "",
+      });
     }
   };
 

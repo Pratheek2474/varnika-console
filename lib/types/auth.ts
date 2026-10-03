@@ -17,6 +17,8 @@ export type Permission =
   | "reports.read"
   | "transactions.read"
   | "transactions.write"
+  | "employees.read"
+  | "employees.write"
   | "marketing.read"
   | "settings.read"
   | "settings.write"
@@ -64,6 +66,8 @@ export const PRESET_ROLES: Record<Exclude<RoleId, "custom">, RoleDefinition> = {
       "reports.read",
       "transactions.read",
       "transactions.write",
+      "employees.read",
+      "employees.write",
       "marketing.read",
       "settings.read",
       "settings.write",
@@ -83,6 +87,7 @@ export const PRESET_ROLES: Record<Exclude<RoleId, "custom">, RoleDefinition> = {
       "measurements.read",
       "tickets.read",
       "transactions.read",
+      "employees.read",
     ],
   },
   manager: {
@@ -106,6 +111,8 @@ export const PRESET_ROLES: Record<Exclude<RoleId, "custom">, RoleDefinition> = {
       "analytics.read",
       "transactions.read",
       "transactions.write",
+      "employees.read",
+      "employees.write",
     ],
   },
 };

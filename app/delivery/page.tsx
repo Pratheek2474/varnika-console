@@ -18,9 +18,12 @@ import { Button } from "@/components/ui/button";
 import { CardsListSkeleton } from "@/components/ui/page-skeletons";
 import { Plus, Pencil, ExternalLink } from "lucide-react";
 import { ShipmentFormDialog } from "@/components/forms/ShipmentFormDialog";
+import { useActor } from "@/lib/context/actor-context";
+import { logActivity } from "@/lib/supabase/activity";
 
 export default function DeliveryPage() {
   const { permissions } = useAuth();
+  const { actor } = useActor();
   const [search, setSearch] = useState("");
   const [shipments, setShipments] = useState<ShipmentWithMilestones[]>([]);
   const [orderOptions, setOrderOptions] = useState<{ id: string; order_number: string; customer_name: string }[]>([]);
@@ -64,11 +67,37 @@ export default function DeliveryPage() {
     values: ShipmentInput,
     milestone?: { status_text: string; location: string }
   ) => {
+    const orderNumber =
+      orderOptions.find((o) => o.id === values.order_id)?.order_number ?? "";
     if (editing) {
       await updateShipment(editing.id, values, milestone);
+      await logActivity({
+        actor,
+        action: "edited",
+        entityType: "shipment",
+        entityId: editing.id,
+        entityLabel: values.tracking_number,
+        detail: milestone?.status_text.trim()
+          ? `milestone: ${milestone.status_text.trim()}`
+          : `status ${values.status.replace(/_/g, " ")}`,
+        orderId: values.order_id,
+        orderNumber,
+      });
       setEditing(null);
     } else {
       await createShipment(values, milestone);
+      const created = (await listShipments()).find(
+        (s) => s.tracking_number === values.tracking_number
+      );
+      await logActivity({
+        actor,
+        action: "added",
+        entityType: "shipment",
+        entityId: created?.id,
+        entityLabel: values.tracking_number,
+        orderId: values.order_id,
+        orderNumber,
+      });
     }
     await refresh();
   };
