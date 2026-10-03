@@ -43,6 +43,8 @@ import {
 import { formatDateTime } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { Message } from "@/components/ui/message";
+import { MessageScroller } from "@/components/ui/message-scroller";
 
 type ThreadMessage = ChatMessageRow & { chat_attachments: ChatAttachmentRow[] };
 
@@ -148,8 +150,6 @@ export default function ChatPage() {
   }, [thread]);
 
   const selected = conversations.find((c) => c.id === selectedId) ?? null;
-  // Latest order for this customer (listOrders is newest-first) — used as the
-  // link target and attachment home when the chat has no explicit order.
   const latestOrderForCustomer = selected?.customer_id
     ? (orders.find((o) => o.customer_id === selected.customer_id) ?? null)
     : null;
@@ -193,8 +193,6 @@ export default function ChatPage() {
     }
   };
 
-  // "Message" — pick a customer (and order), jump into the thread.
-  // Reuses the existing conversation for that customer+order when there is one.
   const openMessageDialog = () => {
     const firstCustomer = allCustomers[0];
     const firstId = firstCustomer?.id ?? "";
@@ -278,19 +276,12 @@ export default function ChatPage() {
 
   return (
     <RouteGuard requiredPermission="chat.read" requiredFeature="chat" moduleName="Customer Chat">
-      <div className="space-y-6 animate-in fade-in duration-200">
+      <div className="h-[calc(100dvh-4rem)] lg:h-[calc(100dvh-8rem)] flex flex-col bg-[#FAF9F6]">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E6E3DB]">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-black tracking-tight">
-              Customer Chat
-            </h1>
-            <p className="text-xs text-neutral-500 mt-1">
-              Active chats — shared photos and files land on the customer and their latest order too.
-            </p>
-          </div>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[#E6E3DB] bg-white">
+          <h1 className="text-lg font-semibold text-black">Chats</h1>
           {canWrite && (
-            <Button variant="default" size="sm" className="h-8 text-xs shrink-0" onClick={openMessageDialog}>
+            <Button variant="default" size="sm" className="h-8 text-xs" onClick={openMessageDialog}>
               <Plus className="w-3.5 h-3.5 mr-1.5" />
               Message
             </Button>
@@ -298,41 +289,48 @@ export default function ChatPage() {
         </div>
 
         {loadError && (
-          <div className="p-3 bg-red-50 border border-red-200 text-xs text-red-700 rounded-xs">
+          <div className="mx-4 mt-3 p-3 bg-red-50 border border-red-200 text-xs text-red-700 rounded-xs">
             {loadError}{" "}
             <button onClick={refreshList} className="underline font-medium">Retry</button>
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="flex-1 flex overflow-hidden">
           {/* Conversation list */}
-          <div className={cn("space-y-3", selectedId && "hidden lg:block")}>
+          <div className={cn("w-full lg:w-80 border-r border-[#E6E3DB] bg-white overflow-y-auto", selectedId && "hidden lg:block")}>
             {conversations.map((conv) => {
               const last = conv.chat_messages[conv.chat_messages.length - 1];
               const isActive = conv.id === selectedId;
+              const latestOrder = conv.orders ?? orders.find((o) => o.customer_id === conv.customer_id);
               return (
                 <button
                   key={conv.id}
                   onClick={() => setSelectedId(conv.id)}
                   className={cn(
-                    "w-full text-left p-4 bg-white border transition-colors rounded-xs space-y-1.5",
-                    isActive ? "border-black" : "border-[#E6E3DB] hover:border-black/40"
+                    "w-full text-left px-4 py-3 border-b border-[#F0ECE1] hover:bg-[#FAF9F6] transition-colors",
+                    isActive && "bg-[#F4F2ED]"
                   )}
                 >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-sm font-medium text-black truncate">
+                  <div className="flex items-center justify-between">
+                    <span className={cn("text-sm font-medium truncate", isActive ? "text-black" : "text-neutral-700")}>
                       {conv.customers?.customer_name ?? "Unknown"}
                     </span>
+                    {last && (
+                      <span className="text-[10px] text-neutral-400 shrink-0 ml-2 font-mono">
+                        {new Date(last.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    )}
                   </div>
-                  <div className="text-[11px] text-neutral-500 truncate">
-                    {conv.subject}
-                    {`Latest: ${conv.orders?.order_number ?? orders.find((o) => o.customer_id === conv.customer_id)?.order_number ?? "—"}`}
+                  <div className="flex items-center justify-between mt-0.5">
+                    <span className="text-xs text-neutral-500 truncate flex-1">
+                      {last ? `${last.sender_name}: ${last.body}` : "No messages yet"}
+                    </span>
+                    {latestOrder && (
+                      <span className="text-[10px] text-neutral-400 shrink-0 ml-2 font-mono">
+                        {latestOrder.order_number}
+                      </span>
+                    )}
                   </div>
-                  {last && (
-                    <div className="text-[11px] text-neutral-400 truncate">
-                      {last.sender_name}: {last.body}
-                    </div>
-                  )}
                 </button>
               );
             })}
@@ -343,18 +341,21 @@ export default function ChatPage() {
             )}
           </div>
 
-          {/* Thread */}
-          <div className={cn("lg:col-span-2", !selectedId && "hidden lg:block")}>
+          {/* Chat thread */}
+          <div className={cn("flex-1 flex flex-col bg-[#FAF9F6]", !selectedId && "hidden lg:flex")}>
             {selected ? (
-              <div className="bg-white border border-[#E6E3DB] rounded-xs flex flex-col min-h-[480px] max-h-[70vh]">
+              <>
                 {/* Thread header */}
-                <div className="px-4 py-3 border-b border-[#E6E3DB] flex items-center gap-3">
+                <div className="px-4 py-2.5 border-b border-[#E6E3DB] bg-white flex items-center gap-3">
                   <button
                     onClick={() => setSelectedId(null)}
-                    className="lg:hidden p-1 text-neutral-500 hover:text-black"
+                    className="lg:hidden p-1.5 text-neutral-500 hover:text-black"
                   >
                     <ArrowLeft className="w-4 h-4" />
                   </button>
+                  <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-white font-medium text-sm shrink-0">
+                    {selected.customers?.customer_name.charAt(0) ?? "?"}
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-black truncate">
                       {selected.customers ? (
@@ -380,42 +381,29 @@ export default function ChatPage() {
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                <MessageScroller onLoadMore={() => {}}>
                   {threadLoading ? (
                     <div className="text-center py-8 text-xs text-neutral-400">Loading…</div>
                   ) : (
-                    thread.map((msg) => {
-                      const mine = msg.sender === "staff";
-                      return (
-                        <div key={msg.id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
-                          <div
-                            className={cn(
-                              "max-w-[80%] p-3 rounded-xs space-y-2",
-                              mine ? "bg-black text-white" : "bg-[#FAF9F6] border border-[#E6E3DB] text-black"
-                            )}
-                          >
-                            <div className={cn("text-[10px] font-mono", mine ? "text-white/60" : "text-neutral-400")}>
-                              {msg.sender_name}
-                            </div>
-                            {msg.body && <div className="text-xs leading-relaxed">{msg.body}</div>}
-                            {msg.chat_attachments.length > 0 && (
-                              <div className="flex flex-wrap gap-2">
-                                {msg.chat_attachments.map((att) => (
-                                  <AttachmentView key={att.id} att={att} />
-                                ))}
-                              </div>
-                            )}
+                    thread.map((msg) => (
+                      <Message key={msg.id} variant={msg.sender === "staff" ? "own" : "default"}>
+                        <div className="text-[10px] font-mono opacity-70 mb-1">{msg.sender_name}</div>
+                        {msg.body && <div>{msg.body}</div>}
+                        {msg.chat_attachments.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {msg.chat_attachments.map((att) => (
+                              <AttachmentView key={att.id} att={att} />
+                            ))}
                           </div>
-                        </div>
-                      );
-                    })
+                        )}
+                      </Message>
+                    ))
                   )}
-                  <div ref={bottomRef} />
-                </div>
+                </MessageScroller>
 
                 {/* Composer */}
                 {canWrite && (
-                  <div className="p-3 border-t border-[#E6E3DB] space-y-2">
+                  <div className="p-3 border-t border-[#E6E3DB] bg-white space-y-2">
                     {pendingFiles.length > 0 && (
                       <div className="flex flex-wrap gap-1.5">
                         {pendingFiles.map((f, i) => (
@@ -440,7 +428,7 @@ export default function ChatPage() {
                       />
                       <button
                         onClick={() => fileRef.current?.click()}
-                        className="p-2 border border-[#E6E3DB] hover:border-black rounded-xs text-neutral-500 hover:text-black transition-colors shrink-0"
+                        className="p-2 border border-[#E6E3DB] hover:border-black rounded-full text-neutral-500 hover:text-black transition-colors shrink-0"
                         title={effectiveOrderId ? "Attach — will also appear on the customer and latest order" : "Attach"}
                       >
                         <Paperclip className="w-4 h-4" />
@@ -449,11 +437,11 @@ export default function ChatPage() {
                         value={reply}
                         onChange={(e) => setReply(e.target.value)}
                         onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                        placeholder={effectiveOrderId ? "Reply… (attachments also go to the customer + latest order)" : "Reply…"}
-                        className="flex-1 px-2.5 py-2 bg-white border border-[#E6E3DB] text-xs focus:outline-none focus:border-black rounded-xs"
+                        placeholder={effectiveOrderId ? "Message… (attachments also go to the customer + latest order)" : "Message…"}
+                        className="flex-1 px-3 py-2 bg-[#F4F2ED] border border-[#E6E3DB] text-sm focus:outline-none focus:border-black rounded-full"
                       />
-                      <Button variant="default" size="sm" className="h-8 shrink-0" disabled={sending || (!reply.trim() && pendingFiles.length === 0)} onClick={handleSend}>
-                        <Send className="w-3.5 h-3.5" />
+                      <Button variant="default" size="sm" className="h-9 w-9 p-0 rounded-full" disabled={sending || (!reply.trim() && pendingFiles.length === 0)} onClick={handleSend}>
+                        <Send className="w-4 h-4" />
                       </Button>
                     </div>
                     <div className="text-[10px] text-neutral-400">
@@ -461,16 +449,16 @@ export default function ChatPage() {
                     </div>
                   </div>
                 )}
-              </div>
+              </>
             ) : (
-              <div className="hidden lg:flex bg-white border border-[#E6E3DB] rounded-xs min-h-[480px] items-center justify-center text-xs text-neutral-400">
+              <div className="flex-1 flex bg-white border border-[#E6E3DB] rounded-xs min-h-[480px] items-center justify-center text-xs text-neutral-400">
                 Select a conversation.
               </div>
             )}
           </div>
         </div>
 
-        {/* Message dialog — choose whom to message */}
+        {/* Message dialog */}
         {canWrite && (
           <Dialog open={msgOpen} onOpenChange={setMsgOpen}>
             <DialogContent className="max-w-md">
@@ -486,7 +474,6 @@ export default function ChatPage() {
                     onChange={(e) => {
                       const id = e.target.value;
                       setMsgCustomerId(id);
-                      // Default to their latest order (list is newest-first).
                       setMsgOrderId(orders.find((o) => o.customer_id === id)?.id ?? "");
                     }}
                   >
@@ -528,12 +515,6 @@ export default function ChatPage() {
             </DialogContent>
           </Dialog>
         )}
-
-        {/* External link hint */}
-        <div className="text-[11px] text-neutral-400 flex items-center gap-1">
-          <ExternalLink className="w-3 h-3" />
-          Customer names and order numbers always link to their pages.
-        </div>
       </div>
     </RouteGuard>
   );
