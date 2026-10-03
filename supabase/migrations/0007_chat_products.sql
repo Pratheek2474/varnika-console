@@ -16,8 +16,6 @@ create table conversations (
   customer_id     uuid references customers (id) on delete cascade,
   order_id        uuid references orders (id) on delete set null,
   subject         text not null default '',
-  status          text not null default 'open'
-    check (status in ('open', 'resolved')),
   last_message_at timestamptz not null default now(),
   created_at      timestamptz not null default now()
 );

@@ -211,7 +211,6 @@ export interface ConversationRow {
   customer_id: string | null;
   order_id: string | null;
   subject: string;
-  status: "open" | "resolved";
   last_message_at: string;
   created_at: string;
 }

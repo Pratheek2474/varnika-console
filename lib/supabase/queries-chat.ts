@@ -75,7 +75,6 @@ export async function createConversation(input: {
       customer_id: input.customer_id,
       order_id: input.order_id || null,
       subject: input.subject,
-      status: "open",
     })
     .select(CONVERSATION_SELECT)
     .single();
@@ -124,14 +123,6 @@ export async function sendMessage(input: {
     );
     throwIf(attError, "Failed to attach files");
   }
-}
-
-export async function resolveConversation(id: string): Promise<void> {
-  const { error } = await supabase
-    .from("conversations")
-    .update({ status: "resolved" })
-    .eq("id", id);
-  throwIf(error, "Failed to resolve conversation");
 }
 
 /** Upload a chat file to the order-photos bucket, returns public URL info. */

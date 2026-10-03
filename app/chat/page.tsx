@@ -15,14 +15,12 @@ import {
   createConversation,
   getConversation,
   listConversations,
-  resolveConversation,
   sendMessage,
   uploadChatFile,
 } from "@/lib/supabase/queries-chat";
 import { listCustomers } from "@/lib/supabase/queries-customers";
 import { listOrders } from "@/lib/supabase/queries-orders";
 import { logActivity } from "@/lib/supabase/activity";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -40,7 +38,6 @@ import {
   Plus,
   Send,
   Paperclip,
-  CheckCheck,
   FileText,
 } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
@@ -226,23 +223,6 @@ export default function ChatPage() {
     }
   };
 
-  const handleResolve = async () => {
-    if (!selectedId || !selected) return;
-    await resolveConversation(selectedId);
-    await logActivity({
-      actor,
-      action: "resolved",
-      entityType: "conversation",
-      entityId: selectedId,
-      entityLabel: selected.subject,
-      customerId: selected.customer_id,
-      customerName: selected.customers?.customer_name ?? "",
-      orderId: selected.order_id,
-      orderNumber: selected.orders?.order_number ?? "",
-    });
-    await refreshList();
-  };
-
   if (loading) return <CardsListSkeleton cards={3} />;
 
   return (
@@ -288,13 +268,10 @@ export default function ChatPage() {
                     isActive ? "border-black" : "border-[#E6E3DB] hover:border-black/40"
                   )}
                 >
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <span className="text-sm font-medium text-black truncate">
                       {conv.customers?.customer_name ?? "Unknown"}
                     </span>
-                    <Badge variant={conv.status === "open" ? "secondary" : "outline"} className="text-[10px] shrink-0">
-                      {conv.status}
-                    </Badge>
                   </div>
                   <div className="text-[11px] text-neutral-500 truncate">
                     {conv.subject}
@@ -349,12 +326,6 @@ export default function ChatPage() {
                       )}
                     </div>
                   </div>
-                  {canWrite && selected.status === "open" && (
-                    <Button variant="outline" size="sm" className="h-7 text-[11px] shrink-0" onClick={handleResolve}>
-                      <CheckCheck className="w-3.5 h-3.5 mr-1" />
-                      Resolve
-                    </Button>
-                  )}
                 </div>
 
                 {/* Messages */}
@@ -392,7 +363,7 @@ export default function ChatPage() {
                 </div>
 
                 {/* Composer */}
-                {canWrite && selected.status === "open" && (
+                {canWrite && (
                   <div className="p-3 border-t border-[#E6E3DB] space-y-2">
                     {pendingFiles.length > 0 && (
                       <div className="flex flex-wrap gap-1.5">

@@ -219,16 +219,16 @@ values
    'Client picked gold dori. Closed.', '2026-09-27T16:00:00Z');
 
 -- 10. Chat --------------------------------------------------------------------
-insert into conversations (id, customer_id, order_id, subject, status, created_at, last_message_at)
+insert into conversations (id, customer_id, order_id, subject, created_at, last_message_at)
 values
   ('e1111111-1111-1111-1111-111111111111',
    'a1111111-1111-1111-1111-111111111111',
    'c1111111-1111-1111-1111-111111111111',
-   'Sleeve length — VAR-8901', 'open',
+   'Sleeve length — VAR-8901',
    '2026-10-01T10:00:00Z', '2026-10-01T11:20:00Z'),
   ('e2222222-2222-2222-2222-222222222222',
    'a2222222-2222-2222-2222-222222222222',
-   null, 'Saree fall question', 'open',
+   null, 'Saree fall question',
    '2026-10-02T09:00:00Z', '2026-10-02T09:30:00Z');
 
 insert into chat_messages (id, conversation_id, sender, sender_name, body, created_at)
