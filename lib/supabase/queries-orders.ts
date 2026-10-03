@@ -200,3 +200,63 @@ export function isOrderPaid(
   if (orderManualPaid(order)) return true;
   return paidSum >= Number(order.total);
 }
+
+function formatFileSize(bytes: number): string {
+  const kb = bytes / 1024;
+  return kb < 1024
+    ? `${Math.max(1, Math.round(kb))} KB`
+    : `${(kb / 1024).toFixed(1)} MB`;
+}
+
+/** Upload a photo to the order-photos bucket and link it to the order. */
+export async function addOrderPhoto(
+  orderId: string,
+  file: File,
+  caption?: string
+): Promise<OrderPhotoRow> {
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const path = `orders/${orderId}/${Date.now()}_${safeName}`;
+  const { error: upError } = await supabase.storage
+    .from("order-photos")
+    .upload(path, file, { contentType: file.type || undefined });
+  if (upError) throw new Error(`Photo upload failed: ${upError.message}`);
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("order-photos").getPublicUrl(path);
+  const { data, error } = await supabase
+    .from("order_photos")
+    .insert({ order_id: orderId, url: publicUrl, caption: caption ?? file.name })
+    .select()
+    .single();
+  throwIf(error, "Failed to save photo");
+  return data as OrderPhotoRow;
+}
+
+/** Upload a file to the order-documents bucket and link it to the order. */
+export async function addOrderDocument(
+  orderId: string,
+  file: File
+): Promise<OrderDocumentRow> {
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const path = `orders/${orderId}/${Date.now()}_${safeName}`;
+  const { error: upError } = await supabase.storage
+    .from("order-documents")
+    .upload(path, file, { contentType: file.type || undefined });
+  if (upError) throw new Error(`File upload failed: ${upError.message}`);
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("order-documents").getPublicUrl(path);
+  const { data, error } = await supabase
+    .from("order_documents")
+    .insert({
+      order_id: orderId,
+      name: file.name,
+      kind: "other",
+      size_text: formatFileSize(file.size),
+      url: publicUrl,
+    })
+    .select()
+    .single();
+  throwIf(error, "Failed to save document");
+  return data as OrderDocumentRow;
+}

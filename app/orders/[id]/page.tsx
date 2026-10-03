@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { RouteGuard } from "@/components/layout/RouteGuard";
 import { useAuth } from "@/lib/context/auth-context";
 import {
+  addOrderDocument,
+  addOrderPhoto,
   getOrderDetail,
   isOrderPaid,
   orderManualPaid,
@@ -14,7 +16,6 @@ import {
   OrderDetail as OrderDetailData,
 } from "@/lib/supabase/queries-orders";
 import { OrderInput } from "@/lib/supabase/queries-orders";
-import { listOrderAttachments } from "@/lib/supabase/queries-chat";
 import {
   createShipment,
   createTransaction,
@@ -72,8 +73,6 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
   const [notFound, setNotFound] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [lightbox, setLightbox] = useState<{ url: string; label: string } | null>(null);
-  const [chatPhotos, setChatPhotos] = useState<{ id: string; url: string; name: string }[]>([]);
-  const [chatFiles, setChatFiles] = useState<{ id: string; url: string; name: string; size_text: string }[]>([]);
   const [transactions, setTransactions] = useState<
     { id: string; amount: number; currency: string; payment_mode: string; payment_ref: string; occurred_at: string }[]
   >([]);
@@ -107,22 +106,6 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
           return;
         }
         setDetail(row);
-        // Chat media linked to this order (also visible on the customer page).
-        try {
-          const atts = await listOrderAttachments(params.id);
-          setChatPhotos(
-            atts
-              .filter((a) => a.kind === "photo" && a.url && !a.url.startsWith("#"))
-              .map((a) => ({ id: a.id, url: a.url, name: a.name || "Photo" }))
-          );
-          setChatFiles(
-            atts
-              .filter((a) => a.kind !== "photo")
-              .map((a) => ({ id: a.id, url: a.url, name: a.name || "File", size_text: a.size_text }))
-          );
-        } catch {
-          // Chat tables may not be migrated yet
-        }
         try {
           const txns = await listTransactions();
           setTransactions(
@@ -321,6 +304,76 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
     }
   };
 
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const docInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+
+  const refreshMedia = async () => {
+    try {
+      const row = await getOrderDetail(order.id);
+      if (row) setDetail({ ...row, order: detail.order });
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handlePhotoFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploadingPhoto(true);
+    try {
+      for (const file of Array.from(files)) {
+        const photo = await addOrderPhoto(order.id, file);
+        await logActivity({
+          actor,
+          action: "added",
+          entityType: "order",
+          entityId: order.id,
+          entityLabel: order.order_number,
+          detail: `added photo ${photo.caption || file.name}`,
+          customerId: order.customers?.id ?? order.customer_id,
+          customerName: order.customers?.customer_name ?? "",
+          orderId: order.id,
+          orderNumber: order.order_number,
+        });
+      }
+      await refreshMedia();
+      toast.success(files.length === 1 ? "Photo added." : `${files.length} photos added.`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const handleDocFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploadingDoc(true);
+    try {
+      for (const file of Array.from(files)) {
+        const doc = await addOrderDocument(order.id, file);
+        await logActivity({
+          actor,
+          action: "added",
+          entityType: "order",
+          entityId: order.id,
+          entityLabel: order.order_number,
+          detail: `added file ${doc.name}`,
+          customerId: order.customers?.id ?? order.customer_id,
+          customerName: order.customers?.customer_name ?? "",
+          orderId: order.id,
+          orderNumber: order.order_number,
+        });
+      }
+      await refreshMedia();
+      toast.success(files.length === 1 ? "File added." : `${files.length} files added.`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setUploadingDoc(false);
+    }
+  };
+
   // Hold Check only appears when the order is actually on hold
   // (or its timeline step is already reached) — never by default.
   const visibleTimeline = timeline.filter(
@@ -420,19 +473,42 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
               </CardContent>
             </Card>
 
-            {/* Photos (incl. chat photos linked to this order) */}
+            {/* Photos */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-semibold text-black flex items-center gap-2">
                   <ImageIcon className="w-4 h-4" />
                   Photos
                   <span className="text-[10px] font-mono font-normal text-neutral-400 ml-auto">
-                    {photos.length + chatPhotos.length} images
+                    {photos.length} images
                   </span>
+                  {canWrite && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-[11px]"
+                      disabled={uploadingPhoto}
+                      onClick={() => photoInputRef.current?.click()}
+                    >
+                      <Plus className="w-3 h-3 mr-1" />
+                      {uploadingPhoto ? "Uploading…" : "Add"}
+                    </Button>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {photos.length + chatPhotos.length > 0 ? (
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    handlePhotoFiles(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+                {photos.length > 0 ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {photos.map((photo) => (
                       <button
@@ -452,24 +528,6 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                           <p className="text-[9px] text-white/70 font-mono">
                             {formatDate(photo.uploaded_at)}
                           </p>
-                        </div>
-                      </button>
-                    ))}
-                    {chatPhotos.map((photo) => (
-                      <button
-                        key={`chat-${photo.id}`}
-                        onClick={() => setLightbox({ url: photo.url, label: `${photo.name} · from chat` })}
-                        className="group relative aspect-square bg-[#FAF9F6] border border-[#E6E3DB] rounded-xs overflow-hidden cursor-pointer hover:border-black/40 transition-colors"
-                        title="Open photo (from chat)"
-                      >
-                        <Image
-                          src={photo.url}
-                          alt={photo.name}
-                          fill
-                          className="object-cover transition-transform group-hover:scale-105"
-                        />
-                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <p className="text-[10px] text-white truncate">{photo.name} · chat</p>
                         </div>
                       </button>
                     ))}
@@ -711,19 +769,42 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
               </CardContent>
             </Card>
 
-            {/* Documents (incl. chat files linked to this order) */}
+            {/* Documents */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-semibold text-black flex items-center gap-2">
                   <FileText className="w-4 h-4" />
                   Documents
                   <span className="text-[10px] font-mono font-normal text-neutral-400 ml-auto">
-                    {documents.length + chatFiles.length} files
+                    {documents.length} files
                   </span>
+                  {canWrite && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-[11px]"
+                      disabled={uploadingDoc}
+                      onClick={() => docInputRef.current?.click()}
+                    >
+                      <Plus className="w-3 h-3 mr-1" />
+                      {uploadingDoc ? "Uploading…" : "Add"}
+                    </Button>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {documents.length + chatFiles.length > 0 ? (
+                <input
+                  ref={docInputRef}
+                  type="file"
+                  multiple
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    handleDocFiles(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+                {documents.length > 0 ? (
                   <div className="space-y-2">
                     {documents.map((doc) => (
                       <a
@@ -740,26 +821,6 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                           </div>
                           <div className="text-[10px] text-neutral-400 font-mono">
                             {doc.size_text} · {formatDate(doc.uploaded_at)}
-                          </div>
-                        </div>
-                        <Download className="w-3.5 h-3.5 text-neutral-400 group-hover:text-black transition-colors shrink-0" />
-                      </a>
-                    ))}
-                    {chatFiles.map((doc) => (
-                      <a
-                        key={`chat-${doc.id}`}
-                        href={doc.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center gap-3 p-2.5 bg-white border border-[#E6E3DB] hover:border-black/40 transition-colors rounded-xs group"
-                      >
-                        <span className="text-lg">📎</span>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-xs font-medium text-black truncate underline underline-offset-2">
-                            {doc.name}
-                          </div>
-                          <div className="text-[10px] text-neutral-400 font-mono">
-                            {doc.size_text} · from chat
                           </div>
                         </div>
                         <Download className="w-3.5 h-3.5 text-neutral-400 group-hover:text-black transition-colors shrink-0" />
