@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  font-size: 112.5%; /* 18px if base is 16px */
+  font-weight: 500; /* medium */
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground text-base font-medium;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    letter-spacing: -0.011em;
+  }
+}
+
+/* Subtle minimal scrollbars */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #D8D4CA;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #AFAAA0;
+}
