@@ -1,13 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/context/auth-context";
 import { useFeatureFlags } from "@/lib/context/feature-flags-context";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MOCK_ORDERS, MOCK_REVENUE_CHART } from "@/lib/api/mock-supabase";
+import { CardsListSkeleton } from "@/components/ui/page-skeletons";
 import { ArrowRight } from "lucide-react";
 import {
   AreaChart,
@@ -18,12 +18,59 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { formatCurrency } from "@/lib/utils";
+import {
+  getCustomerStats,
+  getOpenChatsCount,
+  getOrderStats,
+  getRevenueStats,
+  OrderStatRow,
+} from "@/lib/supabase/stats";
 
 export default function HomePage() {
-  const { role, permissions } = useAuth();
+  const { permissions } = useAuth();
   const { flags } = useFeatureFlags();
+  const [loading, setLoading] = useState(true);
+  const [monthRevenue, setMonthRevenue] = useState(0);
+  const [txnCount, setTxnCount] = useState(0);
+  const [activeOrders, setActiveOrders] = useState(0);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [totalClients, setTotalClients] = useState(0);
+  const [clientsWithOrders, setClientsWithOrders] = useState(0);
+  const [openChats, setOpenChats] = useState(0);
+  const [chartData, setChartData] = useState<{ month: string; revenue: number; orders: number }[]>([]);
+  const [recentOrders, setRecentOrders] = useState<OrderStatRow[]>([]);
 
-  const recentOrders = MOCK_ORDERS.slice(0, 5);
+  const showRevenue = permissions.includes("revenue.read") && flags.revenue;
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [rev, ord, cust, chats] = await Promise.all([
+          getRevenueStats(6),
+          getOrderStats(5),
+          getCustomerStats(),
+          getOpenChatsCount(),
+        ]);
+        setMonthRevenue(rev.thisMonth);
+        setTxnCount(rev.count);
+        setActiveOrders(ord.active);
+        setTotalOrders(ord.total);
+        setTotalClients(cust.total);
+        setClientsWithOrders(cust.withOrders);
+        setOpenChats(chats);
+        setChartData(
+          rev.byMonth.map((b) => ({ month: b.label, revenue: b.revenue, orders: b.count }))
+        );
+        setRecentOrders(ord.recent);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  if (loading) return <CardsListSkeleton cards={4} />;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-200">
@@ -55,13 +102,13 @@ export default function HomePage() {
           <div className="text-xs text-neutral-500 font-normal">
             Monthly Revenue
           </div>
-          {permissions.includes("revenue.read") && flags.revenue ? (
+          {showRevenue ? (
             <div className="mt-2">
               <div className="text-2xl sm:text-3xl font-semibold text-black tracking-tight">
-                $112,000
+                {formatCurrency(monthRevenue)}
               </div>
               <div className="text-xs text-neutral-400 mt-1 font-mono">
-                +18.4% from last month
+                {txnCount} transactions total
               </div>
             </div>
           ) : (
@@ -83,10 +130,10 @@ export default function HomePage() {
           </div>
           <div className="mt-2">
             <div className="text-2xl sm:text-3xl font-semibold text-black tracking-tight">
-              12
+              {activeOrders}
             </div>
             <div className="text-xs text-neutral-400 mt-1">
-              6 in production · 2 rush
+              {totalOrders} orders total
             </div>
           </div>
         </Card>
@@ -98,44 +145,46 @@ export default function HomePage() {
           </div>
           <div className="mt-2">
             <div className="text-2xl sm:text-3xl font-semibold text-black tracking-tight">
-              1,280
+              {totalClients}
             </div>
             <div className="text-xs text-neutral-400 mt-1">
-              48 VIP patrons
+              {clientsWithOrders} with orders
             </div>
           </div>
         </Card>
 
-        {/* Support Queries */}
+        {/* Open Chats */}
         <Card className="p-5">
           <div className="text-xs text-neutral-500 font-normal">
-            Pending Queries
+            Open Chats
           </div>
           <div className="mt-2">
             <div className="text-2xl sm:text-3xl font-semibold text-black tracking-tight">
-              3
+              {openChats}
             </div>
             <div className="text-xs text-neutral-400 mt-1">
-              1 alteration inquiry
+              <Link href="/chat" className="underline underline-offset-2 hover:text-black">
+                Go to chat
+              </Link>
             </div>
           </div>
         </Card>
       </div>
 
       {/* Chart Section */}
-      {permissions.includes("revenue.read") && flags.revenue && (
+      {showRevenue && (
         <Card>
           <CardHeader className="pb-4">
             <CardTitle>Revenue Growth</CardTitle>
             <CardDescription>
-              Monthly revenue volume across the last 6 months
+              Monthly collected revenue across the last 6 months
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-2">
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
-                  data={MOCK_REVENUE_CHART}
+                  data={chartData}
                   margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                 >
                   <defs>
@@ -167,7 +216,7 @@ export default function HomePage() {
                               Revenue: {formatCurrency(data.revenue)}
                             </div>
                             <div className="text-neutral-400 text-[10px]">
-                              Orders: {data.orders}
+                              Transactions: {data.orders}
                             </div>
                           </div>
                         );
@@ -207,82 +256,90 @@ export default function HomePage() {
           </Button>
         </CardHeader>
         <CardContent className="p-0">
-          {/* Desktop Table */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-[#FAF9F6] text-neutral-400 font-medium text-[11px] border-b border-[#E6E3DB]">
-                <tr>
-                  <th className="py-3.5 px-6">Order ID</th>
-                  <th className="py-3.5 px-6">Client</th>
-                  <th className="py-3.5 px-6">Garment</th>
-                  <th className="py-3.5 px-6">Status</th>
-                  <th className="py-3.5 px-6 text-right">Amount</th>
-                  <th className="py-3.5 px-6 text-right">Delivery</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#F0ECE1]">
-                {recentOrders.map((ord) => (
-                  <tr key={ord.id} className="hover:bg-[#FAF9F6] transition-colors">
-                    <td className="py-4 px-6 font-mono text-black">
-                      {ord.orderNumber}
-                    </td>
-                    <td className="py-4 px-6 font-medium text-black">
-                      {ord.customerName}
-                    </td>
-                    <td className="py-4 px-6 text-neutral-600 truncate max-w-xs">
-                      {ord.itemSummary}
-                    </td>
-                    <td className="py-4 px-6">
-                      <span className="capitalize px-2 py-0.5 text-[11px] border border-[#E6E3DB] bg-[#F7F5F0] text-neutral-800 rounded-xs">
-                        {ord.status.replace("_", " ")}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 text-right font-mono text-black">
-                      {permissions.includes("revenue.read")
-                        ? formatCurrency(ord.total)
-                        : "—"}
-                    </td>
-                    <td className="py-4 px-6 text-right text-neutral-500 font-mono text-[11px]">
-                      {ord.deliveryDate}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile Card List (Ergonomic cards) */}
-          <div className="md:hidden divide-y divide-[#F0ECE1]">
-            {recentOrders.map((ord) => (
-              <div key={ord.id} className="p-4 space-y-2 active:bg-[#FAF9F6]">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-semibold text-black">
-                    {ord.orderNumber}
-                  </span>
-                  <Badge variant="secondary" className="text-[10px]">
-                    {ord.status.replace("_", " ")}
-                  </Badge>
-                </div>
-
-                <div className="text-xs font-medium text-black">
-                  {ord.customerName}
-                </div>
-
-                <div className="text-xs text-neutral-500">
-                  {ord.itemSummary}
-                </div>
-
-                <div className="flex items-center justify-between text-xs text-neutral-400 pt-1 font-mono">
-                  <span>Due: {ord.deliveryDate}</span>
-                  {permissions.includes("revenue.read") && (
-                    <span className="text-black font-medium">
-                      {formatCurrency(ord.total)}
-                    </span>
-                  )}
-                </div>
+          {recentOrders.length === 0 ? (
+            <div className="text-center py-12 text-xs text-neutral-400">
+              No orders yet.
+            </div>
+          ) : (
+            <>
+              {/* Desktop Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[#FAF9F6] text-neutral-400 font-medium text-[11px] border-b border-[#E6E3DB]">
+                    <tr>
+                      <th className="py-3.5 px-6">Order ID</th>
+                      <th className="py-3.5 px-6">Client</th>
+                      <th className="py-3.5 px-6">Garment</th>
+                      <th className="py-3.5 px-6">Status</th>
+                      <th className="py-3.5 px-6 text-right">Amount</th>
+                      <th className="py-3.5 px-6 text-right">Delivery</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#F0ECE1]">
+                    {recentOrders.map((ord) => (
+                      <tr key={ord.id} className="hover:bg-[#FAF9F6] transition-colors">
+                        <td className="py-4 px-6 font-mono text-black">
+                          {ord.order_number}
+                        </td>
+                        <td className="py-4 px-6 font-medium text-black">
+                          {ord.customers?.customer_name ?? "—"}
+                        </td>
+                        <td className="py-4 px-6 text-neutral-600 truncate max-w-xs">
+                          {ord.item_summary}
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className="capitalize px-2 py-0.5 text-[11px] border border-[#E6E3DB] bg-[#F7F5F0] text-neutral-800 rounded-xs">
+                            {ord.status.replace(/_/g, " ")}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6 text-right font-mono text-black">
+                          {permissions.includes("revenue.read")
+                            ? formatCurrency(Number(ord.total))
+                            : "—"}
+                        </td>
+                        <td className="py-4 px-6 text-right text-neutral-500 font-mono text-[11px]">
+                          {ord.delivery_date ?? "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            ))}
-          </div>
+
+              {/* Mobile Card List (Ergonomic cards) */}
+              <div className="md:hidden divide-y divide-[#F0ECE1]">
+                {recentOrders.map((ord) => (
+                  <div key={ord.id} className="p-4 space-y-2 active:bg-[#FAF9F6]">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-xs font-semibold text-black">
+                        {ord.order_number}
+                      </span>
+                      <Badge variant="secondary" className="text-[10px] capitalize">
+                        {ord.status.replace(/_/g, " ")}
+                      </Badge>
+                    </div>
+
+                    <div className="text-xs font-medium text-black">
+                      {ord.customers?.customer_name ?? "—"}
+                    </div>
+
+                    <div className="text-xs text-neutral-500">
+                      {ord.item_summary}
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-neutral-400 pt-1 font-mono">
+                      <span>Due: {ord.delivery_date ?? "—"}</span>
+                      {permissions.includes("revenue.read") && (
+                        <span className="text-black font-medium">
+                          {formatCurrency(Number(ord.total))}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>

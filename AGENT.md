@@ -15,7 +15,7 @@ Varnika is a **luxury atelier admin console** built with Next.js 14 (App Router)
 | Icons | lucide-react |
 | Charts | recharts |
 | DnD | @dnd-kit/core + @dnd-kit/sortable |
-| Data | Mock (in-memory, `lib/api/mock-supabase.ts`) |
+| Data | Supabase Postgres (`lib/supabase/` query layer) |
 
 ## Architecture
 
@@ -45,7 +45,7 @@ components/
   ui/                   # shadcn/ui primitives (button, badge, card, dialog, etc.)
   providers/            # AppProviders
 lib/
-  api/                  # mock-supabase.ts (all mock data + types)
+  api/                  # (empty — legacy mocks deleted; Supabase is the backend)
   config/               # navigation.ts
   context/              # auth-context, feature-flags-context, navigation-context
   navigation/           # resolver.ts
@@ -63,8 +63,9 @@ lib/
   - `lib/supabase/queries-ops.ts` — transactions, shipments + milestones, ticket status
   - `lib/supabase/queries-products.ts` — catalog products CRUD
 - All queries throw on error; pages catch and show retry banners
+- Dashboards (Home, Revenue, Analytics, Reports) read live aggregates via `lib/supabase/stats.ts`; Reports exports real CSVs via `downloadCsv()` in `lib/utils.ts`
 - Customer aggregates (`total_spent`, `orders_count`, `last_order_at`) are maintained by a DB trigger on `orders`
-- Legacy mocks remain in `lib/api/mock-supabase.ts`, still used by Home / Analytics / Reports / Revenue dashboards (not yet migrated)
+- No mock data remains — every page (including dashboards) reads live Supabase data
 
 ### Auth & Permissions (RBAC)
 - Real Supabase Auth email/password sessions (`/login` page, session persisted by supabase-js)
@@ -116,7 +117,7 @@ lib/
 3. **Responsive design** — every page has desktop table/card views AND mobile card list views
 4. **Animations** — use `animate-in fade-in duration-200` on page containers
 5. **Icons** — always from `lucide-react`
-6. **No real API calls** — import mock data directly from `lib/api/mock-supabase.ts`
+6. **No mock data** — all reads/writes go through `lib/supabase/queries-*.ts`
 
 ## Common Patterns
 
@@ -130,7 +131,7 @@ lib/
 ### Creating a Detail Page
 1. Create `app/[section]/[id]/page.tsx` with `"use client"`
 2. Access ID via `params` prop
-3. Find record from mock data array
+3. Fetch the record with the appropriate `get*` query (show `loading.tsx` skeleton meanwhile)
 4. Show "Not found" state if ID doesn't match
 5. Include a "Back" link to the list page
 
@@ -211,7 +212,7 @@ Reusable Add/Edit dialogs live in `components/forms/`:
 
 Shared field styling: `components/forms/fields.tsx` (`Field`, `inputCls`, `selectCls`).
 
-**Data mutation pattern:** mock arrays in `lib/api/mock-supabase.ts` are module-level mutable. Forms call `onSave` in the parent page, which pushes/updates the `MOCK_*` array AND updates local `useState` so the UI refreshes. Since the module persists across navigation, new records appear on other pages (e.g., new customer shows up in order/ticket/transaction dropdowns).
+**Data mutation pattern:** pages fetch via `list*` queries into local `useState`, and save handlers call the matching `create*`/`update*` query then update state (or refetch). New records appear everywhere because every page reads the database.
 
 ## Cross-Linking (Redirect Icons)
 
