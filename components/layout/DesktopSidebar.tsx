@@ -137,7 +137,7 @@ export function DesktopSidebar() {
               </div>
 
               <button
-                onClick={() => switchRole(role === "admin" ? "worker" : "admin")}
+                onClick={() => switchRole(role === "admin" ? "staff" : "admin")}
                 title="Toggle Admin / Worker role"
                 className="text-[10px] px-2 py-0.5 border border-[#D5D0C4] bg-white text-neutral-700 hover:border-black rounded-xs transition-colors"
               >

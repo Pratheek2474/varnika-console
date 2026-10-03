@@ -24,7 +24,7 @@ export type Permission =
   | "settings.write"
   | "feature_flags.manage";
 
-export type RoleId = "admin" | "worker" | "manager" | "custom";
+export type RoleId = "admin" | "staff" | "custom";
 
 export interface RoleDefinition {
   id: RoleId;
@@ -74,26 +74,10 @@ export const PRESET_ROLES: Record<Exclude<RoleId, "custom">, RoleDefinition> = {
       "feature_flags.manage",
     ],
   },
-  worker: {
-    id: "worker",
-    name: "Operations Associate",
-    description: "Operational floor access: orders, catalog items, shipments, and customer measurements",
-    permissions: [
-      "home.read",
-      "orders.read",
-      "orders.write",
-      "catalog.read",
-      "delivery.read",
-      "measurements.read",
-      "tickets.read",
-      "transactions.read",
-      "employees.read",
-    ],
-  },
-  manager: {
-    id: "manager",
-    name: "Floor Manager",
-    description: "Manage day-to-day catalog, staff, orders, customer profiles without system settings",
+  staff: {
+    id: "staff",
+    name: "Staff",
+    description: "Day-to-day atelier operations: orders, catalog, customers, shipments, queries, payments, and team",
     permissions: [
       "home.read",
       "orders.read",

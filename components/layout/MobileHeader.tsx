@@ -14,7 +14,7 @@ export function MobileHeader() {
     <header className="lg:hidden h-14 bg-[#FAF9F6]/95 backdrop-blur-md border-b border-[#E6E3DB] px-4 flex items-center justify-between sticky top-0 z-30 select-none">
       {/* Left: Role Pill */}
       <button
-        onClick={() => switchRole(role === "admin" ? "worker" : "admin")}
+        onClick={() => switchRole(role === "admin" ? "staff" : "admin")}
         className="px-2 py-0.5 border border-[#E6E3DB] bg-white text-[10px] uppercase font-mono tracking-wider text-neutral-600 active:scale-95 transition-transform"
         title="Switch role"
       >
