@@ -67,10 +67,11 @@ lib/
 - Legacy mocks remain in `lib/api/mock-supabase.ts`, still used by Home / Analytics / Reports / Revenue dashboards (not yet migrated)
 
 ### Auth & Permissions (RBAC)
-- Three roles: `admin`, `worker`, `manager`
-- Granular permissions (e.g., `customers.read`, `orders.read`, `revenue.read`)
-- `RouteGuard` component wraps pages and enforces permissions + feature flags
-- Role switching available via `useAuth()` context
+- Real Supabase Auth email/password sessions (`/login` page, session persisted by supabase-js)
+- Two roles only: `admin` (everything) and `staff` (all operations, no revenue/reports/settings)
+- Role resolves from `employees.app_role` matched by login email; any authenticated login without an employee row defaults to staff
+- `RouteGuard` redirects unauthenticated visitors to `/login?next=...` and shows a spinner while the session resolves
+- The audit actor is always the signed-in user — no role switching exists anywhere
 
 ### Feature Flags
 - 10 feature flags control module visibility

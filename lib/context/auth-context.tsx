@@ -1,60 +1,89 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase/client";
+import type { Session } from "@supabase/supabase-js";
 import { Permission, PRESET_ROLES, RoleId, UserProfile } from "../types/auth";
 
 interface AuthContextValue {
-  user: UserProfile;
+  user: UserProfile | null;
   role: RoleId;
   permissions: Permission[];
+  loading: boolean;
   hasPermission: (permission: Permission) => boolean;
   hasAnyPermission: (permissions: Permission[]) => boolean;
-  switchRole: (role: RoleId) => void;
-  setCustomPermissions: (perms: Permission[]) => void;
-  toggleCustomPermission: (perm: Permission) => void;
+  signOut: () => Promise<void>;
 }
-
-const DEFAULT_USER: UserProfile = {
-  id: "usr_admin_01",
-  name: "Varnika K.",
-  email: "director@varnika.luxury",
-  avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=128&q=80",
-  role: "admin",
-};
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [role, setRole] = useState<RoleId>("admin");
-  const [customPermissions, setCustomPermissionsState] = useState<Permission[]>(
-    PRESET_ROLES.admin.permissions
-  );
+  const [session, setSession] = useState<Session | null>(null);
+  const [sessionLoading, setSessionLoading] = useState(true);
+  const [employee, setEmployee] = useState<{
+    name: string;
+    app_role: string;
+    avatar_url: string;
+  } | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
 
-  // Load saved role preference on client mount
+  // Track the real Supabase session (persisted automatically by supabase-js)
   useEffect(() => {
-    try {
-      const savedRole = localStorage.getItem("varnika_admin_role") as RoleId;
-      if (savedRole && (savedRole in PRESET_ROLES || savedRole === "custom")) {
-        setRole(savedRole);
-      }
-    } catch {
-      // Ignore localStorage errors
-    }
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setSessionLoading(false);
+    });
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
-  const switchRole = (newRole: RoleId) => {
-    setRole(newRole);
-    try {
-      localStorage.setItem("varnika_admin_role", newRole);
-    } catch {
-      // Ignore
+  // Resolve display name + app role from the employees directory (by email).
+  // Any authenticated user without an employee row defaults to staff —
+  // logins are created by the owner in the Supabase dashboard, so this
+  // cannot be abused for privilege escalation. Promote via app_role.
+  useEffect(() => {
+    const email = session?.user?.email;
+    if (!email) {
+      setEmployee(null);
+      return;
     }
-  };
+    setProfileLoading(true);
+    supabase
+      .from("employees")
+      .select("name,app_role,avatar_url")
+      .eq("email", email)
+      .eq("is_active", true)
+      .maybeSingle()
+      .then(({ data }) => {
+        setEmployee(
+          (data as { name: string; app_role: string; avatar_url: string } | null) ??
+            null
+        );
+        setProfileLoading(false);
+      });
+  }, [session]);
 
-  const permissions: Permission[] =
-    role === "custom"
-      ? customPermissions
-      : PRESET_ROLES[role]?.permissions || [];
+  const role: RoleId =
+    employee?.app_role === "admin" ? "admin" : session ? "staff" : "staff";
+
+  const permissions: Permission[] = session
+    ? (PRESET_ROLES[role]?.permissions || [])
+    : [];
+
+  const email = session?.user?.email ?? "";
+  const user: UserProfile | null = session
+    ? {
+        id: session.user.id,
+        name: employee?.name || email.split("@")[0] || "Staff",
+        email,
+        avatarUrl: employee?.avatar_url || "",
+        role,
+      }
+    : null;
 
   const hasPermission = (permission: Permission): boolean => {
     return permissions.includes(permission);
@@ -64,25 +93,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return targetPermissions.some((p) => permissions.includes(p));
   };
 
-  const setCustomPermissions = (perms: Permission[]) => {
-    setCustomPermissionsState(perms);
-    setRole("custom");
-  };
-
-  const toggleCustomPermission = (perm: Permission) => {
-    setCustomPermissionsState((prev) => {
-      const next = prev.includes(perm)
-        ? prev.filter((p) => p !== perm)
-        : [...prev, perm];
-      return next;
-    });
-    setRole("custom");
-  };
-
-  const user: UserProfile = {
-    ...DEFAULT_USER,
-    role,
-    customPermissions: role === "custom" ? customPermissions : undefined,
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setSession(null);
+    setEmployee(null);
   };
 
   return (
@@ -91,11 +105,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         role,
         permissions,
+        loading: sessionLoading || profileLoading,
         hasPermission,
         hasAnyPermission,
-        switchRole,
-        setCustomPermissions,
-        toggleCustomPermission,
+        signOut,
       }}
     >
       {children}
@@ -105,8 +118,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
+  if (!context) throw new Error("useAuth must be used within AuthProvider");
   return context;
 }

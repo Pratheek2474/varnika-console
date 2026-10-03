@@ -8,10 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PRESET_ROLES, RoleId } from "@/lib/types/auth";
-import { Check } from "lucide-react";
+import { Check, LogOut } from "lucide-react";
 
 export default function SettingsPage() {
-  const { role, switchRole, user } = useAuth();
+  const { role, user, signOut } = useAuth();
   const { flags, toggleFeatureFlag, resetFeatureFlags } = useFeatureFlags();
 
   return (
@@ -34,19 +34,25 @@ export default function SettingsPage() {
 
         {/* User Profile Summary */}
         <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-black text-white text-base font-medium flex items-center justify-center">
-                {user.name.charAt(0)}
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4 min-w-0">
+              <div className="w-12 h-12 rounded-full bg-black text-white text-base font-medium flex items-center justify-center shrink-0">
+                {(user?.name ?? "?").charAt(0)}
               </div>
-              <div>
-                <div className="text-sm font-semibold text-black">{user.name}</div>
-                <div className="text-xs text-neutral-500">{user.email}</div>
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-black truncate">{user?.name ?? "—"}</div>
+                <div className="text-xs text-neutral-500 truncate">{user?.email ?? ""}</div>
               </div>
             </div>
-            <Badge variant="outline" className="text-xs">
-              Role: {role.toUpperCase()}
-            </Badge>
+            <div className="flex items-center gap-2 shrink-0">
+              <Badge variant="outline" className="text-xs">
+                Role: {role.toUpperCase()}
+              </Badge>
+              <Button variant="outline" size="sm" onClick={signOut}>
+                <LogOut className="w-3.5 h-3.5 mr-1.5" />
+                Sign Out
+              </Button>
+            </div>
           </div>
         </Card>
 
@@ -68,11 +74,10 @@ export default function SettingsPage() {
                 return (
                   <div
                     key={rId}
-                    onClick={() => switchRole(rId)}
-                    className={`p-4 border cursor-pointer transition-colors rounded-xs flex items-start justify-between gap-3 ${
+                    className={`p-4 border transition-colors rounded-xs flex items-start justify-between gap-3 ${
                       isSelected
                         ? "border-black bg-white ring-1 ring-black"
-                        : "border-[#E6E3DB] bg-[#FAF9F6] hover:border-black/50"
+                        : "border-[#E6E3DB] bg-[#FAF9F6]"
                     }`}
                   >
                     <div>

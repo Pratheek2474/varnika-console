@@ -6,13 +6,13 @@ import { usePathname } from "next/navigation";
 import { useNavigation } from "@/lib/context/navigation-context";
 import { useAuth } from "@/lib/context/auth-context";
 import { NavIcon } from "@/components/ui/nav-icon";
-import { X, Search, ChevronRight } from "lucide-react";
+import { X, Search, ChevronRight, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function MobileMoreMenu() {
   const pathname = usePathname();
   const { resolved, mobileMoreOpen, setMobileMoreOpen } = useNavigation();
-  const { user, role } = useAuth();
+  const { user, role, signOut } = useAuth();
   const [searchFilter, setSearchFilter] = useState("");
 
   const filteredGroups = useMemo(() => {
@@ -119,8 +119,17 @@ export function MobileMoreMenu() {
             ))
           )}
 
-          <div className="pt-4 pb-6 text-center text-xs text-neutral-500 font-sans">
-            Logged in as <span className="text-black font-medium">{user.name}</span> ({role.toUpperCase()})
+          <div className="pt-4 pb-6 text-center space-y-3">
+            <div className="text-xs text-neutral-500 font-sans">
+              Logged in as <span className="text-black font-medium">{user?.name ?? "—"}</span> ({role.toUpperCase()})
+            </div>
+            <button
+              onClick={signOut}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#E6E3DB] text-xs text-neutral-600 rounded-xs"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              Sign Out
+            </button>
           </div>
         </div>
       </div>

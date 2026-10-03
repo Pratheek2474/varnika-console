@@ -1,73 +1,23 @@
 "use client";
 
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-import { EmployeeRow } from "@/lib/supabase/database.types";
-import { listEmployees } from "@/lib/supabase/queries-employees";
+import React, { createContext, useContext } from "react";
+import { useAuth } from "./auth-context";
 
 interface ActorContextValue {
-  /** Display name stamped on every change ("updated by"). */
+  /** Display name stamped on every change ("updated by") — the signed-in user. */
   actor: string;
-  setActor: (name: string) => void;
-  employees: EmployeeRow[];
+  /** Kept for compatibility; the actor is derived from auth, nothing to refresh. */
   refreshEmployees: () => Promise<void>;
 }
 
 const ActorContext = createContext<ActorContextValue | undefined>(undefined);
 
-const STORAGE_KEY = "varnika_actor";
-
 export function ActorProvider({ children }: { children: React.ReactNode }) {
-  const [actor, setActorState] = useState<string>("Admin");
-  const [employees, setEmployees] = useState<EmployeeRow[]>([]);
-
-  const refreshEmployees = useCallback(async () => {
-    try {
-      const rows = await listEmployees();
-      setEmployees(rows.filter((e) => e.is_active));
-      // If the saved actor no longer exists, fall back gracefully
-      setActorState((prev) => {
-        if (prev === "Admin") {
-          const hasAdmin = rows.some((e) => e.is_active && e.name === "Admin");
-          if (hasAdmin) return "Admin";
-          return rows.find((e) => e.is_active)?.name ?? "Admin";
-        }
-        return rows.some((e) => e.is_active && e.name === prev)
-          ? prev
-          : (rows.find((e) => e.is_active)?.name ?? "Admin");
-      });
-    } catch {
-      // Table may not exist yet / offline — keep default actor
-    }
-  }, []);
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) setActorState(saved);
-    } catch {
-      // Ignore
-    }
-    refreshEmployees();
-  }, [refreshEmployees]);
-
-  const setActor = (name: string) => {
-    setActorState(name);
-    try {
-      localStorage.setItem(STORAGE_KEY, name);
-    } catch {
-      // Ignore
-    }
-  };
+  const { user } = useAuth();
 
   return (
     <ActorContext.Provider
-      value={{ actor, setActor, employees, refreshEmployees }}
+      value={{ actor: user?.name ?? "System", refreshEmployees: async () => {} }}
     >
       {children}
     </ActorContext.Provider>

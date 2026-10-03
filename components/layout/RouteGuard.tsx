@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/context/auth-context";
 import { useFeatureFlags } from "@/lib/context/feature-flags-context";
 import { Permission } from "@/lib/types/auth";
@@ -22,8 +23,26 @@ export function RouteGuard({
   requiredFeature,
   moduleName = "This Section",
 }: RouteGuardProps) {
-  const { hasPermission, role, switchRole } = useAuth();
+  const { hasPermission, user, loading } = useAuth();
   const { isFeatureEnabled, toggleFeatureFlag } = useFeatureFlags();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Send unauthenticated visitors to login (preserving destination)
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+    }
+  }, [loading, user, router, pathname]);
+
+  // Session still resolving, or redirecting — hold the previous UI
+  if (loading || !user) {
+    return (
+      <div className="flex-1 min-h-[60vh] flex items-center justify-center p-6">
+        <div className="w-8 h-8 border-2 border-[#E6E3DB] border-t-black rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   // Feature Flag check
   if (requiredFeature && !isFeatureEnabled(requiredFeature)) {
@@ -77,13 +96,6 @@ export function RouteGuard({
           </p>
 
           <div className="flex gap-2 justify-center">
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => switchRole("admin")}
-            >
-              Switch to Administrator
-            </Button>
             <Button variant="outline" size="sm" asChild>
               <Link href="/">Back to Overview</Link>
             </Button>

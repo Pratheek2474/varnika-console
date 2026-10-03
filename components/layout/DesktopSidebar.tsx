@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 export function DesktopSidebar() {
   const pathname = usePathname();
   const { resolved, sidebarCollapsed } = useNavigation();
-  const { user, role, switchRole } = useAuth();
+  const { user, role } = useAuth();
 
   return (
     <TooltipProvider delayDuration={150}>
@@ -117,18 +117,18 @@ export function DesktopSidebar() {
           {sidebarCollapsed ? (
             <div className="flex justify-center">
               <div className="w-8 h-8 rounded-full bg-black text-white text-xs font-medium flex items-center justify-center">
-                {user.name.charAt(0)}
+                {(user?.name ?? "?").charAt(0)}
               </div>
             </div>
           ) : (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="w-8 h-8 rounded-full bg-black text-white text-xs font-medium flex items-center justify-center shrink-0">
-                  {user.name.charAt(0)}
+                  {(user?.name ?? "?").charAt(0)}
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs font-medium text-black truncate">
-                    {user.name}
+                    {user?.name ?? "—"}
                   </div>
                   <div className="text-[10px] text-neutral-600 uppercase tracking-wider font-mono">
                     {role}
@@ -136,13 +136,12 @@ export function DesktopSidebar() {
                 </div>
               </div>
 
-              <button
-                onClick={() => switchRole(role === "admin" ? "staff" : "admin")}
-                title="Toggle Admin / Worker role"
-                className="text-[10px] px-2 py-0.5 border border-[#D5D0C4] bg-white text-neutral-700 hover:border-black rounded-xs transition-colors"
+              <span
+                title="Console role"
+                className="text-[10px] px-2 py-0.5 border border-[#D5D0C4] bg-white text-neutral-700 rounded-xs uppercase font-mono"
               >
-                {role === "admin" ? "Admin" : "Worker"}
-              </button>
+                {role === "admin" ? "Admin" : "Staff"}
+              </span>
             </div>
           )}
         </div>

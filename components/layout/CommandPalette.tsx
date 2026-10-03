@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useNavigation } from "@/lib/context/navigation-context";
-import { useAuth } from "@/lib/context/auth-context";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { NavIcon } from "@/components/ui/nav-icon";
 import { Search, ArrowRight } from "lucide-react";
@@ -11,7 +10,6 @@ import { Search, ArrowRight } from "lucide-react";
 export function CommandPalette() {
   const router = useRouter();
   const { commandPaletteOpen, setCommandPaletteOpen, resolved } = useNavigation();
-  const { role, switchRole } = useAuth();
   const [query, setQuery] = useState("");
 
   useEffect(() => {

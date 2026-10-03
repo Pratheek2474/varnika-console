@@ -21,7 +21,7 @@ import { EmployeeFormDialog } from "@/components/forms/EmployeeFormDialog";
 
 export default function EmployeesPage() {
   const { permissions } = useAuth();
-  const { actor, refreshEmployees } = useActor();
+  const { actor } = useActor();
   const [searchQuery, setSearchQuery] = useState("");
   const [employees, setEmployees] = useState<EmployeeRow[]>([]);
   const [showInactive, setShowInactive] = useState(false);
@@ -36,7 +36,6 @@ export default function EmployeesPage() {
     try {
       setLoadError(null);
       setEmployees(await listEmployees());
-      await refreshEmployees();
     } catch (e) {
       setLoadError((e as Error).message);
     } finally {
@@ -80,7 +79,6 @@ export default function EmployeesPage() {
         entityLabel: created.name,
       });
     }
-    await refreshEmployees();
   };
 
   const toggleActive = async (emp: EmployeeRow) => {
@@ -96,7 +94,6 @@ export default function EmployeesPage() {
       entityLabel: emp.name,
       detail: emp.is_active ? "deactivated" : "reactivated",
     });
-    await refreshEmployees();
   };
 
   if (loading) return <TableListSkeleton rows={5} cols={4} />;
@@ -111,7 +108,7 @@ export default function EmployeesPage() {
               Employees
             </h1>
             <p className="text-xs text-neutral-500 mt-1">
-              Atelier staff directory — changes are recorded under the acting name.
+              Atelier staff directory — changes are recorded under your sign-in name.
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
