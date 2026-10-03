@@ -81,13 +81,13 @@ function AttachmentView({ att }: { att: ChatAttachmentRow }) {
   );
 }
 
-export default function ChatPage() {
+export default function ChatPage({ initialSelectedId }: { initialSelectedId?: string | null }) {
   const { permissions } = useAuth();
   const { actor } = useActor();
   const [conversations, setConversations] = useState<ConversationWithLinks[]>(
     [],
   );
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId ?? null);
   const [thread, setThread] = useState<ThreadMessage[]>([]);
   const [threadLoading, setThreadLoading] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -139,7 +139,7 @@ export default function ChatPage() {
             customer_id: o.customer_id,
           })),
         );
-        if (convs.length > 0) setSelectedId(convs[0].id);
+        if (!initialSelectedId && convs.length > 0) setSelectedId(convs[0].id);
       } catch (e) {
         setLoadError((e as Error).message);
       } finally {
@@ -349,7 +349,10 @@ export default function ChatPage() {
                 return (
                   <button
                     key={conv.id}
-                    onClick={() => setSelectedId(conv.id)}
+                    onClick={() => {
+                      setSelectedId(conv.id);
+                      window.history.replaceState(null, "", `/chat/${conv.id}`);
+                    }}
                     className={cn(
                       "w-full text-left px-4 py-3 border-b border-[#F0ECE1] hover:bg-[#FAF9F6] transition-colors flex items-center gap-3",
                       isActive && "bg-[#F4F2ED]",
@@ -418,7 +421,7 @@ export default function ChatPage() {
                 {/* Thread header — fixed to top */}
                 <div className="px-3 py-2 border-b border-[#E6E3DB] bg-white flex items-center gap-3 shrink-0">
                   <button
-                    onClick={() => setSelectedId(null)}
+                    onClick={() => { setSelectedId(null); window.history.replaceState(null, "", "/chat"); }}
                     className="lg:hidden p-1.5 text-neutral-500 hover:text-black"
                   >
                     <ArrowLeft className="w-4 h-4" />
