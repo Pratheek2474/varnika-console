@@ -46,6 +46,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Message } from "@/components/ui/message";
 import { MessageScroller } from "@/components/ui/message-scroller";
+import { Attachment } from "@/components/ui/attachment";
 
 type ThreadMessage = ChatMessageRow & { chat_attachments: ChatAttachmentRow[] };
 
@@ -62,23 +63,13 @@ function avatarColor(name: string) {
 
 function AttachmentView({ att }: { att: ChatAttachmentRow }) {
   const isPhoto = att.kind === "photo" || /\.(png|jpe?g|gif|webp|avif)$/i.test(att.url);
-  if (isPhoto && att.url && !att.url.startsWith("#")) {
-    return (
-      <div className="relative w-36 h-36 bg-[#FAF9F6] border border-[#E6E3DB] rounded-xs overflow-hidden">
-        <Image src={att.url} alt={att.name || "Photo"} fill className="object-cover" />
-      </div>
-    );
-  }
   return (
-    <div className="flex items-center gap-2 p-2 bg-white border border-[#E6E3DB] rounded-xs text-xs max-w-[240px]">
-      <FileText className="w-4 h-4 text-neutral-400 shrink-0" />
-      <div className="min-w-0">
-        <div className="font-medium text-black truncate">{att.name || "File"}</div>
-        {att.size_text && (
-          <div className="text-[10px] font-mono text-neutral-400">{att.size_text}</div>
-        )}
-      </div>
-    </div>
+    <Attachment
+      name={att.name || "File"}
+      type={isPhoto ? "photo" : "file"}
+      size={att.size_text || undefined}
+      url={att.url && !att.url.startsWith("#") ? att.url : undefined}
+    />
   );
 }
 
@@ -271,7 +262,7 @@ export default function ChatPage() {
 
   return (
     <RouteGuard requiredPermission="chat.read" requiredFeature="chat" moduleName="Customer Chat">
-      <div className="h-[calc(100dvh-4rem)] lg:h-[calc(100dvh-7rem)] flex flex-col bg-[#FAF9F6] overflow-hidden">
+      <div className="h-[calc(100dvh-3rem)] lg:h-[calc(100dvh-3.5rem)] flex flex-col bg-[#FAF9F6] overflow-hidden">
 
         <div className="flex-1 flex overflow-hidden min-h-0">
           {/* ─── Conversation list ─── */}
@@ -427,10 +418,13 @@ export default function ChatPage() {
                     {pendingFiles.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mb-2">
                         {pendingFiles.map((f, i) => (
-                          <span key={i} className="text-[11px] font-mono bg-[#F4F2ED] border border-[#E6E3DB] px-2 py-1 rounded-xs flex items-center gap-1.5">
-                            {f.name}
-                            <button onClick={() => setPendingFiles((p) => p.filter((_, j) => j !== i))} className="text-neutral-400 hover:text-black">✕</button>
-                          </span>
+                          <Attachment
+                            key={i}
+                            name={f.name}
+                            type={f.type.startsWith("image/") ? "photo" : "file"}
+                            size={`${Math.max(1, Math.round(f.size / 1024))} KB`}
+                            onRemove={() => setPendingFiles((p) => p.filter((_, j) => j !== i))}
+                          />
                         ))}
                       </div>
                     )}
@@ -441,6 +435,7 @@ export default function ChatPage() {
                         multiple
                         accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"
                         className="hidden"
+                        key={pendingFiles.length}
                         onChange={(e) => {
                           if (e.target.files) setPendingFiles((p) => [...p, ...Array.from(e.target.files!)]);
                           e.target.value = "";
