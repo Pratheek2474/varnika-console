@@ -8,6 +8,11 @@ out/
 # Env files (never commit secrets — copy .env.example and fill locally)
 .env*.local
 .env
+.dev.vars
+
+# OpenNext / Wrangler build output
+.open-next/
+.wrangler/
 
 # Logs
 *.log

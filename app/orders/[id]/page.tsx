@@ -3,8 +3,6 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-
-export const runtime = "edge";
 import { RouteGuard } from "@/components/layout/RouteGuard";
 import { useAuth } from "@/lib/context/auth-context";
 import {
