@@ -170,3 +170,33 @@ export async function updateOrder(
   throwIf(error, "Failed to update order");
   return data as OrderWithCustomer;
 }
+
+/** Manual paid tick (0009 `is_paid` column). Throws if the migration isn't applied. */
+export async function setOrderPaid(id: string, paid: boolean): Promise<void> {
+  const { error } = await supabase
+    .from("orders")
+    .update({ is_paid: paid })
+    .eq("id", id);
+  if (error) {
+    if (/is_paid/i.test(error.message)) {
+      throw new Error(
+        "Paid flag not in database yet — run migration 0009_order_paid.sql in Supabase first."
+      );
+    }
+    throw new Error(`Failed to update paid status: ${error.message}`);
+  }
+}
+
+/** Manual flag, tolerating databases where 0009 isn't applied yet. */
+export function orderManualPaid(order: { is_paid?: boolean } | null | undefined): boolean {
+  return Boolean(order?.is_paid);
+}
+
+/** Paid = manual tick OR linked transactions covering the order total. */
+export function isOrderPaid(
+  order: { is_paid?: boolean; total: number | string },
+  paidSum: number
+): boolean {
+  if (orderManualPaid(order)) return true;
+  return paidSum >= Number(order.total);
+}

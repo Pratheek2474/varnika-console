@@ -7,6 +7,9 @@ import { RouteGuard } from "@/components/layout/RouteGuard";
 import { useAuth } from "@/lib/context/auth-context";
 import {
   getOrderDetail,
+  isOrderPaid,
+  orderManualPaid,
+  setOrderPaid,
   updateOrder,
   OrderDetail as OrderDetailData,
 } from "@/lib/supabase/queries-orders";
@@ -40,6 +43,7 @@ import {
   Plus,
 } from "lucide-react";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
+import { toast } from "sonner";
 import { OrderFormDialog } from "@/components/forms/OrderFormDialog";
 import { TransactionFormDialog } from "@/components/forms/TransactionFormDialog";
 import { ShipmentFormDialog } from "@/components/forms/ShipmentFormDialog";
@@ -292,6 +296,31 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
 
   const { order, timeline, photos, documents } = detail;
 
+  const paidSum = transactions.reduce((s, t) => s + Number(t.amount), 0);
+  const manualPaid = orderManualPaid(order);
+  const paid = isOrderPaid(order, paidSum);
+
+  const togglePaid = async () => {
+    try {
+      await setOrderPaid(order.id, !manualPaid);
+      setDetail({ ...detail, order: { ...order, is_paid: !manualPaid } });
+      await logActivity({
+        actor,
+        action: "edited",
+        entityType: "order",
+        entityId: order.id,
+        entityLabel: order.order_number,
+        detail: !manualPaid ? "marked as paid" : "marked as unpaid",
+        customerId: order.customers?.id ?? order.customer_id,
+        customerName: order.customers?.customer_name ?? "",
+        orderId: order.id,
+        orderNumber: order.order_number,
+      });
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+
   // Hold Check only appears when the order is actually on hold
   // (or its timeline step is already reached) — never by default.
   const visibleTimeline = timeline.filter(
@@ -333,6 +362,15 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                   <Badge variant="outline" className="text-[10px] capitalize">
                     {order.status}
                   </Badge>
+                  {paid ? (
+                    <Badge className="text-[10px] border-green-300 bg-green-50 text-green-700">
+                      Paid
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="text-[10px]">
+                      Unpaid
+                    </Badge>
+                  )}
                   <Badge variant="secondary" className="text-[10px] capitalize">
                     {order.priority}
                   </Badge>
@@ -519,6 +557,16 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
+                <div className="flex items-center justify-between p-2.5 border border-[#E6E3DB] bg-white rounded-xs text-xs">
+                  <span className="text-neutral-500">Status</span>
+                  {paid ? (
+                    <Badge className="text-[10px] border-green-300 bg-green-50 text-green-700">
+                      Paid{manualPaid ? " · manual" : paidSum > 0 ? " · via transactions" : ""}
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="text-[10px]">Unpaid</Badge>
+                  )}
+                </div>
                 {transactions.length > 0 ? (
                   <>
                     {transactions.map((t) => (
@@ -564,6 +612,16 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                       </Button>
                     )}
                   </>
+                )}
+                {canWrite && (
+                  <Button
+                    variant={manualPaid ? "outline" : "default"}
+                    size="sm"
+                    className="w-full text-xs"
+                    onClick={togglePaid}
+                  >
+                    {manualPaid ? "Untick — Mark as Unpaid" : "Tick as Paid"}
+                  </Button>
                 )}
               </CardContent>
             </Card>

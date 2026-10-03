@@ -96,6 +96,8 @@ export interface OrderRow {
   priority: PriorityLevel;
   delivery_date: string | null;
   notes: string;
+  /** Manual paid tick — added by 0009; absent until that migration is applied. */
+  is_paid: boolean;
   created_at: string;
   updated_at: string;
 }

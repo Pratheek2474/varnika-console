@@ -7,11 +7,15 @@ import { useAuth } from "@/lib/context/auth-context";
 import { OrderWithCustomer } from "@/lib/supabase/database.types";
 import {
   createOrder,
+  isOrderPaid,
   listOrders,
+  orderManualPaid,
+  setOrderPaid,
   updateOrder,
 } from "@/lib/supabase/queries-orders";
 import { OrderInput } from "@/lib/supabase/queries-orders";
 import { listCustomers } from "@/lib/supabase/queries-customers";
+import { listTransactions } from "@/lib/supabase/queries-ops";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -63,49 +67,17 @@ function groupOrders(orders: OrderWithCustomer[]): Record<Status, OrderWithCusto
 
 // ─── Order card (presentational; drag comes from the wrapping handle) ────────
 
-function OrderCard({
-  order,
-  showRevenue,
-  onClick,
-}: {
-  order: OrderWithCustomer;
-  showRevenue: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <div
-      onClick={onClick}
-      className="p-3 bg-white border border-[#E6E3DB] hover:border-black/40 transition-colors space-y-2 rounded-xs select-none cursor-grab active:cursor-grabbing"
+function PaidBadge({ paid, className }: { paid: boolean; className?: string }) {
+  return paid ? (
+    <Badge
+      className={`text-[10px] shrink-0 border-green-300 bg-green-50 text-green-700 ${className ?? ""}`}
     >
-      <div className="flex items-center justify-between gap-2">
-        <span className="font-mono text-xs font-medium text-black">
-          {order.order_number}
-        </span>
-        <Badge variant="secondary" className="text-[10px] capitalize shrink-0">
-          {order.priority}
-        </Badge>
-      </div>
-
-      <div className="text-xs font-medium text-black truncate flex items-center gap-1">
-        <span className="truncate">
-          {order.customers?.customer_name ?? "No customer"}
-        </span>
-        <ExternalLink className="w-3 h-3 text-neutral-400 shrink-0" />
-      </div>
-
-      <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed">
-        {order.item_summary}
-      </p>
-
-      <div className="pt-2 border-t border-[#F0ECE1] flex items-center justify-between text-xs font-mono">
-        <span className="text-neutral-500">{order.delivery_date ?? "—"}</span>
-        {showRevenue && (
-          <span className="text-black font-medium">
-            {formatCurrency(Number(order.total))}
-          </span>
-        )}
-      </div>
-    </div>
+      Paid
+    </Badge>
+  ) : (
+    <Badge variant="secondary" className={`text-[10px] shrink-0 ${className ?? ""}`}>
+      Unpaid
+    </Badge>
   );
 }
 
@@ -123,6 +95,7 @@ export default function OrdersPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<OrderWithCustomer | null>(null);
+  const [paidSums, setPaidSums] = useState<Record<string, number>>({});
   const draggingRef = useRef(false);
 
   const showRevenue = permissions.includes("revenue.read");
@@ -140,6 +113,9 @@ export default function OrdersPage() {
       o.item_summary.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const isPaid = (o: OrderWithCustomer): boolean =>
+    isOrderPaid(o, paidSums[o.id] ?? 0);
+
   const refresh = async () => {
     try {
       setLoadError(null);
@@ -151,6 +127,16 @@ export default function OrdersPage() {
       setCustomerOptions(
         customerRows.map((c) => ({ id: c.id, customer_name: c.customer_name }))
       );
+      try {
+        const txns = await listTransactions();
+        const sums: Record<string, number> = {};
+        for (const t of txns) {
+          if (t.order_id) sums[t.order_id] = (sums[t.order_id] ?? 0) + Number(t.amount);
+        }
+        setPaidSums(sums);
+      } catch {
+        // Transactions table may not be available — paid falls back to manual tick
+      }
     } catch (e) {
       setLoadError((e as Error).message);
     } finally {
@@ -272,6 +258,35 @@ export default function OrdersPage() {
       });
     }
     await refresh();
+  };
+
+  const togglePaid = async (order: OrderWithCustomer) => {
+    const to = !orderManualPaid(order);
+    try {
+      await setOrderPaid(order.id, to);
+      const apply = (o: OrderWithCustomer) =>
+        o.id === order.id ? { ...o, is_paid: to } : o;
+      setColumns((prev) => {
+        const next = emptyGroups();
+        for (const col of PIPELINE_COLUMNS) next[col.key] = prev[col.key].map(apply);
+        return next;
+      });
+      setSelectedTicket((prev) => (prev?.id === order.id ? { ...prev, is_paid: to } : prev));
+      await logActivity({
+        actor,
+        action: "edited",
+        entityType: "order",
+        entityId: order.id,
+        entityLabel: order.order_number,
+        detail: to ? "marked as paid" : "marked as unpaid",
+        customerId: order.customers?.id ?? order.customer_id,
+        customerName: order.customers?.customer_name ?? "",
+        orderId: order.id,
+        orderNumber: order.order_number,
+      });
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
   };
 
   if (loading) return <TableListSkeleton rows={6} cols={5} />;
@@ -408,9 +423,12 @@ export default function OrdersPage() {
                                     <span className="font-mono text-xs font-medium text-black">
                                       {order.order_number}
                                     </span>
-                                    <Badge variant="secondary" className="text-[10px] capitalize shrink-0">
-                                      {order.priority}
-                                    </Badge>
+                                    <span className="flex items-center gap-1 shrink-0">
+                                      <PaidBadge paid={isPaid(order)} />
+                                      <Badge variant="secondary" className="text-[10px] capitalize shrink-0">
+                                        {order.priority}
+                                      </Badge>
+                                    </span>
                                   </div>
 
                                   <div className="text-xs font-medium text-black truncate flex items-center gap-1">
@@ -475,6 +493,7 @@ export default function OrdersPage() {
                     <Badge variant="outline" className="text-[10px] capitalize">
                       {order.status}
                     </Badge>
+                    <PaidBadge paid={isPaid(order)} />
                     <Badge variant="secondary" className="text-[10px] capitalize">{order.priority}</Badge>
                   </div>
                   <h4 className="text-sm font-medium text-black flex items-center gap-1">
@@ -550,6 +569,7 @@ export default function OrdersPage() {
                   <Badge variant="outline" className="text-[10px] capitalize">
                     {selectedTicket.status}
                   </Badge>
+                  <PaidBadge paid={isPaid(selectedTicket)} />
                 </div>
                 <DialogTitle className="text-lg">
                   {selectedTicket.customers?.customer_name ?? "No customer"}
@@ -596,7 +616,17 @@ export default function OrdersPage() {
                   </Button>
                   {canWrite && (
                     <Button
-                      variant="default"
+                      variant={orderManualPaid(selectedTicket) ? "outline" : "default"}
+                      size="sm"
+                      className="flex-1 text-xs"
+                      onClick={() => togglePaid(selectedTicket)}
+                    >
+                      {orderManualPaid(selectedTicket) ? "Mark Unpaid" : "Mark Paid"}
+                    </Button>
+                  )}
+                  {canWrite && (
+                    <Button
+                      variant="outline"
                       size="sm"
                       className="flex-1 text-xs"
                       onClick={() => { setEditing(selectedTicket); setSelectedTicket(null); setFormOpen(true); }}
