@@ -81,7 +81,9 @@ function AttachmentView({ att }: { att: ChatAttachmentRow }) {
   );
 }
 
-export default function ChatPage({ initialSelectedId }: { initialSelectedId?: string | null }) {
+export default function ChatPage() {
+  const searchParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+  const initialSelectedId = searchParams?.get("c") ?? null;
   const { permissions } = useAuth();
   const { actor } = useActor();
   const [conversations, setConversations] = useState<ConversationWithLinks[]>(
@@ -347,12 +349,10 @@ export default function ChatPage({ initialSelectedId }: { initialSelectedId?: st
                   orders.find((o) => o.customer_id === conv.customer_id);
                 const name = conv.customers?.customer_name ?? "Unknown";
                 return (
-                  <button
+                  <Link
                     key={conv.id}
-                    onClick={() => {
-                      setSelectedId(conv.id);
-                      window.history.replaceState(null, "", `/chat/${conv.id}`);
-                    }}
+                    href={`/chat/${conv.id}`}
+                    onClick={() => setSelectedId(conv.id)}
                     className={cn(
                       "w-full text-left px-4 py-3 border-b border-[#F0ECE1] hover:bg-[#FAF9F6] transition-colors flex items-center gap-3",
                       isActive && "bg-[#F4F2ED]",
@@ -398,7 +398,7 @@ export default function ChatPage({ initialSelectedId }: { initialSelectedId?: st
                         )}
                       </div>
                     </div>
-                  </button>
+                  </Link>
                 );
               })}
               {conversations.length === 0 && !loadError && (
@@ -420,12 +420,13 @@ export default function ChatPage({ initialSelectedId }: { initialSelectedId?: st
               <>
                 {/* Thread header — fixed to top */}
                 <div className="px-3 py-2 border-b border-[#E6E3DB] bg-white flex items-center gap-3 shrink-0">
-                  <button
-                    onClick={() => { setSelectedId(null); window.history.replaceState(null, "", "/chat"); }}
+                  <Link
+                    href="/chat"
+                    onClick={() => setSelectedId(null)}
                     className="lg:hidden p-1.5 text-neutral-500 hover:text-black"
                   >
                     <ArrowLeft className="w-4 h-4" />
-                  </button>
+                  </Link>
                   <div
                     className={cn(
                       "w-10 h-10 rounded-full flex items-center justify-center text-white font-medium text-sm shrink-0",
