@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { RouteGuard } from "@/components/layout/RouteGuard";
 import { useAuth } from "@/lib/context/auth-context";
 import { useFeatureFlags } from "@/lib/context/feature-flags-context";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -73,6 +74,7 @@ export default function HomePage() {
   if (loading) return <CardsListSkeleton cards={4} />;
 
   return (
+    <RouteGuard requiredPermission="home.read" moduleName="Home">
     <div className="space-y-8 animate-in fade-in duration-200">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-[#E6E3DB]">
@@ -343,5 +345,6 @@ export default function HomePage() {
         </CardContent>
       </Card>
     </div>
+    </RouteGuard>
   );
 }
