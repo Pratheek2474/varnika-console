@@ -14,12 +14,14 @@ import {
 import {
   listOrdersByCustomer,
 } from "@/lib/supabase/queries-orders";
+import { listCustomerAttachments } from "@/lib/supabase/queries-chat";
+import { ChatAttachmentRow } from "@/lib/supabase/database.types";
 import { OrderWithCustomer } from "@/lib/supabase/database.types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CustomerDetailSkeleton } from "@/components/ui/page-skeletons";
-import { ArrowLeft, Ruler, Mail, Phone, ShoppingBag, ExternalLink, Pencil } from "lucide-react";
+import { ArrowLeft, Ruler, Mail, Phone, ShoppingBag, ExternalLink, Pencil, Image as ImageIcon, FileText } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { CustomerFormDialog } from "@/components/forms/CustomerFormDialog";
 import { useActor } from "@/lib/context/actor-context";
@@ -42,6 +44,7 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
   const { actor } = useActor();
   const [customer, setCustomer] = useState<CustomerWithMeasurement | null>(null);
   const [orders, setOrders] = useState<OrderWithCustomer[]>([]);
+  const [attachments, setAttachments] = useState<(ChatAttachmentRow & { order_number?: string })[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -60,6 +63,11 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
         }
         setCustomer(row);
         setOrders(await listOrdersByCustomer(params.id));
+        try {
+          setAttachments(await listCustomerAttachments(params.id));
+        } catch {
+          // Chat tables may not be migrated yet
+        }
       } catch (e) {
         setLoadError((e as Error).message);
       } finally {
@@ -301,6 +309,63 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
             </CardContent>
           </Card>
         </div>
+
+        {/* Photos & Files (from chat) */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold text-black flex items-center gap-2">
+              <ImageIcon className="w-4 h-4" />
+              Photos & Files
+              <span className="text-[10px] font-mono font-normal text-neutral-400 ml-auto">
+                {attachments.length} shared in chat
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {attachments.length > 0 ? (
+              <div className="space-y-2">
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                  {attachments
+                    .filter((a) => a.kind === "photo")
+                    .map((att) => (
+                      <div
+                        key={att.id}
+                        className="relative aspect-square bg-[#FAF9F6] border border-[#E6E3DB] rounded-xs overflow-hidden group"
+                        title={att.name}
+                      >
+                        {att.url && !att.url.startsWith("#") ? (
+                          <Image src={att.url} alt={att.name || "Photo"} fill className="object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-neutral-300">
+                            <ImageIcon className="w-5 h-5" />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                </div>
+                {attachments.filter((a) => a.kind !== "photo").map((att) => (
+                  <div
+                    key={att.id}
+                    className="flex items-center gap-3 p-2.5 bg-white border border-[#E6E3DB] rounded-xs"
+                  >
+                    <FileText className="w-4 h-4 text-neutral-400 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-medium text-black truncate">{att.name || "File"}</div>
+                      <div className="text-[10px] text-neutral-400 font-mono">
+                        {att.size_text}
+                        {att.order_number && ` · order ${att.order_number}`}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-xs text-neutral-400">
+                No photos or files shared yet — they appear here when added in chat.
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {canWrite && (
           <CustomerFormDialog open={formOpen} onOpenChange={setFormOpen} initial={customer} onSave={handleSave} />

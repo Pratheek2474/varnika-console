@@ -6,7 +6,7 @@ export type FeatureFlagKey =
   | "advanced_inventory"
   | "marketing"
   | "delivery_tracking"
-  | "support_tickets"
+  | "chat"
   | "measurements"
   | "reports";
 
@@ -28,7 +28,7 @@ export const DEFAULT_FEATURE_FLAGS: FeatureFlagsMap = {
   advanced_inventory: true,
   marketing: false, // experimental
   delivery_tracking: true,
-  support_tickets: true,
+  chat: true,
   measurements: true,
   reports: true,
 };
@@ -77,9 +77,9 @@ export const FEATURE_FLAGS_METADATA: FeatureFlagMeta[] = [
     category: "operations",
   },
   {
-    key: "support_tickets",
-    label: "Customer Queries & Support Tickets",
-    description: "Ticket management system for bespoke inquiries and after-sales support",
+    key: "chat",
+    label: "Customer Chat",
+    description: "Conversation threads with clients, shared photos, and order-linked files",
     defaultValue: true,
     category: "operations",
   },

@@ -18,6 +18,7 @@ export interface ProductInput {
   name: string;
   sku: string;
   category: string;
+  subcategory: string;
   price: number;
   stock: number;
   image_url: string;

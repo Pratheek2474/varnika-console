@@ -74,6 +74,7 @@ export interface ProductRow {
   name: string;
   sku: string;
   category: string;
+  subcategory: string;
   price: number;
   stock: number;
   image_url: string;
@@ -203,6 +204,43 @@ export interface TicketRow {
 export interface TicketWithLinks extends TicketRow {
   customers: { id: string; customer_name: string } | null;
   orders: { id: string; order_number: string } | null;
+}
+
+export interface ConversationRow {
+  id: string;
+  customer_id: string | null;
+  order_id: string | null;
+  subject: string;
+  status: "open" | "resolved";
+  last_message_at: string;
+  created_at: string;
+}
+
+export interface ConversationWithLinks extends ConversationRow {
+  customers: { id: string; customer_name: string } | null;
+  orders: { id: string; order_number: string } | null;
+  chat_messages: { id: string; body: string; sender_name: string; created_at: string }[];
+}
+
+export interface ChatMessageRow {
+  id: string;
+  conversation_id: string;
+  sender: "customer" | "staff";
+  sender_name: string;
+  body: string;
+  created_at: string;
+}
+
+export interface ChatAttachmentRow {
+  id: string;
+  conversation_id: string;
+  message_id: string | null;
+  order_id: string | null;
+  kind: "photo" | "file";
+  url: string;
+  name: string;
+  size_text: string;
+  created_at: string;
 }
 
 export interface EmployeeRow {

@@ -27,6 +27,7 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
   const [sku, setSku] = useState("");
   const [category, setCategory] = useState("");
   const [customCategory, setCustomCategory] = useState("");
+  const [subcategory, setSubcategory] = useState("");
   const [price, setPrice] = useState(0);
   const [stock, setStock] = useState(0);
   const [imageUrl, setImageUrl] = useState("");
@@ -40,6 +41,7 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
         setSku(initial.sku);
         setCategory(initial.category);
         setCustomCategory("");
+        setSubcategory(initial.subcategory || "");
         setPrice(Number(initial.price));
         setStock(initial.stock);
         setImageUrl(initial.image_url);
@@ -50,6 +52,7 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
         setSku("");
         setCategory(categories[0] ?? "");
         setCustomCategory("");
+        setSubcategory("");
         setPrice(0);
         setStock(0);
         setImageUrl("");
@@ -92,6 +95,19 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
               <input className={inputCls} value={customCategory} onChange={(e) => setCustomCategory(e.target.value)} placeholder="e.g. Sarees" />
             </Field>
           )}
+          {(category === "Blouses" || subcategory) && (
+            <Field label="Sub-Type" className="col-span-2">
+              <select
+                className={selectCls}
+                value={["Plain", "Work"].includes(subcategory) ? subcategory : ""}
+                onChange={(e) => setSubcategory(e.target.value)}
+              >
+                <option value="">— None —</option>
+                <option value="Plain">Plain</option>
+                <option value="Work">Work</option>
+              </select>
+            </Field>
+          )}
           <Field label="Price (USD)">
             <input type="number" min="0" className={inputCls} value={price} onChange={(e) => setPrice(Number(e.target.value))} />
           </Field>
@@ -121,6 +137,7 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
                 name: name.trim(),
                 sku: sku.trim(),
                 category: finalCategory,
+                subcategory: category === "Blouses" ? subcategory : "",
                 price,
                 stock,
                 image_url: imageUrl,

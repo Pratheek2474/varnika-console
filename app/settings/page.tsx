@@ -142,9 +142,9 @@ export default function SettingsPage() {
                   desc: "Real-time courier tracking and dispatch updates.",
                 },
                 {
-                  key: "support_tickets" as const,
-                  title: "Client Queries & Tickets",
-                  desc: "Client concierge inquiries and alteration tickets.",
+                  key: "chat" as const,
+                  title: "Customer Chat",
+                  desc: "Client conversations, shared photos, and order-linked files.",
                 },
               ].map((mod) => {
                 const isEnabled = flags[mod.key];

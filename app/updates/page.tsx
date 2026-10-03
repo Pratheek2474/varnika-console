@@ -17,6 +17,7 @@ const FILTERS: { key: string; label: string }[] = [
   { key: "transaction", label: "Transactions" },
   { key: "shipment", label: "Shipments" },
   { key: "ticket", label: "Tickets" },
+  { key: "conversation", label: "Chats" },
   { key: "product", label: "Products" },
   { key: "employee", label: "Team" },
 ];
@@ -36,6 +37,7 @@ const ENTITY_NOUN: Record<string, string> = {
   transaction: "transaction",
   shipment: "shipment",
   ticket: "ticket",
+  conversation: "chat",
   product: "product",
   employee: "team member",
 };
@@ -117,6 +119,24 @@ function FeedItem({ item }: { item: ActivityRow }) {
             {item.customer_name && (
               <>
                 {" "}<span className="text-neutral-500">·</span>{" "}
+                <CustomerLink id={item.customer_id} name={item.customer_name} />
+              </>
+            )}
+            {item.order_number && (
+              <>
+                {" "}<span className="text-neutral-500">·</span>{" "}
+                <OrderLink id={item.order_id} number={item.order_number} />
+              </>
+            )}
+          </>
+        ) : item.entity_type === "conversation" ? (
+          <>
+            <Link href="/chat" className="font-medium underline underline-offset-2">
+              {item.entity_label || "chat"}
+            </Link>
+            {item.customer_name && (
+              <>
+                {" "}<span className="text-neutral-500">with</span>{" "}
                 <CustomerLink id={item.customer_id} name={item.customer_name} />
               </>
             )}

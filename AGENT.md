@@ -157,6 +157,14 @@ lib/
 
 ## Audit Trail (Employees + Updates)
 
+## Chat (replaces Queries/Tickets UI)
+
+- `conversations` + `chat_messages` + `chat_attachments` tables (`chat.read/write` permission, `chat` feature flag)
+- `/chat` page: conversation list + thread, staff reply, client-preview toggle, file/photo upload to `order-photos` storage bucket
+- Attachments with an order auto-fan-out into `order_photos`/`order_documents` via DB trigger — visible on order + customer pages regardless of which site added them
+- Customer detail has a Photos & Files card aggregating chat attachments
+- The old `/tickets` page is deleted (table kept for history; Updates feed still renders ticket events)
+
 - `employees` table + `/employees` page (add/edit/deactivate, `employees.read/write` permissions)
 - "Acting as" selector in `TopNavBar` (via `ActorProvider`, persisted to localStorage) — every mutation stamps this name
 - `activity_log` table (actor, action, entity snapshots + customer/order links, timestamp). Writes go through `logActivity()` in `lib/supabase/activity.ts`, which never throws

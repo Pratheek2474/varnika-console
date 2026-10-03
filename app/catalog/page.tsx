@@ -24,6 +24,7 @@ export default function CatalogPage() {
   const { permissions } = useAuth();
   const { actor } = useActor();
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedSub, setSelectedSub] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<ProductRow | null>(null);
@@ -54,13 +55,23 @@ export default function CatalogPage() {
     ...Array.from(new Set(products.map((p) => p.category).filter(Boolean))),
   ];
 
+  const subcategories = Array.from(
+    new Set(
+      products
+        .filter((p) => p.category === selectedCategory && p.subcategory)
+        .map((p) => p.subcategory)
+    )
+  );
+
   const filteredProducts = products.filter((prod) => {
     const matchesCategory =
       selectedCategory === "All" || prod.category === selectedCategory;
+    const matchesSub =
+      selectedSub === "All" || prod.subcategory === selectedSub;
     const matchesSearch =
       prod.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       prod.sku.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+    return matchesCategory && matchesSub && matchesSearch;
   });
 
   const handleSave = async (values: ProductInput) => {
@@ -129,7 +140,7 @@ export default function CatalogPage() {
             return (
               <button
                 key={cat}
-                onClick={() => setSelectedCategory(cat)}
+                onClick={() => { setSelectedCategory(cat); setSelectedSub("All"); }}
                 className={`px-3.5 py-1.5 transition-colors rounded-xs whitespace-nowrap ${
                   isSelected
                     ? "bg-black text-white font-medium"
@@ -141,6 +152,28 @@ export default function CatalogPage() {
             );
           })}
         </div>
+
+        {/* Sub-Type Pills (e.g. Blouses → Plain / Work) */}
+        {subcategories.length > 0 && (
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+            {["All", ...subcategories].map((sub) => {
+              const isSelected = selectedSub === sub;
+              return (
+                <button
+                  key={sub}
+                  onClick={() => setSelectedSub(sub)}
+                  className={`px-3 py-1 transition-colors rounded-xs whitespace-nowrap ${
+                    isSelected
+                      ? "bg-black text-white font-medium"
+                      : "bg-white border border-[#E6E3DB] text-neutral-600 hover:text-black hover:border-black"
+                  }`}
+                >
+                  {sub}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Search */}
         <div className="flex items-center bg-white p-3 border border-[#E6E3DB] rounded-xs">
@@ -236,6 +269,7 @@ export default function CatalogPage() {
                   </span>
                   <Badge variant="outline" className="text-[10px]">
                     {selectedProduct.category}
+                    {selectedProduct.subcategory ? ` · ${selectedProduct.subcategory}` : ""}
                   </Badge>
                 </div>
                 <DialogTitle className="text-base font-semibold text-black">
