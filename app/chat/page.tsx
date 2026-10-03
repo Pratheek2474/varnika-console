@@ -12,30 +12,17 @@ import {
   ChatAttachmentRow,
 } from "@/lib/supabase/database.types";
 import {
-  createConversation,
   getConversation,
   listConversations,
   sendMessage,
   uploadChatFile,
 } from "@/lib/supabase/queries-chat";
-import { listCustomers } from "@/lib/supabase/queries-customers";
 import { listOrders } from "@/lib/supabase/queries-orders";
-import { logActivity } from "@/lib/supabase/activity";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { CardsListSkeleton } from "@/components/ui/page-skeletons";
-import { Field, inputCls, selectCls } from "@/components/forms/fields";
 import {
   ArrowLeft,
   ExternalLink,
-  Plus,
   Send,
   Paperclip,
   FileText,
@@ -77,17 +64,8 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const [customers, setCustomers] = useState<{ id: string; customer_name: string }[]>([]);
   const [orders, setOrders] = useState<{ id: string; order_number: string; customer_id: string | null }[]>([]);
-
-  const [newOpen, setNewOpen] = useState(false);
-  const [newCustomerId, setNewCustomerId] = useState("");
-  const [newOrderId, setNewOrderId] = useState("");
-  const [newSubject, setNewSubject] = useState("");
-  const [newBody, setNewBody] = useState("");
-
   const [reply, setReply] = useState("");
-  const [sendAs, setSendAs] = useState<"staff" | "customer">("staff");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [sending, setSending] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -106,13 +84,11 @@ export default function ChatPage() {
   useEffect(() => {
     (async () => {
       try {
-        const [convs, custs, ords] = await Promise.all([
+        const [convs, ords] = await Promise.all([
           listConversations(),
-          listCustomers(),
           listOrders(),
         ]);
         setConversations(convs);
-        setCustomers(custs.map((c) => ({ id: c.id, customer_name: c.customer_name })));
         setOrders(
           ords.map((o) => ({ id: o.id, order_number: o.order_number, customer_id: o.customer_id }))
         );
@@ -148,42 +124,15 @@ export default function ChatPage() {
   }, [thread]);
 
   const selected = conversations.find((c) => c.id === selectedId) ?? null;
-  const selectedOrderId = selected?.order_id ?? null;
-
-  const handleNewConversation = async () => {
-    if (!newCustomerId || !newBody.trim()) return;
-    const customerName =
-      customers.find((c) => c.id === newCustomerId)?.customer_name ?? "";
-    const conv = await createConversation({
-      customer_id: newCustomerId,
-      order_id: newOrderId || null,
-      subject: newSubject.trim() || `Chat with ${customerName}`,
-    });
-    await sendMessage({
-      conversation_id: conv.id,
-      sender: "staff",
-      sender_name: actor,
-      body: newBody.trim(),
-    });
-    await logActivity({
-      actor,
-      action: "added",
-      entityType: "conversation",
-      entityId: conv.id,
-      entityLabel: conv.subject,
-      customerId: newCustomerId,
-      customerName,
-      orderId: newOrderId || null,
-      orderNumber: orders.find((o) => o.id === newOrderId)?.order_number ?? "",
-    });
-    setNewOpen(false);
-    setNewCustomerId("");
-    setNewOrderId("");
-    setNewSubject("");
-    setNewBody("");
-    await refreshList();
-    setSelectedId(conv.id);
-  };
+  // Latest order for this customer (listOrders is newest-first) — used as the
+  // link target and attachment home when the chat has no explicit order.
+  const latestOrderForCustomer = selected?.customer_id
+    ? (orders.find((o) => o.customer_id === selected.customer_id) ?? null)
+    : null;
+  const effectiveOrderId = selected?.order_id ?? latestOrderForCustomer?.id ?? null;
+  const effectiveOrderNumber = selected?.orders?.order_number
+    ?? latestOrderForCustomer?.order_number
+    ?? "";
 
   const handleSend = async () => {
     if (!selectedId || (!reply.trim() && pendingFiles.length === 0)) return;
@@ -193,21 +142,17 @@ export default function ChatPage() {
       for (const file of pendingFiles) {
         const up = await uploadChatFile(selectedId, file);
         uploaded.push({
-          order_id: selectedOrderId,
+          order_id: effectiveOrderId,
           kind: (file.type.startsWith("image/") ? "photo" : "file") as "photo" | "file",
           url: up.url,
           name: up.name,
           size_text: up.size,
         });
       }
-      const senderName =
-        sendAs === "staff"
-          ? actor
-          : (selected?.customers?.customer_name ?? "Customer");
       await sendMessage({
         conversation_id: selectedId,
-        sender: sendAs,
-        sender_name: senderName,
+        sender: "staff",
+        sender_name: actor,
         body: reply.trim() || (uploaded.length > 0 ? "Shared a file." : ""),
         attachments: uploaded,
       });
@@ -229,21 +174,13 @@ export default function ChatPage() {
     <RouteGuard requiredPermission="chat.read" requiredFeature="chat" moduleName="Customer Chat">
       <div className="space-y-6 animate-in fade-in duration-200">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-[#E6E3DB]">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-black tracking-tight">
-              Customer Chat
-            </h1>
-            <p className="text-xs text-neutral-500 mt-1">
-              Conversations with clients — shared photos and files land on the order too.
-            </p>
-          </div>
-          {canWrite && (
-            <Button variant="default" size="sm" className="h-8 text-xs shrink-0" onClick={() => setNewOpen(true)}>
-              <Plus className="w-3.5 h-3.5 mr-1.5" />
-              New Chat
-            </Button>
-          )}
+        <div className="pb-4 border-b border-[#E6E3DB]">
+          <h1 className="text-2xl sm:text-3xl font-semibold text-black tracking-tight">
+            Customer Chat
+          </h1>
+          <p className="text-xs text-neutral-500 mt-1">
+            Active chats — shared photos and files land on the customer and their latest order too.
+          </p>
         </div>
 
         {loadError && (
@@ -275,7 +212,7 @@ export default function ChatPage() {
                   </div>
                   <div className="text-[11px] text-neutral-500 truncate">
                     {conv.subject}
-                    {conv.orders && ` · ${conv.orders.order_number}`}
+                    {`Latest: ${conv.orders?.order_number ?? orders.find((o) => o.customer_id === conv.customer_id)?.order_number ?? "—"}`}
                   </div>
                   {last && (
                     <div className="text-[11px] text-neutral-400 truncate">
@@ -316,11 +253,11 @@ export default function ChatPage() {
                     </div>
                     <div className="text-[11px] text-neutral-400 truncate">
                       {selected.subject}
-                      {selected.orders && (
+                      {effectiveOrderId && (
                         <>
                           {" · "}
-                          <Link href={`/orders/${selected.orders.id}`} className="underline underline-offset-2 font-mono">
-                            {selected.orders.order_number}
+                          <Link href={`/orders/${effectiveOrderId}`} className="underline underline-offset-2 font-mono">
+                            {selected.orders ? selected.orders.order_number : effectiveOrderNumber} · Latest order
                           </Link>
                         </>
                       )}
@@ -390,7 +327,7 @@ export default function ChatPage() {
                       <button
                         onClick={() => fileRef.current?.click()}
                         className="p-2 border border-[#E6E3DB] hover:border-black rounded-xs text-neutral-500 hover:text-black transition-colors shrink-0"
-                        title={selectedOrderId ? "Attach — will also appear on the linked order" : "Attach"}
+                        title={effectiveOrderId ? "Attach — will also appear on the customer and latest order" : "Attach"}
                       >
                         <Paperclip className="w-4 h-4" />
                       </button>
@@ -398,31 +335,15 @@ export default function ChatPage() {
                         value={reply}
                         onChange={(e) => setReply(e.target.value)}
                         onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                        placeholder={selectedOrderId ? "Reply… (attachments also go to the order)" : "Reply…"}
+                        placeholder={effectiveOrderId ? "Reply… (attachments also go to the customer + latest order)" : "Reply…"}
                         className="flex-1 px-2.5 py-2 bg-white border border-[#E6E3DB] text-xs focus:outline-none focus:border-black rounded-xs"
                       />
-                      <div className="flex items-center bg-[#F4F2ED] border border-[#E6E3DB] p-0.5 rounded-xs shrink-0">
-                        {(["staff", "customer"] as const).map((s) => (
-                          <button
-                            key={s}
-                            onClick={() => setSendAs(s)}
-                            title={s === "customer" ? "Preview as customer (demo)" : "Send as staff"}
-                            className={cn(
-                              "px-2 py-1 text-[10px] font-medium capitalize transition-all rounded-xs",
-                              sendAs === s ? "bg-white text-black shadow-xs" : "text-neutral-500"
-                            )}
-                          >
-                            {s === "staff" ? "Staff" : "Client*"}
-                          </button>
-                        ))}
-                      </div>
                       <Button variant="default" size="sm" className="h-8 shrink-0" disabled={sending || (!reply.trim() && pendingFiles.length === 0)} onClick={handleSend}>
                         <Send className="w-3.5 h-3.5" />
                       </Button>
                     </div>
                     <div className="text-[10px] text-neutral-400">
-                      *Client sends simulate the customer-facing site for demo.
-                      {selectedOrderId ? " Attachments auto-attach to the linked order." : " Link an order to auto-share attachments there."}
+                      {effectiveOrderId ? "Attachments also appear on the customer page and the latest order." : "No order for this customer yet — attachments stay in chat."}
                     </div>
                   </div>
                 )}
@@ -434,50 +355,6 @@ export default function ChatPage() {
             )}
           </div>
         </div>
-
-        {/* New conversation dialog */}
-        {canWrite && (
-          <Dialog open={newOpen} onOpenChange={setNewOpen}>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>New Chat</DialogTitle>
-                <DialogDescription>Start a conversation with a client.</DialogDescription>
-              </DialogHeader>
-              <div className="grid grid-cols-2 gap-3 py-2 text-xs">
-                <Field label="Customer">
-                  <select className={selectCls} value={newCustomerId} onChange={(e) => { setNewCustomerId(e.target.value); setNewOrderId(""); }}>
-                    <option value="">Select…</option>
-                    {customers.map((c) => (
-                      <option key={c.id} value={c.id}>{c.customer_name}</option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Order (optional)">
-                  <select className={selectCls} value={newOrderId} onChange={(e) => setNewOrderId(e.target.value)}>
-                    <option value="">None</option>
-                    {orders
-                      .filter((o) => !newCustomerId || o.customer_id === newCustomerId)
-                      .map((o) => (
-                        <option key={o.id} value={o.id}>{o.order_number}</option>
-                      ))}
-                  </select>
-                </Field>
-                <Field label="Subject" className="col-span-2">
-                  <input className={inputCls} value={newSubject} onChange={(e) => setNewSubject(e.target.value)} placeholder="e.g. Sleeve fitting" />
-                </Field>
-                <Field label="First Message" className="col-span-2">
-                  <textarea rows={3} className={inputCls} value={newBody} onChange={(e) => setNewBody(e.target.value)} />
-                </Field>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" size="sm" onClick={() => setNewOpen(false)}>Cancel</Button>
-                <Button variant="default" size="sm" disabled={!newCustomerId || !newBody.trim()} onClick={handleNewConversation}>
-                  Start Chat
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
 
         {/* External link hint */}
         <div className="text-[11px] text-neutral-400 flex items-center gap-1">

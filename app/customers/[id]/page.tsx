@@ -20,6 +20,11 @@ import { OrderWithCustomer } from "@/lib/supabase/database.types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { CustomerDetailSkeleton } from "@/components/ui/page-skeletons";
 import { ArrowLeft, Ruler, Mail, Phone, ShoppingBag, ExternalLink, Pencil, Image as ImageIcon, FileText } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -49,6 +54,7 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
   const [notFound, setNotFound] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
+  const [lightbox, setLightbox] = useState<{ url: string; label: string } | null>(null);
 
   const canWrite = permissions.includes("customers.write");
   const showRevenue = permissions.includes("revenue.read");
@@ -160,7 +166,12 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
         <Card>
           <CardContent className="p-6">
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              <div className="w-16 h-16 rounded-full overflow-hidden relative shrink-0 border border-[#E6E3DB] bg-[#F4F2ED] flex items-center justify-center">
+              <button
+                onClick={() => customer.avatar_url && setLightbox({ url: customer.avatar_url, label: customer.customer_name })}
+                className="w-16 h-16 rounded-full overflow-hidden relative shrink-0 border border-[#E6E3DB] bg-[#F4F2ED] flex items-center justify-center cursor-pointer disabled:cursor-default"
+                disabled={!customer.avatar_url}
+                title={customer.avatar_url ? "Open photo" : undefined}
+              >
                 {customer.avatar_url ? (
                   <Image
                     src={customer.avatar_url}
@@ -173,7 +184,7 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
                     {customer.customer_name.charAt(0)}
                   </span>
                 )}
-              </div>
+              </button>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <h1 className="text-xl font-semibold text-black tracking-tight">
@@ -328,10 +339,11 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
                   {attachments
                     .filter((a) => a.kind === "photo")
                     .map((att) => (
-                      <div
+                      <button
                         key={att.id}
-                        className="relative aspect-square bg-[#FAF9F6] border border-[#E6E3DB] rounded-xs overflow-hidden group"
-                        title={att.name}
+                        onClick={() => att.url && !att.url.startsWith("#") && setLightbox({ url: att.url, label: att.name || "Photo" })}
+                        className="relative aspect-square bg-[#FAF9F6] border border-[#E6E3DB] rounded-xs overflow-hidden group cursor-pointer hover:border-black/40 transition-colors"
+                        title={att.name || "Open photo"}
                       >
                         {att.url && !att.url.startsWith("#") ? (
                           <Image src={att.url} alt={att.name || "Photo"} fill className="object-cover" />
@@ -340,23 +352,27 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
                             <ImageIcon className="w-5 h-5" />
                           </div>
                         )}
-                      </div>
+                      </button>
                     ))}
                 </div>
                 {attachments.filter((a) => a.kind !== "photo").map((att) => (
-                  <div
+                  <a
                     key={att.id}
-                    className="flex items-center gap-3 p-2.5 bg-white border border-[#E6E3DB] rounded-xs"
+                    href={att.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-3 p-2.5 bg-white border border-[#E6E3DB] rounded-xs hover:border-black/40 transition-colors"
                   >
                     <FileText className="w-4 h-4 text-neutral-400 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium text-black truncate">{att.name || "File"}</div>
+                      <div className="text-xs font-medium text-black truncate underline underline-offset-2">{att.name || "File"}</div>
                       <div className="text-[10px] text-neutral-400 font-mono">
                         {att.size_text}
                         {att.order_number && ` · order ${att.order_number}`}
                       </div>
                     </div>
-                  </div>
+                    <ExternalLink className="w-3 h-3 text-neutral-400 shrink-0" />
+                  </a>
                 ))}
               </div>
             ) : (
@@ -370,6 +386,17 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
         {canWrite && (
           <CustomerFormDialog open={formOpen} onOpenChange={setFormOpen} initial={customer} onSave={handleSave} />
         )}
+
+        {/* Photo lightbox */}
+        <Dialog open={Boolean(lightbox)} onOpenChange={(open) => !open && setLightbox(null)}>
+          <DialogContent className="max-w-3xl p-2 bg-black border-black">
+            <DialogTitle className="sr-only">{lightbox?.label ?? "Photo"}</DialogTitle>
+            {lightbox && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={lightbox.url} alt={lightbox.label} className="w-full max-h-[80vh] object-contain" />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </RouteGuard>
   );

@@ -145,6 +145,19 @@ export async function uploadChatFile(
   return { url: publicUrl, name: file.name, size };
 }
 
+/** All chat attachments linked to one order — shown on its page. */
+export async function listOrderAttachments(
+  orderId: string
+): Promise<ChatAttachmentRow[]> {
+  const { data, error } = await supabase
+    .from("chat_attachments")
+    .select("*")
+    .eq("order_id", orderId)
+    .order("created_at", { ascending: false });
+  throwIf(error, "Failed to load order files");
+  return (data ?? []) as ChatAttachmentRow[];
+}
+
 /** All attachments for a customer (across conversations) — shown on their page. */
 export async function listCustomerAttachments(
   customerId: string

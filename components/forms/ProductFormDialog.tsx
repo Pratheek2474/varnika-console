@@ -11,8 +11,15 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ProductRow } from "@/lib/supabase/database.types";
-import { ProductInput } from "@/lib/supabase/queries-products";
+import { ProductInput, uploadProductImage } from "@/lib/supabase/queries-products";
 import { Field, inputCls, selectCls } from "./fields";
+
+export const CATALOG_CATEGORIES = ["Blouse", "Skirt", "Saree"] as const;
+
+function isBlouseCategory(category: string): boolean {
+  const c = category.trim().toLowerCase();
+  return c === "blouse" || c === "blouses";
+}
 
 interface Props {
   open: boolean;
@@ -31,8 +38,18 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
   const [price, setPrice] = useState(0);
   const [stock, setStock] = useState(0);
   const [imageUrl, setImageUrl] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [material, setMaterial] = useState("");
   const [featured, setFeatured] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview.startsWith("blob:")) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
 
   useEffect(() => {
     if (open) {
@@ -45,17 +62,23 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
         setPrice(Number(initial.price));
         setStock(initial.stock);
         setImageUrl(initial.image_url);
+        setImageFile(null);
+        setImagePreview(initial.image_url);
+        setUploadError(null);
         setMaterial(initial.material);
         setFeatured(initial.featured);
       } else {
         setName("");
         setSku("");
-        setCategory(categories[0] ?? "");
+        setCategory(categories[0] ?? "Blouse");
         setCustomCategory("");
         setSubcategory("");
         setPrice(0);
         setStock(0);
         setImageUrl("");
+        setImageFile(null);
+        setImagePreview("");
+        setUploadError(null);
         setMaterial("");
         setFeatured(false);
       }
@@ -64,6 +87,42 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
 
   const finalCategory =
     category === "__custom" ? customCategory.trim() : category;
+
+  const handleFileChange = (file: File | undefined) => {
+    if (!file) return;
+    setImageFile(file);
+    setUploadError(null);
+    if (imagePreview.startsWith("blob:")) URL.revokeObjectURL(imagePreview);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleSave = async () => {
+    setUploadError(null);
+    let finalImageUrl = imageUrl;
+    if (imageFile) {
+      setUploading(true);
+      try {
+        finalImageUrl = await uploadProductImage(imageFile);
+      } catch (e) {
+        setUploading(false);
+        setUploadError((e as Error).message);
+        return;
+      }
+      setUploading(false);
+    }
+    onSave({
+      name: name.trim(),
+      sku: sku.trim(),
+      category: finalCategory,
+      subcategory: isBlouseCategory(finalCategory) ? subcategory : "",
+      price,
+      stock,
+      image_url: finalImageUrl,
+      material,
+      featured,
+    });
+    onOpenChange(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -95,7 +154,7 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
               <input className={inputCls} value={customCategory} onChange={(e) => setCustomCategory(e.target.value)} placeholder="e.g. Sarees" />
             </Field>
           )}
-          {(category === "Blouses" || subcategory) && (
+          {isBlouseCategory(category) && (
             <Field label="Sub-Type" className="col-span-2">
               <select
                 className={selectCls}
@@ -114,8 +173,30 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
           <Field label="Stock">
             <input type="number" min="0" className={inputCls} value={stock} onChange={(e) => setStock(Number(e.target.value))} />
           </Field>
-          <Field label="Image URL" className="col-span-2">
-            <input className={inputCls} value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
+          <Field label="Product Image" className="col-span-2">
+            <div className="space-y-2">
+              {imagePreview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={imagePreview}
+                  alt="Product preview"
+                  className="w-full aspect-[4/3] object-cover border border-[#E6E3DB] rounded-xs bg-[#F7F5F0]"
+                />
+              ) : (
+                <div className="w-full aspect-[4/3] flex items-center justify-center text-[11px] text-neutral-400 border border-dashed border-[#E6E3DB] rounded-xs bg-[#F7F5F0]">
+                  No image yet — choose a file below.
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleFileChange(e.target.files?.[0])}
+                className="w-full text-xs text-neutral-600 file:mr-2 file:px-3 file:py-1.5 file:text-xs file:font-medium file:bg-[#F4F2ED] file:border file:border-[#E6E3DB] file:rounded-xs hover:file:border-black file:cursor-pointer"
+              />
+              {uploadError && (
+                <div className="text-[11px] text-red-600">{uploadError}</div>
+              )}
+            </div>
           </Field>
           <Field label="Material" className="col-span-2">
             <input className={inputCls} value={material} onChange={(e) => setMaterial(e.target.value)} placeholder="70% Angora, 30% Virgin Wool" />
@@ -131,23 +212,10 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
           <Button
             variant="default"
             size="sm"
-            disabled={!name.trim() || !sku.trim() || !finalCategory}
-            onClick={() => {
-              onSave({
-                name: name.trim(),
-                sku: sku.trim(),
-                category: finalCategory,
-                subcategory: category === "Blouses" ? subcategory : "",
-                price,
-                stock,
-                image_url: imageUrl,
-                material,
-                featured,
-              });
-              onOpenChange(false);
-            }}
+            disabled={!name.trim() || !sku.trim() || !finalCategory || uploading}
+            onClick={handleSave}
           >
-            {initial ? "Save Changes" : "Add Product"}
+            {uploading ? "Uploading…" : initial ? "Save Changes" : "Add Product"}
           </Button>
         </DialogFooter>
       </DialogContent>

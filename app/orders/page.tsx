@@ -346,9 +346,9 @@ export default function OrdersPage() {
           </div>
         </div>
 
-        {/* Kanban Board */}
+        {/* Kanban Board — internal scroll so the page itself never grows */}
         {viewMode === "kanban" ? (
-          <div className="overflow-x-auto pb-4">
+          <div className="overflow-auto pb-4 max-h-[calc(100dvh-300px)] min-h-[320px] rounded-xs">
             <Kanban
               value={columns}
               onValueChange={setColumns}
@@ -367,7 +367,7 @@ export default function OrdersPage() {
                 draggingRef.current = false;
               }}
             >
-              <KanbanBoard className="flex items-start gap-3">
+              <KanbanBoard className="flex items-start gap-3 min-w-max pb-1">
                 {PIPELINE_COLUMNS.map((column) => {
                   const columnOrders = columns[column.key] ?? [];
                   return (
@@ -388,7 +388,7 @@ export default function OrdersPage() {
 
                       <KanbanColumnContent
                         value={column.key}
-                        className="p-2 gap-2 overflow-y-auto max-h-[600px]"
+                        className="p-2 gap-2 overflow-y-auto max-h-[52vh] lg:max-h-[calc(100dvh-430px)]"
                       >
                         {columnOrders.length === 0 ? (
                           <div className="h-24 flex items-center justify-center text-xs text-neutral-400 italic border border-dashed border-[#E6E3DB] rounded-xs bg-white">

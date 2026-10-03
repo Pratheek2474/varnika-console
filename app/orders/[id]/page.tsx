@@ -11,6 +11,15 @@ import {
   OrderDetail as OrderDetailData,
 } from "@/lib/supabase/queries-orders";
 import { OrderInput } from "@/lib/supabase/queries-orders";
+import { listOrderAttachments } from "@/lib/supabase/queries-chat";
+import {
+  createShipment,
+  createTransaction,
+  listShipments,
+  listTransactions,
+  ShipmentInput,
+  TransactionInput,
+} from "@/lib/supabase/queries-ops";
 import { DocumentKind } from "@/lib/supabase/database.types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,9 +35,19 @@ import {
   Package,
   ExternalLink,
   Pencil,
+  CreditCard,
+  Truck,
+  Plus,
 } from "lucide-react";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { OrderFormDialog } from "@/components/forms/OrderFormDialog";
+import { TransactionFormDialog } from "@/components/forms/TransactionFormDialog";
+import { ShipmentFormDialog } from "@/components/forms/ShipmentFormDialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useActor } from "@/lib/context/actor-context";
 import { logActivity } from "@/lib/supabase/activity";
 
@@ -48,8 +67,30 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
+  const [lightbox, setLightbox] = useState<{ url: string; label: string } | null>(null);
+  const [chatPhotos, setChatPhotos] = useState<{ id: string; url: string; name: string }[]>([]);
+  const [chatFiles, setChatFiles] = useState<{ id: string; url: string; name: string; size_text: string }[]>([]);
+  const [transactions, setTransactions] = useState<
+    { id: string; amount: number; currency: string; payment_mode: string; payment_ref: string; occurred_at: string }[]
+  >([]);
+  const [shipments, setShipments] = useState<
+    {
+      id: string;
+      tracking_number: string;
+      carrier: string;
+      destination_city: string;
+      recipient_name: string;
+      status: string;
+      estimated_delivery: string;
+      shipment_milestones: { id: string; status_text: string; location: string; time_text: string }[];
+    }[]
+  >([]);
+  const [txnOpen, setTxnOpen] = useState(false);
+  const [shipOpen, setShipOpen] = useState(false);
 
   const canWrite = permissions.includes("orders.write");
+  const canTransact = permissions.includes("transactions.write");
+  const canShip = permissions.includes("delivery.write");
   const showRevenue = permissions.includes("revenue.read");
 
   useEffect(() => {
@@ -61,6 +102,63 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
           return;
         }
         setDetail(row);
+        // Chat media linked to this order (also visible on the customer page).
+        try {
+          const atts = await listOrderAttachments(params.id);
+          setChatPhotos(
+            atts
+              .filter((a) => a.kind === "photo" && a.url && !a.url.startsWith("#"))
+              .map((a) => ({ id: a.id, url: a.url, name: a.name || "Photo" }))
+          );
+          setChatFiles(
+            atts
+              .filter((a) => a.kind !== "photo")
+              .map((a) => ({ id: a.id, url: a.url, name: a.name || "File", size_text: a.size_text }))
+          );
+        } catch {
+          // Chat tables may not be migrated yet
+        }
+        try {
+          const txns = await listTransactions();
+          setTransactions(
+            txns
+              .filter((t) => t.order_id === params.id)
+              .map((t) => ({
+                id: t.id,
+                amount: Number(t.amount),
+                currency: t.currency,
+                payment_mode: t.payment_mode,
+                payment_ref: t.payment_ref,
+                occurred_at: t.occurred_at,
+              }))
+          );
+        } catch {
+          // Transactions table may not be available
+        }
+        try {
+          const ships = await listShipments();
+          setShipments(
+            ships
+              .filter((s) => s.order_id === params.id)
+              .map((s) => ({
+                id: s.id,
+                tracking_number: s.tracking_number,
+                carrier: s.carrier,
+                destination_city: s.destination_city,
+                recipient_name: s.recipient_name,
+                status: s.status,
+                estimated_delivery: s.estimated_delivery,
+                shipment_milestones: s.shipment_milestones.map((m) => ({
+                  id: m.id,
+                  status_text: m.status_text,
+                  location: m.location,
+                  time_text: m.time_text,
+                })),
+              }))
+          );
+        } catch {
+          // Shipments table may not be available
+        }
       } catch (e) {
         console.error(e);
         setNotFound(true);
@@ -87,6 +185,87 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
     });
   };
 
+  const refreshFinance = async () => {
+    if (!detail) return;
+    try {
+      const txns = await listTransactions();
+      setTransactions(
+        txns
+          .filter((t) => t.order_id === detail.order.id)
+          .map((t) => ({
+            id: t.id,
+            amount: Number(t.amount),
+            currency: t.currency,
+            payment_mode: t.payment_mode,
+            payment_ref: t.payment_ref,
+            occurred_at: t.occurred_at,
+          }))
+      );
+    } catch (e) {
+      console.error(e);
+    }
+    try {
+      const ships = await listShipments();
+      setShipments(
+        ships
+          .filter((s) => s.order_id === detail.order.id)
+          .map((s) => ({
+            id: s.id,
+            tracking_number: s.tracking_number,
+            carrier: s.carrier,
+            destination_city: s.destination_city,
+            recipient_name: s.recipient_name,
+            status: s.status,
+            estimated_delivery: s.estimated_delivery,
+            shipment_milestones: s.shipment_milestones.map((m) => ({
+              id: m.id,
+              status_text: m.status_text,
+              location: m.location,
+              time_text: m.time_text,
+            })),
+          }))
+      );
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleSaveTransaction = async (values: TransactionInput) => {
+    if (!detail) return;
+    await createTransaction(values);
+    await logActivity({
+      actor,
+      action: "added",
+      entityType: "transaction",
+      entityId: detail.order.id,
+      entityLabel: values.payment_ref,
+      detail: `${values.amount} USD`,
+      customerId: values.customer_id,
+      customerName: detail.order.customers?.customer_name ?? "",
+      orderId: detail.order.id,
+      orderNumber: detail.order.order_number,
+    });
+    await refreshFinance();
+  };
+
+  const handleSaveShipment = async (
+    values: ShipmentInput,
+    milestone?: { status_text: string; location: string }
+  ) => {
+    if (!detail) return;
+    await createShipment(values, milestone);
+    await logActivity({
+      actor,
+      action: "added",
+      entityType: "shipment",
+      entityId: detail.order.id,
+      entityLabel: values.tracking_number,
+      orderId: detail.order.id,
+      orderNumber: detail.order.order_number,
+    });
+    await refreshFinance();
+  };
+
   if (loading) return <OrderDetailSkeleton />;
 
   if (notFound || !detail) {
@@ -109,6 +288,15 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
   }
 
   const { order, timeline, photos, documents } = detail;
+
+  // Hold Check only appears when the order is actually on hold
+  // (or its timeline step is already reached) — never by default.
+  const visibleTimeline = timeline.filter(
+    (t) =>
+      t.title !== "Hold Check" ||
+      order.status === "hold" ||
+      t.state !== "upcoming"
+  );
 
   return (
     <RouteGuard requiredPermission="orders.read" moduleName="Orders">
@@ -174,9 +362,9 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {timeline.length > 0 ? (
+                {visibleTimeline.length > 0 ? (
                   <Timeline
-                    items={timeline.map((t) => ({
+                    items={visibleTimeline.map((t) => ({
                       title: t.title,
                       description: t.description ?? undefined,
                       timestamp: t.display_time ?? undefined,
@@ -191,24 +379,26 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
               </CardContent>
             </Card>
 
-            {/* Photos */}
+            {/* Photos (incl. chat photos linked to this order) */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-semibold text-black flex items-center gap-2">
                   <ImageIcon className="w-4 h-4" />
                   Photos
                   <span className="text-[10px] font-mono font-normal text-neutral-400 ml-auto">
-                    {photos.length} images
+                    {photos.length + chatPhotos.length} images
                   </span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {photos.length > 0 ? (
+                {photos.length + chatPhotos.length > 0 ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {photos.map((photo) => (
-                      <div
+                      <button
                         key={photo.id}
-                        className="group relative aspect-square bg-[#FAF9F6] border border-[#E6E3DB] rounded-xs overflow-hidden"
+                        onClick={() => setLightbox({ url: photo.url, label: photo.caption })}
+                        className="group relative aspect-square bg-[#FAF9F6] border border-[#E6E3DB] rounded-xs overflow-hidden cursor-pointer hover:border-black/40 transition-colors"
+                        title="Open photo"
                       >
                         <Image
                           src={photo.url}
@@ -222,7 +412,25 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                             {formatDate(photo.uploaded_at)}
                           </p>
                         </div>
-                      </div>
+                      </button>
+                    ))}
+                    {chatPhotos.map((photo) => (
+                      <button
+                        key={`chat-${photo.id}`}
+                        onClick={() => setLightbox({ url: photo.url, label: `${photo.name} · from chat` })}
+                        className="group relative aspect-square bg-[#FAF9F6] border border-[#E6E3DB] rounded-xs overflow-hidden cursor-pointer hover:border-black/40 transition-colors"
+                        title="Open photo (from chat)"
+                      >
+                        <Image
+                          src={photo.url}
+                          alt={photo.name}
+                          fill
+                          className="object-cover transition-transform group-hover:scale-105"
+                        />
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <p className="text-[10px] text-white truncate">{photo.name} · chat</p>
+                        </div>
+                      </button>
                     ))}
                   </div>
                 ) : (
@@ -296,42 +504,201 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
               </CardContent>
             </Card>
 
-            {/* Documents */}
+            {/* Payment */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold text-black flex items-center gap-2">
+                  <CreditCard className="w-4 h-4" />
+                  Payment
+                  <span className="text-[10px] font-mono font-normal text-neutral-400 ml-auto">
+                    {transactions.length > 0 ? `${transactions.length} record${transactions.length === 1 ? "" : "s"}` : "not paid"}
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {transactions.length > 0 ? (
+                  <>
+                    {transactions.map((t) => (
+                      <div key={t.id} className="p-3 bg-[#FAF9F6] border border-[#E6E3DB] rounded-xs space-y-1.5 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-neutral-500">Amount</span>
+                          <span className="font-mono font-semibold text-black">
+                            {showRevenue ? formatCurrency(t.amount, t.currency) : "—"}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-neutral-500">Mode</span>
+                          <Badge variant="secondary" className="text-[10px] capitalize">
+                            {t.payment_mode.replace(/_/g, " ")}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-neutral-500">Ref</span>
+                          <span className="font-mono text-[11px] text-neutral-700 truncate">{t.payment_ref}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-neutral-500">Date</span>
+                          <span className="font-mono text-[11px] text-neutral-700">{formatDateTime(t.occurred_at)}</span>
+                        </div>
+                      </div>
+                    ))}
+                    {canTransact && (
+                      <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => setTxnOpen(true)}>
+                        <Plus className="w-3.5 h-3.5 mr-1.5" />
+                        Add Transaction
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="p-3 bg-[#FAF9F6] border border-[#E6E3DB] rounded-xs text-xs text-neutral-500 text-center">
+                      Not paid yet.
+                    </div>
+                    {canTransact && (
+                      <Button variant="default" size="sm" className="w-full text-xs" onClick={() => setTxnOpen(true)}>
+                        <Plus className="w-3.5 h-3.5 mr-1.5" />
+                        Add Transaction
+                      </Button>
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Delivery */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold text-black flex items-center gap-2">
+                  <Truck className="w-4 h-4" />
+                  Delivery
+                  <span className="text-[10px] font-mono font-normal text-neutral-400 ml-auto">
+                    {shipments.length > 0 ? `${shipments.length} shipment${shipments.length === 1 ? "" : "s"}` : "not shipped"}
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {shipments.length > 0 ? (
+                  <>
+                    {shipments.map((s) => (
+                      <div key={s.id} className="p-3 bg-[#FAF9F6] border border-[#E6E3DB] rounded-xs space-y-1.5 text-xs">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-mono font-semibold text-black truncate">{s.tracking_number}</span>
+                          <Badge variant="outline" className="text-[10px] capitalize shrink-0">
+                            {s.status.replace(/_/g, " ")}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-neutral-500">Carrier</span>
+                          <span className="font-medium text-black">{s.carrier || "—"}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-neutral-500">Recipient</span>
+                          <span className="font-medium text-black truncate max-w-[140px]">{s.recipient_name || order.customers?.customer_name || "—"}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-neutral-500">Address</span>
+                          <span className="text-neutral-800 truncate max-w-[140px]">{s.destination_city || "—"}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-neutral-500">Est. delivery</span>
+                          <span className="font-mono text-[11px] text-black">{s.estimated_delivery || "—"}</span>
+                        </div>
+                        {s.shipment_milestones.length > 0 && (
+                          <div className="pt-1.5 border-t border-[#F0ECE1] space-y-1.5">
+                            {s.shipment_milestones.map((m) => (
+                              <div key={m.id} className="flex items-start gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-black mt-1 shrink-0" />
+                                <div>
+                                  <div className="font-medium text-black">{m.status_text}</div>
+                                  <div className="text-neutral-400 font-mono text-[11px]">
+                                    {m.location} · {m.time_text}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <Button variant="outline" size="sm" className="w-full text-xs" asChild>
+                          <Link href="/delivery">Open in Delivery</Link>
+                        </Button>
+                      </div>
+                    ))}
+                    {canShip && (
+                      <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => setShipOpen(true)}>
+                        <Plus className="w-3.5 h-3.5 mr-1.5" />
+                        Add Delivery
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="p-3 bg-[#FAF9F6] border border-[#E6E3DB] rounded-xs text-xs text-neutral-500 text-center">
+                      Not shipped yet.
+                    </div>
+                    {canShip && (
+                      <Button variant="default" size="sm" className="w-full text-xs" onClick={() => setShipOpen(true)}>
+                        <Plus className="w-3.5 h-3.5 mr-1.5" />
+                        Add Delivery
+                      </Button>
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Documents (incl. chat files linked to this order) */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-semibold text-black flex items-center gap-2">
                   <FileText className="w-4 h-4" />
                   Documents
                   <span className="text-[10px] font-mono font-normal text-neutral-400 ml-auto">
-                    {documents.length} files
+                    {documents.length + chatFiles.length} files
                   </span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {documents.length > 0 ? (
+                {documents.length + chatFiles.length > 0 ? (
                   <div className="space-y-2">
                     {documents.map((doc) => (
-                      <div
+                      <a
                         key={doc.id}
+                        href={doc.url}
+                        target="_blank"
+                        rel="noreferrer"
                         className="flex items-center gap-3 p-2.5 bg-white border border-[#E6E3DB] hover:border-black/40 transition-colors rounded-xs group"
                       >
                         <span className="text-lg">{DOCUMENT_ICONS[doc.kind]}</span>
                         <div className="flex-1 min-w-0">
-                          <div className="text-xs font-medium text-black truncate">
+                          <div className="text-xs font-medium text-black truncate underline underline-offset-2">
                             {doc.name}
                           </div>
                           <div className="text-[10px] text-neutral-400 font-mono">
                             {doc.size_text} · {formatDate(doc.uploaded_at)}
                           </div>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
+                        <Download className="w-3.5 h-3.5 text-neutral-400 group-hover:text-black transition-colors shrink-0" />
+                      </a>
+                    ))}
+                    {chatFiles.map((doc) => (
+                      <a
+                        key={`chat-${doc.id}`}
+                        href={doc.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-3 p-2.5 bg-white border border-[#E6E3DB] hover:border-black/40 transition-colors rounded-xs group"
+                      >
+                        <span className="text-lg">📎</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-medium text-black truncate underline underline-offset-2">
+                            {doc.name}
+                          </div>
+                          <div className="text-[10px] text-neutral-400 font-mono">
+                            {doc.size_text} · from chat
+                          </div>
+                        </div>
+                        <Download className="w-3.5 h-3.5 text-neutral-400 group-hover:text-black transition-colors shrink-0" />
+                      </a>
                     ))}
                   </div>
                 ) : (
@@ -355,6 +722,55 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                 : []
             }
             onSave={handleSave}
+          />
+        )}
+
+        {/* Photo lightbox */}
+        <Dialog open={Boolean(lightbox)} onOpenChange={(open) => !open && setLightbox(null)}>
+          <DialogContent className="max-w-3xl p-2 bg-black border-black">
+            <DialogTitle className="sr-only">{lightbox?.label ?? "Photo"}</DialogTitle>
+            {lightbox && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={lightbox.url} alt={lightbox.label} className="w-full max-h-[80vh] object-contain" />
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {canTransact && order.customer_id && (
+          <TransactionFormDialog
+            open={txnOpen}
+            onOpenChange={setTxnOpen}
+            initial={null}
+            customers={
+              order.customers
+                ? [{ id: order.customers.id, customer_name: order.customers.customer_name }]
+                : []
+            }
+            orders={[
+              {
+                id: order.id,
+                order_number: order.order_number,
+                customer_id: order.customer_id,
+                total: Number(order.total),
+              },
+            ]}
+            onSave={handleSaveTransaction}
+          />
+        )}
+
+        {canShip && (
+          <ShipmentFormDialog
+            open={shipOpen}
+            onOpenChange={setShipOpen}
+            initial={null}
+            orders={[
+              {
+                id: order.id,
+                order_number: order.order_number,
+                customer_name: order.customers?.customer_name ?? "No customer",
+              },
+            ]}
+            onSave={handleSaveShipment}
           />
         )}
       </div>

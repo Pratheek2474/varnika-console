@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CardsListSkeleton } from "@/components/ui/page-skeletons";
 import { Search, Plus, Pencil } from "lucide-react";
-import { ProductFormDialog } from "@/components/forms/ProductFormDialog";
+import { ProductFormDialog, CATALOG_CATEGORIES } from "@/components/forms/ProductFormDialog";
 import { useActor } from "@/lib/context/actor-context";
 import { logActivity } from "@/lib/supabase/activity";
 
@@ -52,7 +52,12 @@ export default function CatalogPage() {
 
   const categories = [
     "All",
-    ...Array.from(new Set(products.map((p) => p.category).filter(Boolean))),
+    ...Array.from(
+      new Set([
+        ...CATALOG_CATEGORIES,
+        ...products.map((p) => p.category).filter(Boolean),
+      ])
+    ),
   ];
 
   const subcategories = Array.from(

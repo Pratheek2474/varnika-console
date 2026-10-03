@@ -43,3 +43,17 @@ export async function updateProduct(
   const { error } = await supabase.from("products").update(input).eq("id", id);
   throwIf(error, "Failed to update product");
 }
+
+/** Upload a catalog image to the order-photos bucket, returns public URL. */
+export async function uploadProductImage(file: File): Promise<string> {
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const path = `products/${Date.now()}_${safeName}`;
+  const { error } = await supabase.storage
+    .from("order-photos")
+    .upload(path, file, { contentType: file.type || undefined });
+  if (error) throw new Error(`Image upload failed: ${error.message}`);
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("order-photos").getPublicUrl(path);
+  return publicUrl;
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { usePathname } from "next/navigation";
 import { TopNavBar } from "./TopNavBar";
 import { DesktopSidebar } from "./DesktopSidebar";
 import { MobileHeader } from "./MobileHeader";
@@ -11,6 +12,19 @@ import { NavigationProgress } from "./NavigationProgress";
 import { Toaster } from "sonner";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  // Login is a standalone screen — just the login box, no nav/sidebar chrome.
+  if (pathname === "/login" || pathname.startsWith("/login/")) {
+    return (
+      <div className="min-h-screen bg-[#FAF9F6] text-[#141414] flex flex-col font-sans antialiased selection:bg-neutral-900 selection:text-white">
+        <main className="flex-1 flex flex-col w-full mx-auto">
+          {children}
+        </main>
+        <Toaster position="bottom-right" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#FAF9F6] text-[#141414] flex flex-col font-sans antialiased selection:bg-neutral-900 selection:text-white">
       {/* Instant navigation feedback (shows on link click, before route loads) */}

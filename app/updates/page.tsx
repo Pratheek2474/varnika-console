@@ -66,6 +66,30 @@ function OrderLink({ id, number }: { id: string | null; number: string }) {
   );
 }
 
+function dayKey(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function dayLabel(iso: string): string {
+  const d = new Date(iso);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+  const sameDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+  if (sameDay(d, today)) return "Today";
+  if (sameDay(d, yesterday)) return "Yesterday";
+  return d.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 function FeedItem({ item }: { item: ActivityRow }) {
   const verb = VERBS[item.action] ?? item.action;
   const noun = ENTITY_NOUN[item.entity_type] ?? item.entity_type;
@@ -189,6 +213,21 @@ export default function UpdatesPage() {
 
   const filtered = filter === "all" ? items : items.filter((i) => i.entity_type === filter);
 
+  // Group newest-first items by calendar date for date-separated scrolling.
+  const groups = React.useMemo(() => {
+    const out: { key: string; label: string; rows: ActivityRow[] }[] = [];
+    for (const item of filtered) {
+      const key = dayKey(item.created_at);
+      const last = out[out.length - 1];
+      if (last && last.key === key) {
+        last.rows.push(item);
+      } else {
+        out.push({ key, label: dayLabel(item.created_at), rows: [item] });
+      }
+    }
+    return out;
+  }, [filtered]);
+
   if (loading) return <CardsListSkeleton cards={5} />;
 
   return (
@@ -239,10 +278,25 @@ export default function UpdatesPage() {
           })}
         </div>
 
-        {/* Feed */}
-        <div className="space-y-3 max-w-3xl">
-          {filtered.map((item) => (
-            <FeedItem key={item.id} item={item} />
+        {/* Feed — separated by date */}
+        <div className="space-y-8 max-w-3xl">
+          {groups.map((group) => (
+            <section key={group.key} className="space-y-3">
+              <div className="sticky top-14 z-10 -mx-1 px-1 py-1 bg-[#FBF9F5]/95 backdrop-blur">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-semibold text-black whitespace-nowrap">
+                    {group.label}
+                  </span>
+                  <span className="text-[10px] font-mono text-neutral-400">
+                    {group.rows.length} update{group.rows.length === 1 ? "" : "s"}
+                  </span>
+                  <div className="flex-1 h-px bg-[#E6E3DB]" />
+                </div>
+              </div>
+              {group.rows.map((item) => (
+                <FeedItem key={item.id} item={item} />
+              ))}
+            </section>
           ))}
           {filtered.length === 0 && !loadError && (
             <div className="text-center py-12 text-xs text-neutral-400">
