@@ -95,8 +95,6 @@ export const PRESET_ROLES: Record<Exclude<RoleId, "custom">, RoleDefinition> = {
       "analytics.read",
       "transactions.read",
       "transactions.write",
-      "employees.read",
-      "employees.write",
     ],
   },
 };

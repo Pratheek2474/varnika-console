@@ -20,6 +20,7 @@ export interface EmployeeInput {
   role: string;
   avatar_url: string;
   is_active: boolean;
+  app_role: "admin" | "staff";
 }
 
 export async function createEmployee(

@@ -28,6 +28,7 @@ export function EmployeeFormDialog({ open, onOpenChange, initial, onSave }: Prop
   const [customRole, setCustomRole] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const [appRole, setAppRole] = useState<"admin" | "staff">("staff");
 
   useEffect(() => {
     if (open) {
@@ -38,6 +39,7 @@ export function EmployeeFormDialog({ open, onOpenChange, initial, onSave }: Prop
         setCustomRole("");
         setAvatarUrl(initial.avatar_url);
         setIsActive(initial.is_active);
+        setAppRole((initial.app_role as "admin" | "staff") || "staff");
       } else {
         setName("");
         setPhone("");
@@ -45,6 +47,7 @@ export function EmployeeFormDialog({ open, onOpenChange, initial, onSave }: Prop
         setCustomRole("");
         setAvatarUrl("");
         setIsActive(true);
+        setAppRole("staff");
       }
     }
   }, [open, initial]);
@@ -90,6 +93,12 @@ export function EmployeeFormDialog({ open, onOpenChange, initial, onSave }: Prop
             <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="accent-black" />
             Active (inactive staff are hidden from lists)
           </label>
+          <Field label="Console Access" className="col-span-2">
+            <select className={selectCls} value={appRole} onChange={(e) => setAppRole(e.target.value as "admin" | "staff")}>
+              <option value="staff">Staff — day-to-day operations</option>
+              <option value="admin">Admin — everything + money + settings</option>
+            </select>
+          </Field>
         </div>
 
         <DialogFooter>
@@ -105,6 +114,7 @@ export function EmployeeFormDialog({ open, onOpenChange, initial, onSave }: Prop
                 role: finalRole,
                 avatar_url: avatarUrl,
                 is_active: isActive,
+                app_role: appRole,
               });
               onOpenChange(false);
             }}

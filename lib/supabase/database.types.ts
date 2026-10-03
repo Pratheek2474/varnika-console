@@ -212,6 +212,7 @@ export interface EmployeeRow {
   role: string;
   is_active: boolean;
   avatar_url: string;
+  app_role: string;
   created_at: string;
   updated_at: string;
 }
