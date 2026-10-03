@@ -42,6 +42,7 @@ import {
 } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 type ThreadMessage = ChatMessageRow & { chat_attachments: ChatAttachmentRow[] };
 
@@ -186,6 +187,7 @@ export default function ChatPage() {
       await refreshList();
     } catch (e) {
       console.error(e);
+      toast.error(`Could not send: ${(e as Error).message}`);
     } finally {
       setSending(false);
     }
@@ -266,6 +268,7 @@ export default function ChatPage() {
       setSelectedId(conv.id);
     } catch (e) {
       console.error(e);
+      toast.error(`Could not open chat: ${(e as Error).message}`);
     } finally {
       setMsgSending(false);
     }
@@ -428,7 +431,7 @@ export default function ChatPage() {
                         ref={fileRef}
                         type="file"
                         multiple
-                        accept="image/*,.pdf"
+                        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"
                         className="hidden"
                         onChange={(e) => {
                           if (e.target.files) setPendingFiles((p) => [...p, ...Array.from(e.target.files!)]);
