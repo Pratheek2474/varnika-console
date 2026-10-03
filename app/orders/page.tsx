@@ -372,17 +372,9 @@ export default function OrdersPage() {
                                   </div>
 
                                   <div className="text-xs font-medium text-black truncate flex items-center gap-1">
-                                    {order.customers ? (
-                                      <Link
-                                        href={`/customers/${order.customers.id}`}
-                                        onClick={(e) => e.stopPropagation()}
-                                        className="hover:underline truncate"
-                                      >
-                                        {order.customers.customer_name}
-                                      </Link>
-                                    ) : (
-                                      <span className="text-neutral-400">No customer</span>
-                                    )}
+                                    <span className="truncate">
+                                      {order.customers?.customer_name ?? "No customer"}
+                                    </span>
                                     <ExternalLink className="w-3 h-3 text-neutral-400 shrink-0" />
                                   </div>
 
