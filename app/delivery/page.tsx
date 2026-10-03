@@ -208,6 +208,14 @@ export default function DeliveryPage() {
                     <span className="text-neutral-500">Destination:</span>
                     <span className="text-neutral-800">{shipment.destination_city}</span>
                   </div>
+                  {((shipment as { address?: string }).address ?? "") && (
+                    <div className="space-y-0.5">
+                      <span className="text-neutral-500">Address:</span>
+                      <p className="text-neutral-800 leading-relaxed">
+                        {(shipment as { address?: string }).address}
+                      </p>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between pt-1 border-t border-[#F0ECE1]">
                     <span className="text-neutral-500">Estimated Delivery:</span>
                     <span className="font-mono font-medium text-black">{shipment.estimated_delivery || "—"}</span>

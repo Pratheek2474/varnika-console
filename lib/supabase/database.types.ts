@@ -162,6 +162,8 @@ export interface ShipmentRow {
   carrier: string;
   destination_city: string;
   recipient_name: string;
+  /** Full street address — added by 0008; absent until that migration is applied. */
+  address: string;
   order_id: string | null;
   status: ShipmentStatus;
   estimated_delivery: string;

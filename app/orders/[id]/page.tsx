@@ -79,6 +79,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
       tracking_number: string;
       carrier: string;
       destination_city: string;
+      address: string;
       recipient_name: string;
       status: string;
       estimated_delivery: string;
@@ -145,6 +146,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                 tracking_number: s.tracking_number,
                 carrier: s.carrier,
                 destination_city: s.destination_city,
+                address: (s as { address?: string }).address ?? "",
                 recipient_name: s.recipient_name,
                 status: s.status,
                 estimated_delivery: s.estimated_delivery,
@@ -214,6 +216,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
             tracking_number: s.tracking_number,
             carrier: s.carrier,
             destination_city: s.destination_city,
+            address: (s as { address?: string }).address ?? "",
             recipient_name: s.recipient_name,
             status: s.status,
             estimated_delivery: s.estimated_delivery,
@@ -595,10 +598,14 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                           <span className="text-neutral-500">Recipient</span>
                           <span className="font-medium text-black truncate max-w-[140px]">{s.recipient_name || order.customers?.customer_name || "—"}</span>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-neutral-500">Address</span>
-                          <span className="text-neutral-800 truncate max-w-[140px]">{s.destination_city || "—"}</span>
-                        </div>
+                        {(s.address || s.destination_city) && (
+                          <div className="space-y-0.5">
+                            <span className="text-neutral-500">Address</span>
+                            <p className="text-neutral-800 leading-relaxed">
+                              {s.address || s.destination_city}
+                            </p>
+                          </div>
+                        )}
                         <div className="flex items-center justify-between">
                           <span className="text-neutral-500">Est. delivery</span>
                           <span className="font-mono text-[11px] text-black">{s.estimated_delivery || "—"}</span>

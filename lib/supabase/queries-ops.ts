@@ -98,32 +98,37 @@ export interface ShipmentInput {
   tracking_number: string;
   carrier: string;
   destination_city: string;
+  address: string;
   status: ShipmentStatus;
   estimated_delivery: string;
 }
 
-export async function createShipment(
-  input: ShipmentInput,
+/** Insert payload — drops `address` when the 0008 migration isn't applied yet. */
+function shipmentPayload(input: ShipmentInput): Record<string, string> {
+  return {
+    order_id: input.order_id,
+    tracking_number: input.tracking_number,
+    carrier: input.carrier,
+    destination_city: input.destination_city,
+    address: input.address,
+    status: input.status,
+    estimated_delivery: input.estimated_delivery,
+  };
+}
+
+function isMissingAddressColumn(error: unknown): boolean {
+  const msg = (error as Error)?.message ?? "";
+  return /address/i.test(msg) && /column|schema cache/i.test(msg);
+}
+
+async function insertInitialMilestones(
+  shipmentId: string,
   milestone?: { status_text: string; location: string }
 ): Promise<void> {
-  const { data: shipment, error } = await supabase
-    .from("shipments")
-    .insert({
-      order_id: input.order_id,
-      tracking_number: input.tracking_number,
-      carrier: input.carrier,
-      destination_city: input.destination_city,
-      status: input.status,
-      estimated_delivery: input.estimated_delivery,
-    })
-    .select("id")
-    .single();
-  throwIf(error, "Failed to create shipment");
-
   const milestones = milestone?.status_text
     ? [
         {
-          shipment_id: (shipment as { id: string }).id,
+          shipment_id: shipmentId,
           position: 0,
           status_text: milestone.status_text,
           location: milestone.location,
@@ -132,7 +137,7 @@ export async function createShipment(
       ]
     : [
         {
-          shipment_id: (shipment as { id: string }).id,
+          shipment_id: shipmentId,
           position: 0,
           status_text: "Label Created",
           location: "Varnika Studio Vault",
@@ -145,23 +150,44 @@ export async function createShipment(
   throwIf(msError, "Failed to create shipment milestone");
 }
 
+export async function createShipment(
+  input: ShipmentInput,
+  milestone?: { status_text: string; location: string }
+): Promise<void> {
+  const { data: shipment, error } = await supabase
+    .from("shipments")
+    .insert(shipmentPayload(input))
+    .select("id")
+    .single();
+  if (error && isMissingAddressColumn(error)) {
+    // 0008 migration not applied yet — retry without the address column.
+    const fallback = shipmentPayload(input);
+    delete fallback.address;
+    const retry = await supabase.from("shipments").insert(fallback).select("id").single();
+    throwIf(retry.error, "Failed to create shipment");
+    await insertInitialMilestones((retry.data as { id: string }).id, milestone);
+    return;
+  }
+  throwIf(error, "Failed to create shipment");
+
+  await insertInitialMilestones((shipment as { id: string }).id, milestone);
+}
+
 export async function updateShipment(
   id: string,
   input: ShipmentInput,
   milestone?: { status_text: string; location: string }
 ): Promise<void> {
-  const { error } = await supabase
-    .from("shipments")
-    .update({
-      order_id: input.order_id,
-      tracking_number: input.tracking_number,
-      carrier: input.carrier,
-      destination_city: input.destination_city,
-      status: input.status,
-      estimated_delivery: input.estimated_delivery,
-    })
-    .eq("id", id);
-  throwIf(error, "Failed to update shipment");
+  const payload = shipmentPayload(input);
+  const { error } = await supabase.from("shipments").update(payload).eq("id", id);
+  if (error && isMissingAddressColumn(error)) {
+    // 0008 migration not applied yet — retry without the address column.
+    delete payload.address;
+    const retry = await supabase.from("shipments").update(payload).eq("id", id);
+    throwIf(retry.error, "Failed to update shipment");
+  } else {
+    throwIf(error, "Failed to update shipment");
+  }
 
   if (milestone?.status_text.trim()) {
     await addMilestone(id, milestone.status_text.trim(), milestone.location.trim());

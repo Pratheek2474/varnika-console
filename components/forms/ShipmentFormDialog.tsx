@@ -37,6 +37,7 @@ export function ShipmentFormDialog({ open, onOpenChange, initial, orders, onSave
   const [trackingNumber, setTrackingNumber] = useState("");
   const [carrier, setCarrier] = useState("");
   const [destinationCity, setDestinationCity] = useState("");
+  const [address, setAddress] = useState("");
   const [status, setStatus] = useState<ShipmentStatus>("shipped");
   const [estimatedDelivery, setEstimatedDelivery] = useState("");
   const [milestoneStatus, setMilestoneStatus] = useState("");
@@ -49,6 +50,7 @@ export function ShipmentFormDialog({ open, onOpenChange, initial, orders, onSave
         setTrackingNumber(initial.tracking_number);
         setCarrier(initial.carrier);
         setDestinationCity(initial.destination_city);
+        setAddress((initial as { address?: string }).address ?? "");
         setStatus(initial.status);
         setEstimatedDelivery(initial.estimated_delivery);
         setMilestoneStatus("");
@@ -58,6 +60,7 @@ export function ShipmentFormDialog({ open, onOpenChange, initial, orders, onSave
         setTrackingNumber("");
         setCarrier("");
         setDestinationCity("");
+        setAddress("");
         setStatus("shipped");
         setEstimatedDelivery("");
         setMilestoneStatus("");
@@ -103,6 +106,15 @@ export function ShipmentFormDialog({ open, onOpenChange, initial, orders, onSave
           <Field label="Estimated Delivery">
             <input className={inputCls} value={estimatedDelivery} onChange={(e) => setEstimatedDelivery(e.target.value)} placeholder="Sep 30, 2026" />
           </Field>
+          <Field label="Full Address" className="col-span-2">
+            <textarea
+              rows={2}
+              className={inputCls}
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Flat, street, area, city, state, PIN"
+            />
+          </Field>
           <div className="col-span-2 pt-2 text-[11px] font-medium text-neutral-500 uppercase tracking-wide">New Milestone (optional)</div>
           <Field label="Milestone Status">
             <input className={inputCls} value={milestoneStatus} onChange={(e) => setMilestoneStatus(e.target.value)} placeholder="Arrived at hub" />
@@ -125,6 +137,7 @@ export function ShipmentFormDialog({ open, onOpenChange, initial, orders, onSave
                   tracking_number: trackingNumber.trim(),
                   carrier: carrier.trim(),
                   destination_city: destinationCity,
+                  address: address.trim(),
                   status,
                   estimated_delivery: estimatedDelivery,
                 },
