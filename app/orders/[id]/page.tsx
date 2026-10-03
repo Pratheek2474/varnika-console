@@ -99,6 +99,8 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
 
   const photoInputRef = useRef<HTMLInputElement>(null);
   const docInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -306,9 +308,6 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
       toast.error((e as Error).message);
     }
   };
-
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [uploadingDoc, setUploadingDoc] = useState(false);
 
   const refreshMedia = async () => {
     try {
