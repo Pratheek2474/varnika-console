@@ -4,6 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/context/auth-context";
 import { supabase } from "@/lib/supabase/client";
+import { normalizeUsername, toLoginEmail } from "@/lib/supabase/login";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -11,7 +12,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading } = useAuth();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -28,16 +29,21 @@ function LoginForm() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    const clean = normalizeUsername(username);
+    if (!clean) {
+      setError("Enter your username.");
+      return;
+    }
     setBusy(true);
     const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
+      email: toLoginEmail(clean),
       password,
     });
     setBusy(false);
     if (signInError) {
       setError(
         signInError.message === "Invalid login credentials"
-          ? "Incorrect email or password."
+          ? "Incorrect username or password."
           : signInError.message
       );
       return;
@@ -60,13 +66,15 @@ function LoginForm() {
 
           <form onSubmit={handleLogin} className="space-y-3">
             <div className="space-y-1">
-              <label className="text-[11px] font-medium text-neutral-600">Email</label>
+              <label className="text-[11px] font-medium text-neutral-600">Username</label>
               <input
-                type="email"
+                type="text"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@atelier.com"
+                autoCapitalize="none"
+                autoCorrect="off"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="e.g. anand"
                 className="w-full px-2.5 py-2 bg-white border border-[#E6E3DB] text-xs focus:outline-none focus:border-black rounded-xs"
               />
             </div>
@@ -94,7 +102,7 @@ function LoginForm() {
           </form>
 
           <p className="text-[11px] text-neutral-400 text-center leading-relaxed">
-            Accounts are created by the administrator in Supabase → Authentication → Users.
+            Ask the administrator for your username and password.
           </p>
         </CardContent>
       </Card>

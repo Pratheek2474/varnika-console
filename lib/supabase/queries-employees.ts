@@ -1,4 +1,5 @@
 import { supabase } from "./client";
+import { toLoginEmail } from "./login";
 import { EmployeeRow } from "./database.types";
 
 function throwIf(error: unknown, action: string): void {
@@ -16,6 +17,7 @@ export async function listEmployees(): Promise<EmployeeRow[]> {
 
 export interface EmployeeInput {
   name: string;
+  username: string;
   phone: string;
   role: string;
   avatar_url: string;
@@ -28,7 +30,7 @@ export async function createEmployee(
 ): Promise<EmployeeRow> {
   const { data, error } = await supabase
     .from("employees")
-    .insert(input)
+    .insert({ ...input, email: toLoginEmail(input.username) })
     .select()
     .single();
   throwIf(error, "Failed to add employee");
@@ -41,7 +43,7 @@ export async function updateEmployee(
 ): Promise<EmployeeRow> {
   const { data, error } = await supabase
     .from("employees")
-    .update(input)
+    .update({ ...input, email: toLoginEmail(input.username) })
     .eq("id", id)
     .select()
     .single();

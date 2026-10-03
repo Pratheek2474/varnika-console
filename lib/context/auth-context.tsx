@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
+import { usernameFromEmail } from "@/lib/supabase/login";
 import type { Session } from "@supabase/supabase-js";
 import { Permission, PRESET_ROLES, RoleId, UserProfile } from "../types/auth";
 
@@ -41,30 +42,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Resolve display name + app role from the employees directory (by email).
-  // Any authenticated user without an employee row defaults to staff —
-  // logins are created by the owner in the Supabase dashboard, so this
-  // cannot be abused for privilege escalation. Promote via app_role.
+  // Resolve display name + app role from the employees directory.
+  // Match by username first (username@varnika.local logins), then by email
+  // for backwards compatibility. Any authenticated user without an employee
+  // row defaults to staff — logins are created by the owner in the Supabase
+  // dashboard, so this cannot be abused for privilege escalation.
   useEffect(() => {
     const email = session?.user?.email;
     if (!email) {
       setEmployee(null);
       return;
     }
+    const username = usernameFromEmail(email);
     setProfileLoading(true);
-    supabase
+    let query = supabase
       .from("employees")
       .select("name,app_role,avatar_url")
-      .eq("email", email)
-      .eq("is_active", true)
-      .maybeSingle()
-      .then(({ data }) => {
-        setEmployee(
-          (data as { name: string; app_role: string; avatar_url: string } | null) ??
-            null
-        );
-        setProfileLoading(false);
-      });
+      .eq("is_active", true);
+    query = username
+      ? query.or(`username.eq.${username},email.eq.${email}`)
+      : query.eq("email", email);
+    query.maybeSingle().then(({ data }) => {
+      setEmployee(
+        (data as { name: string; app_role: string; avatar_url: string } | null) ??
+          null
+      );
+      setProfileLoading(false);
+    });
   }, [session]);
 
   const role: RoleId =

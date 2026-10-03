@@ -208,6 +208,7 @@ export interface TicketWithLinks extends TicketRow {
 export interface EmployeeRow {
   id: string;
   name: string;
+  username: string;
   phone: string;
   role: string;
   is_active: boolean;

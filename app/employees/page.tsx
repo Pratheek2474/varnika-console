@@ -51,6 +51,7 @@ export default function EmployeesPage() {
     (e) =>
       (showInactive || e.is_active) &&
       (e.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (e.username || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
         e.role.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
@@ -171,7 +172,14 @@ export default function EmployeesPage() {
                       <div className="w-8 h-8 rounded-full bg-black text-white text-xs font-medium flex items-center justify-center shrink-0">
                         {emp.name.charAt(0)}
                       </div>
-                      <span className="font-medium text-black">{emp.name}</span>
+                      <div>
+                        <div className="font-medium text-black">{emp.name}</div>
+                        {emp.username && (
+                          <div className="text-[11px] text-neutral-400 font-mono">
+                            @{emp.username}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </td>
                   <td className="py-4 px-6 text-neutral-700">{emp.role}</td>

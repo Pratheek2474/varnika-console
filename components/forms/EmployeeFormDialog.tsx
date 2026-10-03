@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { EmployeeRow } from "@/lib/supabase/database.types";
 import { EmployeeInput } from "@/lib/supabase/queries-employees";
 import { Field, inputCls, selectCls } from "./fields";
+import { normalizeUsername } from "@/lib/supabase/login";
 
 interface Props {
   open: boolean;
@@ -23,6 +24,7 @@ interface Props {
 
 export function EmployeeFormDialog({ open, onOpenChange, initial, onSave }: Props) {
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState("Staff");
   const [customRole, setCustomRole] = useState("");
@@ -34,6 +36,7 @@ export function EmployeeFormDialog({ open, onOpenChange, initial, onSave }: Prop
     if (open) {
       if (initial) {
         setName(initial.name);
+        setUsername(initial.username || "");
         setPhone(initial.phone);
         setRole(initial.role);
         setCustomRole("");
@@ -42,6 +45,7 @@ export function EmployeeFormDialog({ open, onOpenChange, initial, onSave }: Prop
         setAppRole((initial.app_role as "admin" | "staff") || "staff");
       } else {
         setName("");
+        setUsername("");
         setPhone("");
         setRole("Staff");
         setCustomRole("");
@@ -67,6 +71,9 @@ export function EmployeeFormDialog({ open, onOpenChange, initial, onSave }: Prop
         <div className="grid grid-cols-2 gap-3 py-2 text-xs">
           <Field label="Full Name">
             <input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} placeholder="Anand Kumar" />
+          </Field>
+          <Field label="Username (login)">
+            <input className={inputCls} value={username} onChange={(e) => setUsername(e.target.value)} placeholder="anand" autoCapitalize="none" autoCorrect="off" />
           </Field>
           <Field label="Role">
             <select className={selectCls} value={role} onChange={(e) => setRole(e.target.value)}>
@@ -106,10 +113,11 @@ export function EmployeeFormDialog({ open, onOpenChange, initial, onSave }: Prop
           <Button
             variant="default"
             size="sm"
-            disabled={!name.trim() || !finalRole}
+            disabled={!name.trim() || !normalizeUsername(username) || !finalRole}
             onClick={() => {
               onSave({
                 name: name.trim(),
+                username: normalizeUsername(username),
                 phone,
                 role: finalRole,
                 avatar_url: avatarUrl,
