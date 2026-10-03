@@ -208,44 +208,44 @@ function formatFileSize(bytes: number): string {
     : `${(kb / 1024).toFixed(1)} MB`;
 }
 
-/** Upload a photo to the order-photos bucket and link it to the order. */
+/** Upload to R2 via the /api/upload endpoint. */
+async function uploadToR2(
+  file: File,
+  bucket: "catalog" | "customerdata",
+  prefix: string
+): Promise<string> {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("bucket", bucket);
+  form.append("prefix", prefix);
+  const res = await fetch("/api/upload", { method: "POST", body: form });
+  if (!res.ok) throw new Error(await res.text());
+  const { url } = await res.json();
+  return url;
+}
+
+/** Upload a photo to R2 (customerdata/images) and link it to the order. */
 export async function addOrderPhoto(
   orderId: string,
   file: File,
   caption?: string
 ): Promise<OrderPhotoRow> {
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const path = `orders/${orderId}/${Date.now()}_${safeName}`;
-  const { error: upError } = await supabase.storage
-    .from("order-photos")
-    .upload(path, file, { contentType: file.type || undefined });
-  if (upError) throw new Error(`Photo upload failed: ${upError.message}`);
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from("order-photos").getPublicUrl(path);
+  const url = await uploadToR2(file, "customerdata", `orders/${orderId}/images`);
   const { data, error } = await supabase
     .from("order_photos")
-    .insert({ order_id: orderId, url: publicUrl, caption: caption ?? file.name })
+    .insert({ order_id: orderId, url, caption: caption ?? file.name })
     .select()
     .single();
   throwIf(error, "Failed to save photo");
   return data as OrderPhotoRow;
 }
 
-/** Upload a file to the order-documents bucket and link it to the order. */
+/** Upload a file to R2 (customerdata/files) and link it to the order. */
 export async function addOrderDocument(
   orderId: string,
   file: File
 ): Promise<OrderDocumentRow> {
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const path = `orders/${orderId}/${Date.now()}_${safeName}`;
-  const { error: upError } = await supabase.storage
-    .from("order-documents")
-    .upload(path, file, { contentType: file.type || undefined });
-  if (upError) throw new Error(`File upload failed: ${upError.message}`);
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from("order-documents").getPublicUrl(path);
+  const url = await uploadToR2(file, "customerdata", `orders/${orderId}/files`);
   const { data, error } = await supabase
     .from("order_documents")
     .insert({
@@ -253,7 +253,7 @@ export async function addOrderDocument(
       name: file.name,
       kind: "other",
       size_text: formatFileSize(file.size),
-      url: publicUrl,
+      url,
     })
     .select()
     .single();

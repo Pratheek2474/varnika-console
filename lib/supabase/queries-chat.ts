@@ -125,24 +125,32 @@ export async function sendMessage(input: {
   }
 }
 
-/** Upload a chat file to the order-photos bucket, returns public URL info. */
+/** Upload a chat file to R2 (customerdata) and return public URL info. */
 export async function uploadChatFile(
   conversationId: string,
   file: File
 ): Promise<{ url: string; name: string; size: string }> {
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const path = `chat/${conversationId}/${Date.now()}_${safeName}`;
-  const { error } = await supabase.storage
-    .from("order-photos")
-    .upload(path, file, { contentType: file.type || undefined });
-  if (error) throw new Error(`Upload failed: ${error.message}`);
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from("order-photos").getPublicUrl(path);
+  const isImage = file.type.startsWith("image/");
+  const prefix = `chat/${conversationId}/${isImage ? "images" : "files"}`;
+  const url = await uploadToR2(file, "customerdata", prefix);
   const kb = file.size / 1024;
-  const size =
-    kb < 1024 ? `${Math.max(1, Math.round(kb))} KB` : `${(kb / 1024).toFixed(1)} MB`;
-  return { url: publicUrl, name: file.name, size };
+  const size = kb < 1024 ? `${Math.max(1, Math.round(kb))} KB` : `${(kb / 1024).toFixed(1)} MB`;
+  return { url, name: file.name, size };
+}
+
+async function uploadToR2(
+  file: File,
+  bucket: "catalog" | "customerdata",
+  prefix: string
+): Promise<string> {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("bucket", bucket);
+  form.append("prefix", prefix);
+  const res = await fetch("/api/upload", { method: "POST", body: form });
+  if (!res.ok) throw new Error(await res.text());
+  const { url } = await res.json();
+  return url;
 }
 
 /** All chat attachments linked to one order — shown on its page. */

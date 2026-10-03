@@ -19,5 +19,9 @@
   ],
   "images": {
     "binding": "IMAGES"
-  }
+  },
+  "r2_buckets": [
+    { "binding": "CATALOG_BUCKET", "bucket_name": "catalog" },
+    { "binding": "CUSTOMERDATA_BUCKET", "bucket_name": "customerdata" }
+  ]
 }
