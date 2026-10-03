@@ -17,6 +17,7 @@ export function MobileBottomNav() {
   const isMoreActive = resolved.mobileMoreItems.some((item) =>
     item.href === "/" ? pathname === "/" : pathname.startsWith(item.href)
   );
+  const moreHasBadge = resolved.mobileMoreItems.some((item) => item.badge != null);
 
   return (
     <nav
@@ -53,6 +54,11 @@ export function MobileBottomNav() {
                     isActive ? "text-black" : "text-neutral-500"
                   )}
                 />
+                {item.badge != null && (
+                  <span className="absolute -top-2 -right-3 min-w-[18px] h-[18px] px-1 rounded-full bg-black text-white text-[10px] font-mono flex items-center justify-center">
+                    {item.badge}
+                  </span>
+                )}
               </div>
 
               <span className="text-[11px] mt-1 font-sans tracking-tight">
@@ -85,6 +91,9 @@ export function MobileBottomNav() {
                 mobileMoreOpen || isMoreActive ? "text-black" : "text-neutral-500"
               )}
             />
+            {moreHasBadge && (
+              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-black" />
+            )}
           </div>
 
           <span className="text-[11px] mt-1 font-sans tracking-tight">

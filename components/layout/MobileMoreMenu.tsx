@@ -101,8 +101,13 @@ export function MobileMoreMenu() {
                         <div className="flex items-center gap-3.5 min-w-0">
                           <NavIcon name={item.iconName} className="w-4 h-4 text-neutral-600" />
                           <div className="min-w-0">
-                            <div className="text-xs font-medium text-black">
-                              {item.label}
+                            <div className="text-xs font-medium text-black flex items-center gap-2">
+                              <span className="truncate">{item.label}</span>
+                              {item.badge != null && (
+                                <span className="text-[10px] px-1.5 py-0.5 font-mono shrink-0 rounded-xs bg-[#EAE6DD] text-neutral-600">
+                                  {item.badge}
+                                </span>
+                              )}
                             </div>
                             <div className="text-[11px] text-neutral-500 truncate mt-0.5">
                               {item.description}

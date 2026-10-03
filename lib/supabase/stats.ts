@@ -170,3 +170,76 @@ export async function getOpenChatsCount(): Promise<number> {
   throwIf(error, "Failed to load chat stats");
   return count ?? 0;
 }
+
+export interface NavCounts {
+  /** Orders not yet delivered (pipeline). Null when unreadable. */
+  ordersActive: number | null;
+  /** Shipments not yet delivered. Null when unreadable. */
+  inTransit: number | null;
+  /** Month-over-month revenue growth, e.g. "+18%". Null when not computable. */
+  revenueDelta: string | null;
+  /** Open conversation count. Null when unreadable. */
+  chats: number | null;
+}
+
+/**
+ * Live sidebar/mobile badge numbers. Never throws — unreadable sources
+ * come back null so the nav simply shows no badge instead of a wrong one.
+ */
+export async function getNavCounts(): Promise<NavCounts> {
+  const out: NavCounts = {
+    ordersActive: null,
+    inTransit: null,
+    revenueDelta: null,
+    chats: null,
+  };
+  try {
+    const { count, error } = await supabase
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .neq("status", "delivered");
+    if (!error) out.ordersActive = count ?? 0;
+  } catch {
+    // Badge stays hidden
+  }
+  try {
+    const { count, error } = await supabase
+      .from("shipments")
+      .select("id", { count: "exact", head: true })
+      .neq("status", "delivered");
+    if (!error) out.inTransit = count ?? 0;
+  } catch {
+    // Badge stays hidden
+  }
+  try {
+    out.chats = await getOpenChatsCount();
+  } catch {
+    // Badge stays hidden
+  }
+  try {
+    const now = new Date();
+    const thisKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevKey = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, "0")}`;
+    const { data, error } = await supabase
+      .from("transactions")
+      .select("amount,occurred_at")
+      .gte("occurred_at", `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, "0")}-01`);
+    if (!error) {
+      let thisMonth = 0;
+      let lastMonth = 0;
+      for (const t of (data ?? []) as { amount: number; occurred_at: string }[]) {
+        const key = String(t.occurred_at).slice(0, 7);
+        if (key === thisKey) thisMonth += Number(t.amount) || 0;
+        else if (key === prevKey) lastMonth += Number(t.amount) || 0;
+      }
+      if (lastMonth > 0) {
+        const pct = Math.round(((thisMonth - lastMonth) / lastMonth) * 100);
+        out.revenueDelta = `${pct >= 0 ? "+" : ""}${pct}%`;
+      }
+    }
+  } catch {
+    // Badge stays hidden
+  }
+  return out;
+}

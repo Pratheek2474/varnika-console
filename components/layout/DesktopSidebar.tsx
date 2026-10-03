@@ -24,7 +24,10 @@ export function DesktopSidebar() {
     <TooltipProvider delayDuration={150}>
       <aside
         className={cn(
-          "hidden lg:flex flex-col border-r border-[#E6E3DB] bg-[#F7F5F0] text-[#141414] transition-all duration-200 ease-out relative select-none z-30 shrink-0",
+          "hidden lg:flex flex-col border-r border-[#E6E3DB] bg-[#F7F5F0] text-[#141414] transition-all duration-200 ease-out select-none z-30 shrink-0",
+          // Sticky viewport-height column: the nav list scrolls on its own,
+          // the page scrolls separately.
+          "lg:sticky lg:top-14 lg:h-[calc(100dvh-3.5rem)]",
           sidebarCollapsed ? "w-[64px]" : "w-[240px]"
         )}
       >

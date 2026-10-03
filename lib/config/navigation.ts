@@ -63,8 +63,6 @@ export const MASTER_NAVIGATION: NavigationItem[] = [
     mobile: {
       primary: true,
     },
-    badge: "12",
-    badgeVariant: "accent",
     description: "Manage client purchases, Kanban processing board, and order tickets",
     keywords: ["orders", "kanban", "tickets", "fulfillment", "purchases"],
   },
@@ -98,8 +96,6 @@ export const MASTER_NAVIGATION: NavigationItem[] = [
       // Primary when permitted, will take 4th slot if authorized
       primary: true,
     },
-    badge: "+18%",
-    badgeVariant: "subtle",
     description: "Gross revenue breakdown, currency settlement, and sales performance",
     keywords: ["revenue", "money", "sales", "finance", "earnings", "profit"],
   },
@@ -132,7 +128,6 @@ export const MASTER_NAVIGATION: NavigationItem[] = [
     mobile: {
       primary: false,
     },
-    badge: "5 In-Transit",
     description: "Carrier dispatch (DHL, FedEx, BlueDart), parcel tracking, and transit logs",
     keywords: ["delivery", "tracking", "courier", "shipping", "dhl", "fedex", "parcels"],
   },
