@@ -303,7 +303,7 @@ export default function OrdersPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {canWrite && (
               <Button variant="default" size="sm" className="h-8 text-xs" onClick={() => { setEditing(null); setFormOpen(true); }}>
                 <Plus className="w-3.5 h-3.5 mr-1.5" />
