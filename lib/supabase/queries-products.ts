@@ -44,14 +44,28 @@ export async function updateProduct(
   throwIf(error, "Failed to update product");
 }
 
-/** Upload a catalog image to R2 (catalog/images) and return public URL. */
+/** Upload a catalog image to R2 (catalog/images). Falls back to Supabase. */
 export async function uploadProductImage(file: File): Promise<string> {
   const form = new FormData();
   form.append("file", file);
   form.append("bucket", "catalog");
   form.append("prefix", "images");
   const res = await fetch("/api/upload", { method: "POST", body: form });
-  if (!res.ok) throw new Error(await res.text());
-  const { url } = await res.json();
-  return url;
+  const json = await res.json();
+  if (!res.ok) {
+    if (json.fallback) {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const path = `images/${Date.now()}_${safeName}`;
+      const { error: upError } = await supabase.storage
+        .from("order-photos")
+        .upload(path, file, { contentType: file.type || undefined });
+      if (upError) throw new Error(`Supabase fallback upload failed: ${upError.message}`);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("order-photos").getPublicUrl(path);
+      return publicUrl;
+    }
+    throw new Error(json.error || "Upload failed");
+  }
+  return json.url;
 }

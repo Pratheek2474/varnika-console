@@ -18,9 +18,10 @@ export async function POST(request: NextRequest) {
 
     const r2 = bucket === "catalog" ? env.CATALOG_BUCKET : env.CUSTOMERDATA_BUCKET;
     if (!r2) {
+      // No R2 binding (e.g. local preview) — fall back to Supabase storage via client
       return NextResponse.json(
-        { error: "R2 bucket binding not configured" },
-        { status: 500 }
+        { error: "R2 not configured — using Supabase fallback", fallback: true },
+        { status: 503 }
       );
     }
 

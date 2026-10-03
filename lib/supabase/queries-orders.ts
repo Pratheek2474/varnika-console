@@ -208,7 +208,7 @@ function formatFileSize(bytes: number): string {
     : `${(kb / 1024).toFixed(1)} MB`;
 }
 
-/** Upload to R2 via the /api/upload endpoint. */
+/** Upload to R2 via the /api/upload endpoint. Falls back to Supabase if R2 unavailable. */
 async function uploadToR2(
   file: File,
   bucket: "catalog" | "customerdata",
@@ -219,9 +219,25 @@ async function uploadToR2(
   form.append("bucket", bucket);
   form.append("prefix", prefix);
   const res = await fetch("/api/upload", { method: "POST", body: form });
-  if (!res.ok) throw new Error(await res.text());
-  const { url } = await res.json();
-  return url;
+  const json = await res.json();
+  if (!res.ok) {
+    // R2 not configured (local preview) — fall back to Supabase storage
+    if (json.fallback) {
+      const supabaseBucket = bucket === "catalog" ? "order-photos" : "order-photos";
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const path = `${prefix}/${Date.now()}_${safeName}`;
+      const { error: upError } = await supabase.storage
+        .from(supabaseBucket)
+        .upload(path, file, { contentType: file.type || undefined });
+      if (upError) throw new Error(`Supabase fallback upload failed: ${upError.message}`);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from(supabaseBucket).getPublicUrl(path);
+      return publicUrl;
+    }
+    throw new Error(json.error || "Upload failed");
+  }
+  return json.url;
 }
 
 /** Upload a photo to R2 (customerdata/images) and link it to the order. */

@@ -125,7 +125,7 @@ export async function sendMessage(input: {
   }
 }
 
-/** Upload a chat file to R2 (customerdata) and return public URL info. */
+/** Upload a chat file to R2 (customerdata). Falls back to Supabase. */
 export async function uploadChatFile(
   conversationId: string,
   file: File
@@ -148,9 +148,24 @@ async function uploadToR2(
   form.append("bucket", bucket);
   form.append("prefix", prefix);
   const res = await fetch("/api/upload", { method: "POST", body: form });
-  if (!res.ok) throw new Error(await res.text());
-  const { url } = await res.json();
-  return url;
+  const json = await res.json();
+  if (!res.ok) {
+    if (json.fallback) {
+      const supabaseBucket = bucket === "catalog" ? "order-photos" : "order-photos";
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const path = `${prefix}/${Date.now()}_${safeName}`;
+      const { error: upError } = await supabase.storage
+        .from(supabaseBucket)
+        .upload(path, file, { contentType: file.type || undefined });
+      if (upError) throw new Error(`Supabase fallback upload failed: ${upError.message}`);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from(supabaseBucket).getPublicUrl(path);
+      return publicUrl;
+    }
+    throw new Error(json.error || "Upload failed");
+  }
+  return json.url;
 }
 
 /** All chat attachments linked to one order — shown on its page. */
