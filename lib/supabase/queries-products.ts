@@ -51,7 +51,12 @@ export async function uploadProductImage(file: File): Promise<string> {
   form.append("bucket", "catalog");
   form.append("prefix", "images");
   const res = await fetch("/api/upload", { method: "POST", body: form });
-  const json = await res.json();
+  let json: { url?: string; error?: string; fallback?: boolean };
+  try {
+    json = await res.json();
+  } catch {
+    json = { error: `Upload failed (HTTP ${res.status})`, fallback: res.status >= 500 };
+  }
   if (!res.ok) {
     if (json.fallback) {
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");

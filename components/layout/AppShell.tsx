@@ -39,12 +39,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <DesktopSidebar />
 
         {/* Content Region */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <div className="flex-1 flex flex-col min-w-0">
           {/* Mobile Top Header */}
           <MobileHeader />
 
           {/* Page Content Container */}
-          <main className={pathname.startsWith("/chat") ? "flex-1 w-full mx-auto overflow-hidden" : "flex-1 px-5 sm:px-8 lg:px-12 py-8 sm:py-10 max-w-7xl w-full mx-auto"}>
+          <main className={pathname.startsWith("/chat") ? "flex-1 w-full mx-auto overflow-hidden" : "flex-1 px-5 sm:px-8 lg:px-12 py-8 sm:py-10 max-w-7xl w-full mx-auto overflow-y-auto"}>
             {children}
           </main>
         </div>

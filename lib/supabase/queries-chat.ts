@@ -148,7 +148,13 @@ async function uploadToR2(
   form.append("bucket", bucket);
   form.append("prefix", prefix);
   const res = await fetch("/api/upload", { method: "POST", body: form });
-  const json = await res.json();
+  let json: { url?: string; error?: string; fallback?: boolean };
+  try {
+    json = await res.json();
+  } catch {
+    // Response wasn't JSON (e.g. HTML error page from Cloudflare)
+    json = { error: `Upload failed (HTTP ${res.status})`, fallback: res.status >= 500 };
+  }
   if (!res.ok) {
     if (json.fallback) {
       const supabaseBucket = bucket === "catalog" ? "order-photos" : "order-photos";

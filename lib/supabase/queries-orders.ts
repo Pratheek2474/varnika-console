@@ -219,7 +219,12 @@ async function uploadToR2(
   form.append("bucket", bucket);
   form.append("prefix", prefix);
   const res = await fetch("/api/upload", { method: "POST", body: form });
-  const json = await res.json();
+  let json: { url?: string; error?: string; fallback?: boolean };
+  try {
+    json = await res.json();
+  } catch {
+    json = { error: `Upload failed (HTTP ${res.status})`, fallback: res.status >= 500 };
+  }
   if (!res.ok) {
     // R2 not configured (local preview) — fall back to Supabase storage
     if (json.fallback) {
