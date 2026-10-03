@@ -262,7 +262,7 @@ export default function ChatPage() {
 
   return (
     <RouteGuard requiredPermission="chat.read" requiredFeature="chat" moduleName="Customer Chat">
-      <div className="h-[calc(100dvh-3rem)] lg:h-[calc(100dvh-3.5rem)] flex flex-col bg-[#FAF9F6] overflow-hidden">
+      <div className="h-[calc(100dvh-3.5rem-4rem-env(safe-area-inset-bottom))] lg:h-[calc(100dvh-3.5rem)] flex flex-col bg-[#FAF9F6] overflow-hidden">
 
         <div className="flex-1 flex overflow-hidden min-h-0">
           {/* ─── Conversation list ─── */}
