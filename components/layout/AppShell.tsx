@@ -34,17 +34,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <TopNavBar />
 
       {/* Main Workspace Layout — offset by navbar height */}
-      <div className="flex-1 flex w-full relative min-h-0 lg:pt-14">
+      <div className="flex-1 flex w-full relative min-h-0 lg:pt-14 overflow-hidden">
         {/* Desktop Persistent Sidebar */}
         <DesktopSidebar />
 
         {/* Content Region */}
-        <div className="flex-1 flex flex-col min-w-0 pb-24 lg:pb-12">
+        <div className="flex-1 flex flex-col min-w-0 pb-24 lg:pb-12 overflow-hidden">
           {/* Mobile Top Header */}
           <MobileHeader />
 
           {/* Page Content Container */}
-          <main className="flex-1 px-5 sm:px-8 lg:px-12 py-8 sm:py-10 max-w-7xl w-full mx-auto">
+          <main className={pathname.startsWith("/chat") ? "flex-1 w-full mx-auto overflow-hidden" : "flex-1 px-5 sm:px-8 lg:px-12 py-8 sm:py-10 max-w-7xl w-full mx-auto"}>
             {children}
           </main>
         </div>
