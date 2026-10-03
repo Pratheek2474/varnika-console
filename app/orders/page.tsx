@@ -37,7 +37,7 @@ import { OrderFormDialog } from "@/components/forms/OrderFormDialog";
 import { useActor } from "@/lib/context/actor-context";
 import { logActivity } from "@/lib/supabase/activity";
 import { toast } from "sonner";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 
 type Status = OrderWithCustomer["status"];
 
@@ -49,8 +49,64 @@ const PIPELINE_COLUMNS: { key: Status; label: string; dot: string }[] = [
   { key: "delivered", label: "Delivered", dot: "bg-green-600" },
 ];
 
-function flattenColumns(board: Record<string, OrderWithCustomer[]>): OrderWithCustomer[] {
-  return PIPELINE_COLUMNS.flatMap((c) => board[c.key] ?? []);
+function emptyGroups(): Record<Status, OrderWithCustomer[]> {
+  return { new: [], active: [], hold: [], dispatched: [], delivered: [] };
+}
+
+function groupOrders(orders: OrderWithCustomer[]): Record<Status, OrderWithCustomer[]> {
+  const grouped = emptyGroups();
+  for (const order of orders) {
+    if (grouped[order.status]) grouped[order.status].push(order);
+  }
+  return grouped;
+}
+
+// ─── Order card (presentational; drag comes from the wrapping handle) ────────
+
+function OrderCard({
+  order,
+  showRevenue,
+  onClick,
+}: {
+  order: OrderWithCustomer;
+  showRevenue: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <div
+      onClick={onClick}
+      className="p-3 bg-white border border-[#E6E3DB] hover:border-black/40 transition-colors space-y-2 rounded-xs select-none cursor-grab active:cursor-grabbing"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-mono text-xs font-medium text-black">
+          {order.order_number}
+        </span>
+        <Badge variant="secondary" className="text-[10px] capitalize shrink-0">
+          {order.priority}
+        </Badge>
+      </div>
+
+      <div className="text-xs font-medium text-black truncate flex items-center gap-1">
+        <span className="truncate">
+          {order.customers?.customer_name ?? "No customer"}
+        </span>
+        <ExternalLink className="w-3 h-3 text-neutral-400 shrink-0" />
+      </div>
+
+      <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed">
+        {order.item_summary}
+      </p>
+
+      <div className="pt-2 border-t border-[#F0ECE1] flex items-center justify-between text-xs font-mono">
+        <span className="text-neutral-500">{order.delivery_date ?? "—"}</span>
+        {showRevenue && (
+          <span className="text-black font-medium">
+            {formatCurrency(Number(order.total))}
+          </span>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -59,7 +115,7 @@ export default function OrdersPage() {
   const { permissions } = useAuth();
   const { actor } = useActor();
   const [viewMode, setViewMode] = useState<"kanban" | "tickets">("kanban");
-  const [orders, setOrders] = useState<OrderWithCustomer[]>([]);
+  const [columns, setColumns] = useState<Record<Status, OrderWithCustomer[]>>(emptyGroups);
   const [customerOptions, setCustomerOptions] = useState<{ id: string; customer_name: string }[]>([]);
   const [selectedTicket, setSelectedTicket] = useState<OrderWithCustomer | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -72,6 +128,18 @@ export default function OrdersPage() {
   const showRevenue = permissions.includes("revenue.read");
   const canWrite = permissions.includes("orders.write");
 
+  const flatOrders = useMemo(
+    () => PIPELINE_COLUMNS.flatMap((c) => columns[c.key] ?? []),
+    [columns]
+  );
+
+  const filteredOrders = flatOrders.filter(
+    (o) =>
+      o.order_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (o.customers?.customer_name ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      o.item_summary.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   const refresh = async () => {
     try {
       setLoadError(null);
@@ -79,7 +147,7 @@ export default function OrdersPage() {
         listOrders(),
         listCustomers(),
       ]);
-      setOrders(orderRows);
+      setColumns(groupOrders(orderRows));
       setCustomerOptions(
         customerRows.map((c) => ({ id: c.id, customer_name: c.customer_name }))
       );
@@ -94,114 +162,88 @@ export default function OrdersPage() {
     refresh();
   }, []);
 
-  const persistStatus = async (
-    orderId: string,
-    status: Status,
-    fromOverride?: string
-  ): Promise<boolean> => {
-    const current = orders.find((o) => o.id === orderId);
-    if (!current || !current.customer_id) return false;
-    const from = fromOverride ?? current.status;
-    try {
-      await updateOrder(orderId, {
-        customer_id: current.customer_id,
-        item_summary: current.item_summary,
-        total: Number(current.total),
-        status,
-        priority: current.priority,
-        delivery_date: current.delivery_date ?? "",
-        notes: current.notes,
-      });
-      await logActivity({
-        actor,
-        action: "status_changed",
-        entityType: "order",
-        entityId: orderId,
-        entityLabel: current.order_number,
-        detail: `from ${from} to ${status}`,
-        customerId: current.customers?.id ?? current.customer_id,
-        customerName: current.customers?.customer_name ?? "",
-        orderId,
-        orderNumber: current.order_number,
-      });
-      return true;
-    } catch (e) {
-      console.error(e);
-      refresh();
-      return false;
-    }
+  const persistMove = async (orderId: string, to: Status, from: Status) => {
+    const current = flatOrders.find((o) => o.id === orderId);
+    if (!current || !current.customer_id) throw new Error("Order not found");
+    await updateOrder(orderId, {
+      customer_id: current.customer_id,
+      item_summary: current.item_summary,
+      total: Number(current.total),
+      status: to,
+      priority: current.priority,
+      delivery_date: current.delivery_date ?? "",
+      notes: current.notes,
+    });
+    await logActivity({
+      actor,
+      action: "status_changed",
+      entityType: "order",
+      entityId: orderId,
+      entityLabel: current.order_number,
+      detail: `from ${from} to ${to}`,
+      customerId: current.customers?.id ?? current.customer_id,
+      customerName: current.customers?.customer_name ?? "",
+      orderId,
+      orderNumber: current.order_number,
+    });
   };
 
-  const filteredOrders = orders.filter(
-    (o) =>
-      o.order_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (o.customers?.customer_name ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      o.item_summary.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  // Board state grouped by status (always contains every column)
-  const board = useMemo(() => {
-    const grouped: Record<string, OrderWithCustomer[]> = {};
-    for (const col of PIPELINE_COLUMNS) {
-      grouped[col.key] = filteredOrders.filter((o) => o.status === col.key);
-    }
-    return grouped;
-  }, [filteredOrders]);
-
-  const applyBoard = (next: Record<string, OrderWithCustomer[]>) => {
-    setOrders(flattenColumns(next));
-  };
-
+  // Fires once per completed drag (never during hover preview).
   const handleValueCommit = async (
-    next: Record<string, OrderWithCustomer[]>,
+    _next: Record<string, OrderWithCustomer[]>,
     meta: KanbanCommitMeta<OrderWithCustomer>
   ) => {
     if (meta.kind !== "item") return;
-
-    // Find the order whose column changed between preview start and drop
-    const prevContainerOf = new Map<string, string>();
+    const id = String(meta.event.active.id);
+    const to = meta.overContainer as Status;
+    let from: Status | null = null;
     for (const [col, items] of Object.entries(meta.previousValue)) {
-      for (const item of items) prevContainerOf.set(item.id, col);
-    }
-    let movedId: string | null = null;
-    let to: string | null = null;
-    for (const [col, items] of Object.entries(next)) {
-      for (const item of items) {
-        if (prevContainerOf.get(item.id) !== col) {
-          movedId = item.id;
-          to = col;
-          break;
-        }
+      if ((items as OrderWithCustomer[]).some((item) => item.id === id)) {
+        from = col as Status;
+        break;
       }
-      if (movedId) break;
     }
-    if (!movedId || !to) return; // pure reorder — nothing to persist
-
-    const ok = await persistStatus(movedId, to as Status, prevContainersGet(meta, movedId));
-    if (!ok) {
-      setOrders(flattenColumns(meta.previousValue));
+    if (!from || to === from) return;
+    try {
+      await persistMove(id, to, from);
+    } catch (e) {
+      console.error(e);
+      // Roll back via refetch so a newer arrangement is never clobbered.
+      await refresh();
       toast.error("Could not save move. Board restored.");
     }
   };
 
   const advanceOrderStatus = async (orderId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const target = orders.find((o) => o.id === orderId);
+    const target = flatOrders.find((o) => o.id === orderId);
     if (!target) return;
     const currentIndex = PIPELINE_COLUMNS.findIndex((col) => col.key === target.status);
     if (currentIndex < PIPELINE_COLUMNS.length - 1) {
       const next = PIPELINE_COLUMNS[currentIndex + 1].key;
-      setOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, status: next } : o))
-      );
-      await persistStatus(orderId, next);
+      const from = target.status;
+      setColumns((prev) => {
+        const moved = { ...target, status: next };
+        const rest: Record<Status, OrderWithCustomer[]> = emptyGroups();
+        for (const col of PIPELINE_COLUMNS) {
+          rest[col.key] = prev[col.key].filter((o) => o.id !== orderId);
+        }
+        rest[next] = [...rest[next], moved];
+        return rest;
+      });
+      try {
+        await persistMove(orderId, next, from);
+      } catch (err) {
+        console.error(err);
+        await refresh();
+        toast.error("Could not advance order.");
+      }
     }
   };
 
   const handleSaveOrder = async (values: OrderInput) => {
     if (editing) {
       const updated = await updateOrder(editing.id, values);
-      setOrders((prev) => prev.map((o) => (o.id === editing.id ? updated : o)));
       if (selectedTicket?.id === editing.id) setSelectedTicket(updated);
       await logActivity({
         actor,
@@ -217,7 +259,6 @@ export default function OrdersPage() {
       setEditing(null);
     } else {
       const created = await createOrder(values);
-      setOrders((prev) => [created, ...prev]);
       await logActivity({
         actor,
         action: "added",
@@ -230,6 +271,7 @@ export default function OrdersPage() {
         orderNumber: created.order_number,
       });
     }
+    await refresh();
   };
 
   if (loading) return <TableListSkeleton rows={6} cols={5} />;
@@ -308,8 +350,8 @@ export default function OrdersPage() {
         {viewMode === "kanban" ? (
           <div className="overflow-x-auto pb-4">
             <Kanban
-              value={board}
-              onValueChange={applyBoard}
+              value={columns}
+              onValueChange={setColumns}
               getItemValue={(item) => item.id}
               onValueCommit={handleValueCommit}
               restoreOnCancel
@@ -327,7 +369,7 @@ export default function OrdersPage() {
             >
               <KanbanBoard className="flex items-start gap-3">
                 {PIPELINE_COLUMNS.map((column) => {
-                  const columnOrders = board[column.key] ?? [];
+                  const columnOrders = columns[column.key] ?? [];
                   return (
                     <KanbanColumn
                       key={column.key}
@@ -402,7 +444,7 @@ export default function OrdersPage() {
               </KanbanBoard>
               <KanbanOverlay>
                 {({ value }) => {
-                  const ghost = orders.find((o) => o.id === String(value));
+                  const ghost = flatOrders.find((o) => o.id === String(value));
                   if (!ghost) return null;
                   return (
                     <div className="p-3 bg-white border border-black shadow-lg rounded-xs opacity-95 w-[240px] space-y-2 rotate-1">
@@ -579,14 +621,4 @@ export default function OrdersPage() {
       </div>
     </RouteGuard>
   );
-}
-
-function prevContainersGet(
-  meta: KanbanCommitMeta<OrderWithCustomer>,
-  id: string
-): string {
-  for (const [col, items] of Object.entries(meta.previousValue)) {
-    if (items.some((item) => item.id === id)) return col;
-  }
-  return "";
 }
