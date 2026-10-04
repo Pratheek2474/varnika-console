@@ -12,8 +12,13 @@ export function MobileHeader() {
   const [inChat, setInChat] = React.useState(false);
 
   React.useEffect(() => {
-    const hasChatParam = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("c");
-    setInChat(hasChatParam);
+    const onRouteChange = () => {
+      const hasChatId = window.location.pathname.startsWith("/chat/") && window.location.pathname.length > 6;
+      setInChat(hasChatId);
+    };
+    onRouteChange();
+    window.addEventListener("popstate", onRouteChange);
+    return () => window.removeEventListener("popstate", onRouteChange);
   }, []);
 
   if (inChat) return null;
