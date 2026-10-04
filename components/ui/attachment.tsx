@@ -17,18 +17,27 @@ interface AttachmentProps extends React.HTMLAttributes<HTMLDivElement> {
 
 function Attachment({ className, name, type = "other", size, url, status, progress, onRemove, action, ...props }: AttachmentProps) {
   const Icon = type === "photo" ? ImageIcon : FileText;
+  const isPhoto = type === "photo" && url;
   return (
     <div
       className={cn(
         "flex items-center gap-2.5 p-2.5 bg-white border border-[#E6E3DB] rounded-xs max-w-[240px]",
+        isPhoto && "flex-col items-stretch p-0 max-w-[180px] overflow-hidden",
         className
       )}
       {...props}
     >
-      <div className="w-9 h-9 rounded-xs bg-[#F4F2ED] flex items-center justify-center shrink-0">
-        <Icon className="w-4.5 h-4.5 text-neutral-500" />
-      </div>
-      <div className="flex-1 min-w-0">
+      {isPhoto ? (
+        <a href={url} target="_blank" rel="noreferrer" className="block relative aspect-square bg-[#F4F2ED]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={url} alt={name} className="absolute inset-0 w-full h-full object-cover" />
+        </a>
+      ) : (
+        <div className="w-9 h-9 rounded-xs bg-[#F4F2ED] flex items-center justify-center shrink-0">
+          <Icon className="w-4.5 h-4.5 text-neutral-500" />
+        </div>
+      )}
+      <div className={cn("flex-1 min-w-0", isPhoto && "px-2.5 pb-2.5")}>
         <div className="text-xs font-medium text-black truncate">{name}</div>
         {size && <div className="text-[10px] text-neutral-400 font-mono">{size}</div>}
         {status === "uploading" && progress !== undefined && (
@@ -37,7 +46,7 @@ function Attachment({ className, name, type = "other", size, url, status, progre
           </div>
         )}
       </div>
-      {action ?? (
+      {!isPhoto && (action ?? (
         onRemove ? (
           <button onClick={onRemove} className="p-1 text-neutral-400 hover:text-black">
             <X className="w-3.5 h-3.5" />
@@ -47,7 +56,7 @@ function Attachment({ className, name, type = "other", size, url, status, progre
             <Download className="w-3.5 h-3.5" />
           </a>
         ) : null
-      )}
+      ))}
     </div>
   );
 }
