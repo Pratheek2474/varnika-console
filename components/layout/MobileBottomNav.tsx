@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useNavigation } from "@/lib/context/navigation-context";
@@ -11,6 +11,21 @@ import { cn } from "@/lib/utils";
 export function MobileBottomNav() {
   const pathname = usePathname();
   const { resolved, mobileMoreOpen, setMobileMoreOpen } = useNavigation();
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+
+  React.useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => {
+      // Keyboard open if viewport height drops significantly
+      setKeyboardOpen(vv.height < window.innerHeight * 0.7);
+    };
+    vv.addEventListener("resize", onResize);
+    return () => vv.removeEventListener("resize", onResize);
+  }, []);
+
+  // Hide bottom nav when keyboard is open on mobile
+  if (keyboardOpen) return null;
 
   const primaryItems = resolved.mobilePrimary;
 
