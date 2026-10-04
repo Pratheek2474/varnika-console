@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ProductRow } from "@/lib/supabase/database.types";
 import { ProductInput, uploadProductImage } from "@/lib/supabase/queries-products";
-import { Field, inputCls, selectCls } from "./fields";
+import { Field, NumberField, inputCls, selectCls } from "./fields";
 
 export const CATALOG_CATEGORIES = ["Blouse", "Skirt", "Saree"] as const;
 
@@ -35,8 +35,8 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
   const [category, setCategory] = useState("");
   const [customCategory, setCustomCategory] = useState("");
   const [subcategory, setSubcategory] = useState("");
-  const [price, setPrice] = useState(0);
-  const [stock, setStock] = useState(0);
+  const [price, setPrice] = useState("");
+  const [stock, setStock] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
@@ -59,8 +59,8 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
         setCategory(initial.category);
         setCustomCategory("");
         setSubcategory(initial.subcategory || "");
-        setPrice(Number(initial.price));
-        setStock(initial.stock);
+        setPrice(Number(initial.price) ? String(Number(initial.price)) : "");
+        setStock(initial.stock ? String(initial.stock) : "");
         setImageUrl(initial.image_url);
         setImageFile(null);
         setImagePreview(initial.image_url);
@@ -73,8 +73,8 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
         setCategory(categories[0] ?? "Blouse");
         setCustomCategory("");
         setSubcategory("");
-        setPrice(0);
-        setStock(0);
+        setPrice("");
+        setStock("");
         setImageUrl("");
         setImageFile(null);
         setImagePreview("");
@@ -115,8 +115,8 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
       sku: sku.trim(),
       category: finalCategory,
       subcategory: isBlouseCategory(finalCategory) ? subcategory : "",
-      price,
-      stock,
+      price: Number(price) || 0,
+      stock: Math.floor(Number(stock) || 0),
       image_url: finalImageUrl,
       material,
       featured,
@@ -168,10 +168,10 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
             </Field>
           )}
           <Field label="Price (USD)">
-            <input type="number" min="0" className={inputCls} value={price} onChange={(e) => setPrice(Number(e.target.value))} />
+            <NumberField value={price} onChange={setPrice} placeholder="0" />
           </Field>
           <Field label="Stock">
-            <input type="number" min="0" className={inputCls} value={stock} onChange={(e) => setStock(Number(e.target.value))} />
+            <NumberField value={stock} allowDecimals={false} onChange={setStock} placeholder="0" />
           </Field>
           <Field label="Product Image" className="col-span-2">
             <div className="space-y-2">

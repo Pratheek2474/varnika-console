@@ -23,3 +23,37 @@ export const inputCls =
 
 export const selectCls =
   "w-full px-2.5 py-1.5 bg-white border border-[#E6E3DB] text-xs focus:outline-none focus:border-black rounded-xs";
+
+/**
+ * Blank-by-default numeric input: plain text field with a numeric keypad on
+ * mobile, no spinner arrows, backspace always works. Holds a string; parse
+ * with Number() on save (empty string → 0 via `Number(v) || 0`).
+ */
+export function NumberField({
+  value,
+  onChange,
+  placeholder,
+  allowDecimals = true,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  allowDecimals?: boolean;
+}) {
+  return (
+    <input
+      type="text"
+      inputMode={allowDecimals ? "decimal" : "numeric"}
+      autoComplete="off"
+      className={inputCls}
+      value={value}
+      placeholder={placeholder}
+      onChange={(e) => {
+        const v = e.target.value;
+        if (v === "" || (allowDecimals ? /^\d*\.?\d*$/.test(v) : /^\d*$/.test(v))) {
+          onChange(v);
+        }
+      }}
+    />
+  );
+}

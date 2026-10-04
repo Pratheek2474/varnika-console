@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { OrderRow, OrderStatus, PriorityLevel, OrderItemInput } from "@/lib/supabase/database.types";
 import { OrderInput, listOrderItems } from "@/lib/supabase/queries-orders";
-import { Field, inputCls, selectCls } from "./fields";
+import { Field, NumberField, inputCls, selectCls } from "./fields";
 import { Plus, Trash2 } from "lucide-react";
 
 interface Props {
@@ -34,8 +34,8 @@ const STATUSES: { value: OrderStatus; label: string }[] = [
 export function OrderFormDialog({ open, onOpenChange, initial, customers, onSave }: Props) {
   const [customerId, setCustomerId] = useState("");
   const [itemSummary, setItemSummary] = useState("");
-  const [items, setItems] = useState<OrderItemInput[]>([{ name: "", detail: "", qty: 1, price: 0 }]);
-  const [total, setTotal] = useState(0);
+  const [items, setItems] = useState<{ name: string; detail: string; qty: string; price: string }[]>([{ name: "", detail: "", qty: "", price: "" }]);
+  const [total, setTotal] = useState("");
   const [status, setStatus] = useState<OrderStatus>("new");
   const [priority, setPriority] = useState<PriorityLevel>("medium");
   const [deliveryDate, setDeliveryDate] = useState(new Date().toISOString().slice(0, 10));
@@ -46,23 +46,23 @@ export function OrderFormDialog({ open, onOpenChange, initial, customers, onSave
     if (initial) {
       setCustomerId(initial.customer_id ?? customers[0]?.id ?? "");
       setItemSummary(initial.item_summary);
-      setTotal(Number(initial.total));
+      setTotal(Number(initial.total) ? String(Number(initial.total)) : "");
       setStatus(initial.status);
       setPriority(initial.priority);
       setDeliveryDate(initial.delivery_date ?? new Date().toISOString().slice(0, 10));
       setNotes(initial.notes);
-      setItems([{ name: "", detail: "", qty: 1, price: 0 }]);
+      setItems([{ name: "", detail: "", qty: "", price: "" }]);
       listOrderItems(initial.id).then((rows) => {
         if (rows.length > 0) {
-          setItems(rows.map((r) => ({ name: r.name, detail: r.detail, qty: Number(r.qty), price: Number(r.price) })));
-          setTotal(rows.reduce((s, r) => s + Number(r.qty) * Number(r.price), 0));
+          setItems(rows.map((r) => ({ name: r.name, detail: r.detail, qty: String(Number(r.qty)), price: String(Number(r.price)) })));
+          setTotal(String(rows.reduce((s, r) => s + Number(r.qty) * Number(r.price), 0)));
         }
       });
     } else {
       setCustomerId(customers[0]?.id ?? "");
       setItemSummary("");
-      setItems([{ name: "", detail: "", qty: 1, price: 0 }]);
-      setTotal(0);
+      setItems([{ name: "", detail: "", qty: "", price: "" }]);
+      setTotal("");
       setStatus("new");
       setPriority("medium");
       setDeliveryDate(new Date().toISOString().slice(0, 10));
@@ -71,13 +71,15 @@ export function OrderFormDialog({ open, onOpenChange, initial, customers, onSave
   }, [open, initial, customers]);
 
   const itemsTotal = items.reduce((s, i) => s + (Number(i.qty) || 0) * (Number(i.price) || 0), 0);
-  const namedItems = items.filter((i) => i.name.trim());
+  const namedItems: OrderItemInput[] = items
+    .filter((i) => i.name.trim())
+    .map((i) => ({ name: i.name.trim(), detail: i.detail.trim(), qty: Number(i.qty) || 0, price: Number(i.price) || 0 }));
 
-  const updateItem = (idx: number, patch: Partial<OrderItemInput>) => {
+  const updateItem = (idx: number, patch: Partial<{ name: string; detail: string; qty: string; price: string }>) => {
     setItems((prev) => {
       const next = prev.map((it, j) => (j === idx ? { ...it, ...patch } : it));
       const sum = next.reduce((s, i) => s + (Number(i.qty) || 0) * (Number(i.price) || 0), 0);
-      if (next.some((i) => i.name.trim())) setTotal(sum);
+      if (next.some((i) => i.name.trim())) setTotal(sum ? String(sum) : "");
       return next;
     });
   };
@@ -110,7 +112,7 @@ export function OrderFormDialog({ open, onOpenChange, initial, customers, onSave
               <span className="text-[11px] font-medium text-neutral-600">Order Contents</span>
               <button
                 type="button"
-                onClick={() => setItems((prev) => [...prev, { name: "", detail: "", qty: 1, price: 0 }])}
+                onClick={() => setItems((prev) => [...prev, { name: "", detail: "", qty: "", price: "" }])}
                 className="inline-flex items-center gap-1 text-[11px] font-medium text-black hover:underline"
               >
                 <Plus className="w-3 h-3" /> Add item
@@ -143,18 +145,15 @@ export function OrderFormDialog({ open, onOpenChange, initial, customers, onSave
                     onChange={(e) => updateItem(idx, { detail: e.target.value })}
                     placeholder="Details (fabric, size…)"
                   />
-                  <input
-                    type="number" min="0" step="1"
-                    className={inputCls}
+                  <NumberField
                     value={it.qty}
-                    onChange={(e) => updateItem(idx, { qty: Number(e.target.value) })}
+                    allowDecimals={false}
+                    onChange={(v) => updateItem(idx, { qty: v })}
                     placeholder="Qty"
                   />
-                  <input
-                    type="number" min="0" step="0.01"
-                    className={inputCls}
+                  <NumberField
                     value={it.price}
-                    onChange={(e) => updateItem(idx, { price: Number(e.target.value) })}
+                    onChange={(v) => updateItem(idx, { price: v })}
                     placeholder="Price"
                   />
                 </div>
@@ -168,7 +167,7 @@ export function OrderFormDialog({ open, onOpenChange, initial, customers, onSave
           </div>
 
           <Field label="Total (USD)">
-            <input type="number" min="0" className={inputCls} value={total} onChange={(e) => setTotal(Number(e.target.value))} />
+            <NumberField value={total} onChange={setTotal} placeholder="0" />
           </Field>
           <Field label="Delivery Date">
             <input type="date" className={inputCls} value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} />
@@ -199,7 +198,7 @@ export function OrderFormDialog({ open, onOpenChange, initial, customers, onSave
             size="sm"
             disabled={!itemSummary.trim() || !customerId}
             onClick={() => {
-              onSave({ customer_id: customerId, item_summary: itemSummary.trim(), total, status, priority, delivery_date: deliveryDate, notes }, namedItems);
+              onSave({ customer_id: customerId, item_summary: itemSummary.trim(), total: Number(total) || 0, status, priority, delivery_date: deliveryDate, notes }, namedItems);
               onOpenChange(false);
             }}
           >

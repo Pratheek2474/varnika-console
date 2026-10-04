@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { PaymentMode, TransactionWithLinks } from "@/lib/supabase/database.types";
 import { TransactionInput } from "@/lib/supabase/queries-ops";
-import { Field, inputCls, selectCls } from "./fields";
+import { Field, NumberField, inputCls, selectCls } from "./fields";
 
 interface Props {
   open: boolean;
@@ -26,7 +26,7 @@ interface Props {
 export function TransactionFormDialog({ open, onOpenChange, initial, customers, orders, onSave }: Props) {
   const [customerId, setCustomerId] = useState("");
   const [orderId, setOrderId] = useState("");
-  const [amount, setAmount] = useState(0);
+  const [amount, setAmount] = useState("");
   const [paymentMode, setPaymentMode] = useState<PaymentMode>("upi");
   const [paymentRef, setPaymentRef] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
@@ -36,7 +36,7 @@ export function TransactionFormDialog({ open, onOpenChange, initial, customers, 
       if (initial) {
         setCustomerId(initial.customer_id ?? customers[0]?.id ?? "");
         setOrderId(initial.order_id ?? orders[0]?.id ?? "");
-        setAmount(Number(initial.amount));
+        setAmount(Number(initial.amount) ? String(Number(initial.amount)) : "");
         setPaymentMode(initial.payment_mode);
         setPaymentRef(initial.payment_ref);
         setDate(initial.occurred_at.slice(0, 10));
@@ -44,7 +44,7 @@ export function TransactionFormDialog({ open, onOpenChange, initial, customers, 
         setCustomerId(customers[0]?.id ?? "");
         const firstOrder = orders[0];
         setOrderId(firstOrder?.id ?? "");
-        setAmount(Number(firstOrder?.total ?? 0));
+        setAmount(Number(firstOrder?.total) ? String(Number(firstOrder?.total)) : "");
         setPaymentMode("upi");
         setPaymentRef("");
         setDate(new Date().toISOString().slice(0, 10));
@@ -72,7 +72,7 @@ export function TransactionFormDialog({ open, onOpenChange, initial, customers, 
             <select className={selectCls} value={orderId} onChange={(e) => {
               setOrderId(e.target.value);
               const o = orders.find((x) => x.id === e.target.value);
-              if (o) setAmount(Number(o.total));
+              if (o) setAmount(Number(o.total) ? String(Number(o.total)) : "");
             }}>
               {orders.map((o) => (
                 <option key={o.id} value={o.id}>{o.order_number}</option>
@@ -80,7 +80,7 @@ export function TransactionFormDialog({ open, onOpenChange, initial, customers, 
             </select>
           </Field>
           <Field label="Amount (USD)">
-            <input type="number" min="0" className={inputCls} value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
+            <NumberField value={amount} onChange={setAmount} placeholder="0" />
           </Field>
           <Field label="Date">
             <input type="date" className={inputCls} value={date} onChange={(e) => setDate(e.target.value)} />
@@ -106,7 +106,7 @@ export function TransactionFormDialog({ open, onOpenChange, initial, customers, 
             size="sm"
             disabled={!customerId || !orderId || !paymentRef.trim()}
             onClick={() => {
-              onSave({ customer_id: customerId, order_id: orderId, amount, payment_mode: paymentMode, payment_ref: paymentRef.trim(), date });
+              onSave({ customer_id: customerId, order_id: orderId, amount: Number(amount) || 0, payment_mode: paymentMode, payment_ref: paymentRef.trim(), date });
               onOpenChange(false);
             }}
           >

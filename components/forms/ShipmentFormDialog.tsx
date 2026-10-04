@@ -104,7 +104,7 @@ export function ShipmentFormDialog({ open, onOpenChange, initial, orders, onSave
             <input className={inputCls} value={destinationCity} onChange={(e) => setDestinationCity(e.target.value)} placeholder="Mumbai, India" />
           </Field>
           <Field label="Estimated Delivery">
-            <input className={inputCls} value={estimatedDelivery} onChange={(e) => setEstimatedDelivery(e.target.value)} placeholder="Sep 30, 2026" />
+            <input type="date" className={inputCls} value={estimatedDelivery} onChange={(e) => setEstimatedDelivery(e.target.value)} />
           </Field>
           <Field label="Full Address" className="col-span-2">
             <textarea

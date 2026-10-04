@@ -15,7 +15,7 @@ import {
   CustomerInput,
   MeasurementInput,
 } from "@/lib/supabase/queries-customers";
-import { Field, inputCls, selectCls } from "./fields";
+import { Field, NumberField, inputCls, selectCls } from "./fields";
 
 interface Props {
   open: boolean;
@@ -129,13 +129,10 @@ export function CustomerFormDialog({ open, onOpenChange, initial, onSave }: Prop
           </Field>
           {MEASUREMENT_FIELDS.map((f) => (
             <Field key={f.key} label={`${f.label} (in)`}>
-              <input
-                type="number"
-                step="0.25"
-                min="0"
-                className={inputCls}
-                value={measurement[f.key]}
-                onChange={(e) => setM(f.key, Number(e.target.value))}
+              <NumberField
+                value={measurement[f.key] === 0 ? "" : String(measurement[f.key])}
+                onChange={(v) => setM(f.key, Number(v) || 0)}
+                placeholder="—"
               />
             </Field>
           ))}
