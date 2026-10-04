@@ -193,7 +193,7 @@ export default function ChatDetailPage() {
                 ))}
               </div>
             )}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mb-2">
               <input
                 ref={fileRef}
                 type="file"

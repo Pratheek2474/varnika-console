@@ -40,8 +40,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* Content Region */}
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Mobile Top Header */}
-          <MobileHeader />
+          {/* Mobile Top Header — hidden inside a chat thread */}
+          {!pathname.startsWith("/chat/") && <MobileHeader />}
 
           {/* Page Content Container */}
           <main className={pathname.startsWith("/chat") ? "flex-1 w-full mx-auto overflow-hidden" : "flex-1 px-5 pb-24 sm:px-8 lg:px-12 lg:pb-12 py-8 sm:py-10 max-w-7xl w-full mx-auto overflow-y-auto"}>
@@ -50,8 +50,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-      {/* Mobile Navigation Controls */}
-      <MobileBottomNav />
+      {/* Mobile Navigation Controls — hidden inside a chat thread */}
+      {!pathname.startsWith("/chat/") && <MobileBottomNav />}
       <MobileMoreMenu />
 
       {/* Global Command Search (⌘K) */}

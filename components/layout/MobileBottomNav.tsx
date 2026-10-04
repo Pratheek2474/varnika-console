@@ -12,7 +12,6 @@ export function MobileBottomNav() {
   const pathname = usePathname();
   const { resolved, mobileMoreOpen, setMobileMoreOpen } = useNavigation();
   const [keyboardOpen, setKeyboardOpen] = useState(false);
-  const [inChat, setInChat] = useState(false);
 
   React.useEffect(() => {
     // Hide nav when composer/input gets focus (keyboard opens)
@@ -31,18 +30,8 @@ export function MobileBottomNav() {
     };
   }, []);
 
-  React.useEffect(() => {
-    const onRouteChange = () => {
-      const hasChatId = window.location.pathname.startsWith("/chat/") && window.location.pathname.length > 6;
-      setInChat(hasChatId);
-    };
-    onRouteChange();
-    window.addEventListener("popstate", onRouteChange);
-    return () => window.removeEventListener("popstate", onRouteChange);
-  }, [pathname]);
-
-  // Hide when keyboard is open or inside a chat thread
-  if (keyboardOpen || inChat) return null;
+  // Hide only when keyboard is open
+  if (keyboardOpen) return null;
 
   const primaryItems = resolved.mobilePrimary;
 
