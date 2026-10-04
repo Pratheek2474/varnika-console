@@ -14,14 +14,20 @@ export function MobileBottomNav() {
   const [keyboardOpen, setKeyboardOpen] = useState(false);
 
   React.useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) return;
-    const onResize = () => {
-      // Keyboard open if viewport height drops significantly
-      setKeyboardOpen(vv.height < window.innerHeight * 0.7);
+    // Hide nav when composer/input gets focus (keyboard opens)
+    const onFocusIn = (e: FocusEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") {
+        setKeyboardOpen(true);
+      }
     };
-    vv.addEventListener("resize", onResize);
-    return () => vv.removeEventListener("resize", onResize);
+    const onFocusOut = () => setKeyboardOpen(false);
+    document.addEventListener("focusin", onFocusIn);
+    document.addEventListener("focusout", onFocusOut);
+    return () => {
+      document.removeEventListener("focusin", onFocusIn);
+      document.removeEventListener("focusout", onFocusOut);
+    };
   }, []);
 
   // Hide bottom nav when keyboard is open on mobile
