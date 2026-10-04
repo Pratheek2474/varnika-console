@@ -123,6 +123,17 @@ export default function ChatPage() {
   };
 
   useEffect(() => {
+    if (initialSelectedId) setSelectedId(initialSelectedId);
+  }, [initialSelectedId]);
+
+  // Sync selection when URL param changes
+  useEffect(() => {
+    if (initialSelectedId !== undefined) {
+      setSelectedId(initialSelectedId);
+    }
+  }, [initialSelectedId]);
+
+  useEffect(() => {
     (async () => {
       try {
         const [convs, custs, ords] = await Promise.all([
@@ -141,7 +152,6 @@ export default function ChatPage() {
             customer_id: o.customer_id,
           })),
         );
-        if (initialSelectedId) setSelectedId(initialSelectedId);
       } catch (e) {
         setLoadError((e as Error).message);
       } finally {
