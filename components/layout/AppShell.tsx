@@ -44,7 +44,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <MobileHeader />
 
           {/* Page Content Container */}
-          <main className={pathname.startsWith("/chat") ? "flex-1 w-full mx-auto overflow-hidden" : "flex-1 px-5 sm:px-8 lg:px-12 py-8 sm:py-10 max-w-7xl w-full mx-auto overflow-y-auto"}>
+          <main className={pathname.startsWith("/chat") ? "flex-1 w-full mx-auto overflow-hidden" : "flex-1 px-5 pb-24 sm:px-8 lg:px-12 lg:pb-12 py-8 sm:py-10 max-w-7xl w-full mx-auto overflow-y-auto"}>
             {children}
           </main>
         </div>
