@@ -139,6 +139,24 @@ export interface OrderDocumentRow {
   uploaded_at: string;
 }
 
+export interface OrderItemRow {
+  id: string;
+  order_id: string;
+  position: number;
+  name: string;
+  detail: string;
+  qty: number;
+  price: number;
+  created_at: string;
+}
+
+export interface OrderItemInput {
+  name: string;
+  detail: string;
+  qty: number;
+  price: number;
+}
+
 export interface TransactionRow {
   id: string;
   serial_number: number;

@@ -1,6 +1,8 @@
 import { supabase } from "./client";
 import {
   OrderDocumentRow,
+  OrderItemInput,
+  OrderItemRow,
   OrderPhotoRow,
   OrderStatus,
   OrderWithCustomer,
@@ -40,6 +42,7 @@ export interface OrderDetail {
   timeline: TimelineEventRow[];
   photos: OrderPhotoRow[];
   documents: OrderDocumentRow[];
+  items: OrderItemRow[];
 }
 
 export async function listOrdersByCustomer(
@@ -65,7 +68,7 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
   }
   if (!order) return null;
 
-  const [{ data: timeline }, { data: photos }, { data: documents }] =
+  const [{ data: timeline }, { data: photos }, { data: documents }, { data: items }] =
     await Promise.all([
       supabase
         .from("order_timeline_events")
@@ -74,6 +77,7 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
         .order("position"),
       supabase.from("order_photos").select("*").eq("order_id", id),
       supabase.from("order_documents").select("*").eq("order_id", id),
+      supabase.from("order_items").select("*").eq("order_id", id).order("position"),
     ]);
 
   return {
@@ -81,7 +85,55 @@ export async function getOrderDetail(id: string): Promise<OrderDetail | null> {
     timeline: (timeline ?? []) as TimelineEventRow[],
     photos: (photos ?? []) as OrderPhotoRow[],
     documents: (documents ?? []) as OrderDocumentRow[],
+    items: ((items ?? []) as OrderItemRow[]).sort((a, b) => a.position - b.position),
   };
+}
+
+/** Line items for the order form (tolerates missing 0010 table). */
+export async function listOrderItems(orderId: string): Promise<OrderItemRow[]> {
+  try {
+    const { data, error } = await supabase
+      .from("order_items")
+      .select("*")
+      .eq("order_id", orderId)
+      .order("position");
+    if (error) return [];
+    return ((data ?? []) as OrderItemRow[]).sort((a, b) => a.position - b.position);
+  } catch {
+    return [];
+  }
+}
+
+/** Replace all line items for an order. Throws if 0010 isn't applied. */
+export async function saveOrderItems(
+  orderId: string,
+  items: OrderItemInput[]
+): Promise<void> {
+  const { error: delError } = await supabase
+    .from("order_items")
+    .delete()
+    .eq("order_id", orderId);
+  if (delError) {
+    if (/order_items/i.test(delError.message)) {
+      throw new Error(
+        "Order contents need migration 0010_order_items.sql run in Supabase first."
+      );
+    }
+    throw new Error(`Failed to save items: ${delError.message}`);
+  }
+  const rows = items
+    .filter((i) => i.name.trim())
+    .map((i, idx) => ({
+      order_id: orderId,
+      position: idx,
+      name: i.name.trim(),
+      detail: i.detail.trim(),
+      qty: Number(i.qty) || 0,
+      price: Number(i.price) || 0,
+    }));
+  if (rows.length === 0) return;
+  const { error } = await supabase.from("order_items").insert(rows);
+  throwIf(error, "Failed to save items");
 }
 
 async function nextOrderNumber(): Promise<string> {

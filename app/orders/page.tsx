@@ -10,10 +10,12 @@ import {
   isOrderPaid,
   listOrders,
   orderManualPaid,
+  saveOrderItems,
   setOrderPaid,
   updateOrder,
 } from "@/lib/supabase/queries-orders";
 import { OrderInput } from "@/lib/supabase/queries-orders";
+import { OrderItemInput } from "@/lib/supabase/database.types";
 import { listCustomers } from "@/lib/supabase/queries-customers";
 import { listTransactions } from "@/lib/supabase/queries-ops";
 import { Badge } from "@/components/ui/badge";
@@ -228,37 +230,44 @@ export default function OrdersPage() {
     }
   };
 
-  const handleSaveOrder = async (values: OrderInput) => {
-    if (editing) {
-      const updated = await updateOrder(editing.id, values);
-      if (selectedTicket?.id === editing.id) setSelectedTicket(updated);
-      await logActivity({
-        actor,
-        action: "edited",
-        entityType: "order",
-        entityId: editing.id,
-        entityLabel: updated.order_number,
-        customerId: updated.customers?.id ?? updated.customer_id,
-        customerName: updated.customers?.customer_name ?? "",
-        orderId: editing.id,
-        orderNumber: updated.order_number,
-      });
-      setEditing(null);
-    } else {
-      const created = await createOrder(values);
-      await logActivity({
-        actor,
-        action: "added",
-        entityType: "order",
-        entityId: created.id,
-        entityLabel: created.order_number,
-        customerId: created.customers?.id ?? created.customer_id,
-        customerName: created.customers?.customer_name ?? "",
-        orderId: created.id,
-        orderNumber: created.order_number,
-      });
+  const handleSaveOrder = async (values: OrderInput, items: OrderItemInput[]) => {
+    try {
+      if (editing) {
+        const updated = await updateOrder(editing.id, values);
+        await saveOrderItems(editing.id, items);
+        if (selectedTicket?.id === editing.id) setSelectedTicket(updated);
+        await logActivity({
+          actor,
+          action: "edited",
+          entityType: "order",
+          entityId: editing.id,
+          entityLabel: updated.order_number,
+          customerId: updated.customers?.id ?? updated.customer_id,
+          customerName: updated.customers?.customer_name ?? "",
+          orderId: editing.id,
+          orderNumber: updated.order_number,
+        });
+        setEditing(null);
+      } else {
+        const created = await createOrder(values);
+        await saveOrderItems(created.id, items);
+        await logActivity({
+          actor,
+          action: "added",
+          entityType: "order",
+          entityId: created.id,
+          entityLabel: created.order_number,
+          customerId: created.customers?.id ?? created.customer_id,
+          customerName: created.customers?.customer_name ?? "",
+          orderId: created.id,
+          orderNumber: created.order_number,
+        });
+      }
+      await refresh();
+    } catch (e) {
+      console.error(e);
+      toast.error((e as Error).message);
     }
-    await refresh();
   };
 
   const togglePaid = async (order: OrderWithCustomer) => {
@@ -364,7 +373,7 @@ export default function OrdersPage() {
 
         {/* Kanban Board — internal scroll so the page itself never grows */}
         {viewMode === "kanban" ? (
-          <div className="overflow-auto pb-4 max-h-[calc(100dvh-300px)] min-h-[320px] rounded-xs">
+          <div className="pb-4 lg:overflow-auto lg:max-h-[calc(100dvh-300px)] lg:min-h-[320px] rounded-xs">
             <Kanban
               value={columns}
               onValueChange={setColumns}
@@ -383,14 +392,14 @@ export default function OrdersPage() {
                 draggingRef.current = false;
               }}
             >
-              <KanbanBoard className="flex items-start gap-3 min-w-max pb-1">
+              <KanbanBoard className="flex flex-col lg:flex-row lg:items-start gap-3 lg:min-w-max pb-1">
                 {PIPELINE_COLUMNS.map((column) => {
                   const columnOrders = columns[column.key] ?? [];
                   return (
                     <KanbanColumn
                       key={column.key}
                       value={column.key}
-                      className="w-[240px] shrink-0 bg-[#FAF9F6] border border-[#E6E3DB] rounded-xs"
+                      className="w-full lg:w-[240px] shrink-0 bg-[#FAF9F6] border border-[#E6E3DB] rounded-xs"
                     >
                       <div className="px-3 py-2.5 border-b border-[#E6E3DB] flex items-center justify-between bg-white rounded-t-xs">
                         <span className="text-xs font-medium text-black flex items-center gap-1.5">
@@ -404,7 +413,7 @@ export default function OrdersPage() {
 
                       <KanbanColumnContent
                         value={column.key}
-                        className="p-2 gap-2 overflow-y-auto max-h-[52vh] lg:max-h-[calc(100dvh-430px)]"
+                        className="p-2 gap-2 lg:overflow-y-auto lg:max-h-[calc(100dvh-430px)]"
                       >
                         {columnOrders.length === 0 ? (
                           <div className="h-24 flex items-center justify-center text-xs text-neutral-400 italic border border-dashed border-[#E6E3DB] rounded-xs bg-white">
