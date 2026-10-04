@@ -9,6 +9,14 @@ import { Search } from "lucide-react";
 export function MobileHeader() {
   const { role } = useAuth();
   const { setCommandPaletteOpen } = useNavigation();
+  const [inChat, setInChat] = React.useState(false);
+
+  React.useEffect(() => {
+    const hasChatParam = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("c");
+    setInChat(hasChatParam);
+  }, []);
+
+  if (inChat) return null;
 
   return (
     <header className="lg:hidden h-14 bg-[#FAF9F6]/95 backdrop-blur-md border-b border-[#E6E3DB] px-4 flex items-center justify-between sticky top-0 z-30 select-none">
