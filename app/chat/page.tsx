@@ -141,7 +141,7 @@ export default function ChatPage() {
             customer_id: o.customer_id,
           })),
         );
-        if (!initialSelectedId && convs.length > 0) setSelectedId(convs[0].id);
+        if (initialSelectedId) setSelectedId(initialSelectedId);
       } catch (e) {
         setLoadError((e as Error).message);
       } finally {

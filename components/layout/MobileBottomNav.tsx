@@ -30,8 +30,8 @@ export function MobileBottomNav() {
     };
   }, []);
 
-  // Hide on chat page (chat has its own composer) and when keyboard is open
-  if (keyboardOpen || pathname.startsWith("/chat")) return null;
+  // Hide bottom nav only when keyboard is open on mobile
+  if (keyboardOpen) return null;
 
   const primaryItems = resolved.mobilePrimary;
 
