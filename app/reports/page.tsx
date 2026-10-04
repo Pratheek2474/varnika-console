@@ -5,7 +5,7 @@ import { RouteGuard } from "@/components/layout/RouteGuard";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CardsListSkeleton } from "@/components/ui/page-skeletons";
-import { Download } from "lucide-react";
+import { Download, FileSpreadsheet } from "lucide-react";
 import { downloadCsv } from "@/lib/utils";
 import { supabase } from "@/lib/supabase/client";
 
@@ -18,6 +18,7 @@ function one<T>(v: T | T[] | null | undefined): T | null {
 export default function ReportsPage() {
   const [counts, setCounts] = useState({ txns: 0, customers: 0, orders: 0 });
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -126,6 +127,73 @@ export default function ReportsPage() {
     );
   };
 
+  const exportFullExcel = async () => {
+    setExporting(true);
+    try {
+      const XLSX = await import("xlsx");
+      const wb = XLSX.utils.book_new();
+      const stamp = new Date().toISOString().slice(0, 10);
+
+      const addSheet = (name: string, rows: Record<string, unknown>[]) => {
+        const ws = XLSX.utils.json_to_sheet(rows);
+        ws["!cols"] = Object.keys(rows[0] ?? {}).map(() => ({ wch: 22 }));
+        XLSX.utils.book_append_sheet(wb, ws, name);
+      };
+
+      const [ordersRes, itemsRes, custRes, prodRes, txnRes, shipRes, actRes] = await Promise.all([
+        supabase.from("orders").select("order_number,item_summary,total,currency,status,priority,is_paid,delivery_date,notes,created_at,customers(customer_name)").order("created_at", { ascending: false }),
+        supabase.from("order_items").select("order_id,name,detail,qty,price,orders(order_number)").order("position"),
+        supabase.from("customers").select("customer_name,email,phone,orders_count,total_spent,special_notes").order("customer_name"),
+        supabase.from("products").select("sku,name,category,subcategory,price,stock,material,featured").order("name"),
+        supabase.from("transactions").select("serial_number,occurred_at,payment_ref,payment_mode,amount,currency,customers(customer_name),orders(order_number)").order("occurred_at", { ascending: false }),
+        supabase.from("shipments").select("tracking_number,carrier,recipient_name,destination_city,address,status,estimated_delivery,orders(order_number)").order("created_at", { ascending: false }),
+        supabase.from("activity_log").select("created_at,actor_name,action,entity_type,entity_label,customer_name,order_number,detail").order("created_at", { ascending: false }).limit(2000),
+      ]);
+
+      type Join = { customer_name?: string; order_number?: string } | { customer_name?: string; order_number?: string }[] | null;
+      const custName = (j: Join) => (Array.isArray(j) ? j[0]?.customer_name : j?.customer_name) ?? "";
+      const ordNo = (j: Join) => (Array.isArray(j) ? j[0]?.order_number : j?.order_number) ?? "";
+
+      addSheet("Orders", (((ordersRes.data ?? []) as unknown as Record<string, unknown>[]) as Record<string, never>[]).map((o) => ({
+        Order: o.order_number, Customer: custName(o.customers as Join), Item: o.item_summary,
+        Total: Number(o.total), Currency: o.currency, Status: o.status, Paid: o.is_paid ? "Yes" : "No",
+        Priority: o.priority, Delivery: o.delivery_date ?? "", Notes: o.notes ?? "",
+        Placed: String(o.created_at).slice(0, 10),
+      })));
+      addSheet("Order Items", (((itemsRes.data ?? []) as unknown as Record<string, never>[]) ?? []).map((i) => ({
+        Order: ordNo(i.orders as Join), Item: i.name, Detail: i.detail ?? "",
+        Qty: Number(i.qty), Price: Number(i.price),
+      })));
+      addSheet("Customers", (((custRes.data ?? []) as unknown as Record<string, never>[]) ?? []).map((c) => ({
+        Name: c.customer_name, Email: c.email ?? "", Phone: c.phone ?? "",
+        Orders: Number(c.orders_count ?? 0), "Total Spent": Number(c.total_spent ?? 0), Notes: c.special_notes ?? "",
+      })));
+      addSheet("Products", (((prodRes.data ?? []) as unknown as Record<string, never>[]) ?? []).map((p) => ({
+        SKU: p.sku, Name: p.name, Category: p.category, Subtype: p.subcategory ?? "",
+        Price: Number(p.price), Stock: p.stock, Material: p.material ?? "", Featured: p.featured ? "Yes" : "No",
+      })));
+      addSheet("Transactions", (((txnRes.data ?? []) as unknown as Record<string, never>[]) ?? []).map((t) => ({
+        Serial: t.serial_number, Date: String(t.occurred_at).slice(0, 10), Customer: custName(t.customers as Join),
+        Order: ordNo(t.orders as Join), Mode: t.payment_mode, Ref: t.payment_ref,
+        Amount: Number(t.amount), Currency: t.currency,
+      })));
+      addSheet("Shipments", (((shipRes.data ?? []) as unknown as Record<string, never>[]) ?? []).map((s) => ({
+        Tracking: s.tracking_number, Carrier: s.carrier ?? "", Recipient: s.recipient_name ?? "",
+        Order: ordNo(s.orders as Join), City: s.destination_city ?? "", Address: s.address ?? "",
+        Status: s.status, "Est. Delivery": s.estimated_delivery ?? "",
+      })));
+      addSheet("Activity", (((actRes.data ?? []) as unknown as Record<string, never>[]) ?? []).map((a) => ({
+        When: String(a.created_at).replace("T", " ").slice(0, 16), Actor: a.actor_name, Action: a.action,
+        Type: a.entity_type, Label: a.entity_label, Customer: a.customer_name ?? "",
+        Order: a.order_number ?? "", Detail: a.detail ?? "",
+      })));
+
+      XLSX.writeFile(wb, `varnika-full-backup-${stamp}.xlsx`);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (loading) return <CardsListSkeleton cards={3} />;
 
   return (
@@ -183,6 +251,19 @@ export default function ReportsPage() {
             <Button variant="outline" size="sm" className="w-full text-xs gap-1.5" onClick={exportOrders}>
               <Download className="w-3.5 h-3.5" />
               <span>Download CSV</span>
+            </Button>
+          </Card>
+
+          <Card className="p-5 space-y-3 md:col-span-3 border-black">
+            <h3 className="text-sm font-semibold text-black">
+              Full Backup (Excel)
+            </h3>
+            <p className="text-xs text-neutral-500">
+              Everything in one spreadsheet — Orders, Items, Customers, Products, Transactions, Shipments, Activity (latest 2,000).
+            </p>
+            <Button variant="default" size="sm" className="w-full text-xs gap-1.5" disabled={exporting} onClick={exportFullExcel}>
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              <span>{exporting ? "Building…" : "Download Full Excel"}</span>
             </Button>
           </Card>
         </div>
