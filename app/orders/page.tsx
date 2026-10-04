@@ -117,6 +117,7 @@ export default function OrdersPage() {
     isOrderPaid(o, paidSums[o.id] ?? 0);
 
   const refresh = async () => {
+    setLoading(true);
     try {
       setLoadError(null);
       const [orderRows, customerRows] = await Promise.all([

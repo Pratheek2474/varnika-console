@@ -197,6 +197,7 @@ export default function UpdatesPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const refresh = async () => {
+    setLoading(true);
     try {
       setLoadError(null);
       setItems(await listActivity(150));

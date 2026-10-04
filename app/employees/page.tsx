@@ -33,6 +33,7 @@ export default function EmployeesPage() {
   const canWrite = permissions.includes("employees.write");
 
   const refresh = async () => {
+    setLoading(true);
     try {
       setLoadError(null);
       setEmployees(await listEmployees());

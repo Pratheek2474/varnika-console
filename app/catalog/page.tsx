@@ -36,6 +36,7 @@ export default function CatalogPage() {
   const canWrite = permissions.includes("catalog.write");
 
   const refresh = async () => {
+    setLoading(true);
     try {
       setLoadError(null);
       setProducts(await listProducts());

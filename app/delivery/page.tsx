@@ -35,6 +35,7 @@ export default function DeliveryPage() {
   const canWrite = permissions.includes("delivery.write");
 
   const refresh = async () => {
+    setLoading(true);
     try {
       setLoadError(null);
       const [rows, ords] = await Promise.all([listShipments(), listOrders()]);

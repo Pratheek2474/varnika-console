@@ -33,6 +33,7 @@ export default function CustomersPage() {
   const canWrite = permissions.includes("customers.write");
 
   const refresh = async () => {
+    setLoading(true);
     try {
       setLoadError(null);
       const rows = await listCustomers();

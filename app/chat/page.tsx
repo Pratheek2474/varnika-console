@@ -108,7 +108,7 @@ export default function ChatPage() {
   const [msgCustomerId, setMsgCustomerId] = useState("");
   const [msgBody, setMsgBody] = useState("");
   const [msgSending, setMsgSending] = useState(false);
-  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [pendingFiles, setPendingFiles] = useState<{ file: File; previewUrl?: string }[]>([]);
   const [sending, setSending] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -184,7 +184,7 @@ export default function ChatPage() {
     setSending(true);
     try {
       const uploaded = [];
-      for (const file of pendingFiles) {
+      for (const { file } of pendingFiles) {
         const up = await uploadChatFile(selectedId, file);
         uploaded.push({
           order_id: effectiveOrderId,
@@ -503,14 +503,15 @@ export default function ChatPage() {
                   <div className="px-3 py-2.5 border-t border-[#E6E3DB] bg-white shrink-0">
                     {pendingFiles.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mb-2">
-                        {pendingFiles.map((f, i) => (
+                        {pendingFiles.map(({ file, previewUrl }, i) => (
                           <Attachment
                             key={i}
-                            name={f.name}
+                            name={file.name}
                             type={
-                              f.type.startsWith("image/") ? "photo" : "file"
+                              file.type.startsWith("image/") ? "photo" : "file"
                             }
-                            size={`${Math.max(1, Math.round(f.size / 1024))} KB`}
+                            size={`${Math.max(1, Math.round(file.size / 1024))} KB`}
+                            url={previewUrl}
                             onRemove={() =>
                               setPendingFiles((p) =>
                                 p.filter((_, j) => j !== i),
@@ -527,13 +528,16 @@ export default function ChatPage() {
                         multiple
                         accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"
                         className="hidden"
-                        key={pendingFiles.length}
                         onChange={(e) => {
-                          if (e.target.files)
-                            setPendingFiles((p) => [
-                              ...p,
-                              ...Array.from(e.target.files!),
-                            ]);
+                          if (e.target.files && e.target.files.length > 0) {
+                            const files = Array.from(e.target.files).map((file) => ({
+                              file,
+                              previewUrl: file.type.startsWith("image/")
+                                ? URL.createObjectURL(file)
+                                : undefined,
+                            }));
+                            setPendingFiles((p) => [...p, ...files]);
+                          }
                           e.target.value = "";
                         }}
                       />

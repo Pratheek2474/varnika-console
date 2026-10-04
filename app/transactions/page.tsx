@@ -46,6 +46,7 @@ export default function TransactionsPage() {
   const canWrite = permissions.includes("transactions.write");
 
   const refresh = async () => {
+    setLoading(true);
     try {
       setLoadError(null);
       const [txns, custs, ords] = await Promise.all([
