@@ -9,8 +9,8 @@ export const metadata: Metadata = {
     "Production-quality, responsive business administration console with independent RBAC, Feature Flags, and responsive dual-tier navigation architecture.",
   manifest: "/manifest.json",
   icons: {
-    icon: "/icon-192.png?v=2",
-    apple: "/icon-192.png?v=2",
+    icon: "/icon-192.png?v=3",
+    apple: "/icon-192.png?v=3",
   },
 };
 
