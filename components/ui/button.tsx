@@ -4,20 +4,20 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-black disabled:pointer-events-none disabled:opacity-40 select-none rounded-xs",
+  "inline-flex items-center justify-center whitespace-nowrap text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-wine disabled:pointer-events-none disabled:opacity-40 select-none rounded-xs",
   {
     variants: {
       variant: {
         default:
-          "bg-black text-white hover:bg-neutral-800 active:scale-[0.99]",
+          "bg-wine text-white hover:bg-wine-2 active:scale-[0.99]",
         secondary:
-          "bg-[#F4F2ED] text-black hover:bg-[#EAE6DD] active:scale-[0.99]",
+          "bg-sunk text-black hover:bg-line active:scale-[0.99]",
         outline:
-          "border border-[#E6E3DB] bg-white text-black hover:bg-[#FAF9F6] active:scale-[0.99]",
+          "border border-line bg-white text-black hover:bg-ivory active:scale-[0.99]",
         ghost:
-          "text-neutral-600 hover:text-black hover:bg-[#F4F2ED]",
+          "text-neutral-600 hover:text-black hover:bg-sunk",
         destructive:
-          "bg-neutral-900 text-white hover:bg-black",
+          "bg-wine-2 text-white hover:bg-wine",
         link:
           "text-black underline-offset-4 hover:underline",
       },

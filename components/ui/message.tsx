@@ -30,8 +30,8 @@ const Message = React.forwardRef<HTMLDivElement, MessageProps>(
             className={cn(
               "rounded-xl px-3.5 py-2 text-sm leading-relaxed",
               variant === "own"
-                ? "bg-black text-white rounded-br-sm"
-                : "bg-[#F4F2ED] text-black rounded-bl-sm border border-[#E6E3DB]"
+                ? "bg-wine text-white rounded-br-sm"
+                : "bg-sunk text-black rounded-bl-sm border border-line"
             )}
           >
             {children}

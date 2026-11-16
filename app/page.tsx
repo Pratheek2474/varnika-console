@@ -77,9 +77,9 @@ export default function HomePage() {
     <RouteGuard requiredPermission="home.read" moduleName="Home">
     <div className="space-y-8 animate-in fade-in duration-200">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-[#E6E3DB]">
+      <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-line">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-semibold text-black tracking-tight">
+          <h1 className="text-2xl sm:text-3xl">
             Overview
           </h1>
           <p className="text-xs text-neutral-500 mt-1">
@@ -191,19 +191,19 @@ export default function HomePage() {
                 >
                   <defs>
                     <linearGradient id="monochromeGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#141414" stopOpacity={0.25} />
-                      <stop offset="95%" stopColor="#141414" stopOpacity={0.0} />
+                      <stop offset="5%" stopColor="#4A0E19" stopOpacity={0.25} />
+                      <stop offset="95%" stopColor="#4A0E19" stopOpacity={0.0} />
                     </linearGradient>
                   </defs>
                   <XAxis
                     dataKey="month"
                     tickLine={false}
-                    stroke="#A3A3A3"
+                    stroke="#A39B93"
                     fontSize={11}
                   />
                   <YAxis
                     tickLine={false}
-                    stroke="#A3A3A3"
+                    stroke="#A39B93"
                     fontSize={11}
                     tickFormatter={(val) => `$${val / 1000}k`}
                   />
@@ -212,7 +212,7 @@ export default function HomePage() {
                       if (active && payload && payload.length) {
                         const data = payload[0].payload;
                         return (
-                          <div className="bg-black text-white p-2.5 text-xs shadow-md border border-neutral-800 rounded-xs">
+                          <div className="bg-ink text-white p-2.5 text-xs shadow-md border border-ink rounded-xs">
                             <div className="font-medium">{data.month}</div>
                             <div className="mt-1 font-mono">
                               Revenue: {formatCurrency(data.revenue)}
@@ -229,7 +229,7 @@ export default function HomePage() {
                   <Area
                     type="monotone"
                     dataKey="revenue"
-                    stroke="#141414"
+                    stroke="#4A0E19"
                     strokeWidth={2}
                     fillOpacity={1}
                     fill="url(#monochromeGrad)"
@@ -267,7 +267,7 @@ export default function HomePage() {
               {/* Desktop Table */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-[#FAF9F6] text-neutral-400 font-medium text-[11px] border-b border-[#E6E3DB]">
+                  <thead className="bg-ivory text-neutral-400 font-medium text-[11px] border-b border-line">
                     <tr>
                       <th className="py-3.5 px-6">Order ID</th>
                       <th className="py-3.5 px-6">Client</th>
@@ -277,9 +277,9 @@ export default function HomePage() {
                       <th className="py-3.5 px-6 text-right">Delivery</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#F0ECE1]">
+                  <tbody className="divide-y divide-line-soft">
                     {recentOrders.map((ord) => (
-                      <tr key={ord.id} className="hover:bg-[#FAF9F6] transition-colors">
+                      <tr key={ord.id} className="hover:bg-ivory transition-colors">
                         <td className="py-4 px-6 font-mono text-black">
                           {ord.order_number}
                         </td>
@@ -290,7 +290,7 @@ export default function HomePage() {
                           {ord.item_summary}
                         </td>
                         <td className="py-4 px-6">
-                          <span className="capitalize px-2 py-0.5 text-[11px] border border-[#E6E3DB] bg-[#F7F5F0] text-neutral-800 rounded-xs">
+                          <span className="capitalize px-2 py-0.5 text-[11px] border border-line bg-ivory text-neutral-800 rounded-xs">
                             {ord.status.replace(/_/g, " ")}
                           </span>
                         </td>
@@ -309,9 +309,9 @@ export default function HomePage() {
               </div>
 
               {/* Mobile Card List (Ergonomic cards) */}
-              <div className="md:hidden divide-y divide-[#F0ECE1]">
+              <div className="md:hidden divide-y divide-line-soft">
                 {recentOrders.map((ord) => (
-                  <div key={ord.id} className="p-4 space-y-2 active:bg-[#FAF9F6]">
+                  <div key={ord.id} className="p-4 space-y-2 active:bg-ivory">
                     <div className="flex items-center justify-between">
                       <span className="font-mono text-xs font-semibold text-black">
                         {ord.order_number}

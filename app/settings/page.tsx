@@ -21,9 +21,9 @@ export default function SettingsPage() {
     >
       <div className="space-y-8 animate-in fade-in duration-200">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-[#E6E3DB]">
+        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-line">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-black tracking-tight">
+            <h1 className="text-2xl sm:text-3xl">
               Settings & Access
             </h1>
             <p className="text-xs text-neutral-500 mt-1">
@@ -36,7 +36,7 @@ export default function SettingsPage() {
         <Card className="p-6">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4 min-w-0">
-              <div className="w-12 h-12 rounded-full bg-black text-white text-base font-medium flex items-center justify-center shrink-0">
+              <div className="w-12 h-12 rounded-full bg-wine text-white text-base font-medium flex items-center justify-center shrink-0">
                 {(user?.name ?? "?").charAt(0)}
               </div>
               <div className="min-w-0">
@@ -76,8 +76,8 @@ export default function SettingsPage() {
                     key={rId}
                     className={`p-4 border transition-colors rounded-xs flex items-start justify-between gap-3 ${
                       isSelected
-                        ? "border-black bg-white ring-1 ring-black"
-                        : "border-[#E6E3DB] bg-[#FAF9F6]"
+                        ? "border-wine bg-white ring-1 ring-wine"
+                        : "border-line bg-ivory"
                     }`}
                   >
                     <div>
@@ -91,11 +91,11 @@ export default function SettingsPage() {
 
                     <div className="shrink-0 mt-0.5">
                       {isSelected ? (
-                        <div className="w-4 h-4 bg-black text-white flex items-center justify-center text-[10px] rounded-xs">
+                        <div className="w-4 h-4 bg-wine text-white flex items-center justify-center text-[10px] rounded-xs">
                           <Check className="w-3 h-3" />
                         </div>
                       ) : (
-                        <div className="w-4 h-4 border border-[#E6E3DB] rounded-xs" />
+                        <div className="w-4 h-4 border border-line rounded-xs" />
                       )}
                     </div>
                   </div>
@@ -154,8 +154,8 @@ export default function SettingsPage() {
                     onClick={() => toggleFeatureFlag(mod.key)}
                     className={`p-4 border cursor-pointer transition-colors rounded-xs flex items-start justify-between gap-3 ${
                       isEnabled
-                        ? "border-black bg-white"
-                        : "border-[#E6E3DB] bg-[#FAF9F6] opacity-60"
+                        ? "border-wine bg-white"
+                        : "border-line bg-ivory opacity-60"
                     }`}
                   >
                     <div>
@@ -168,7 +168,7 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="shrink-0 mt-0.5">
-                      <span className="text-[10px] font-mono px-2 py-0.5 border border-[#E6E3DB] rounded-xs">
+                      <span className="text-[10px] font-mono px-2 py-0.5 border border-line rounded-xs">
                         {isEnabled ? "ACTIVE" : "OFF"}
                       </span>
                     </div>

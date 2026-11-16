@@ -1,0 +1,762 @@
+<title>Varnika Store Blueprint</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gilda+Display&family=Poppins:wght@400;500;600&display=swap">
+<style>
+/* Layout: phone prototype pinned left, the system documented on the right; stacks on phones.
+   Direction: the Varnika brand (wine monogram, gold-brown bird) on a calm ivory ground, styled like
+   Hyderabad's new Telugu cafes: one elegant serif and a clean sans.
+   A deliberate single light theme: the brand ground #F1F0EA is fixed. */
+:root{
+  color-scheme:light;
+  --bg:#F1F0EA; --card:#FAF9F5; --sunk:#E9E7DF; --line:#DFDBCF;
+  --fg:#241B18; --muted:#6E6560; --faint:#A39B93;
+  --wine:#4A0E19; --wine-2:#6B1A28; --on-wine:#F6F1EA;
+  --gold:#8C5A2B; --gold-soft:#EFE3D3;
+  --sage:#3E5F4F; --sage-soft:#DDE5DD;
+  --blush:#E8CFD2; --blush-soft:#F4E7E8;
+  --warn:#9A5418; --warn-soft:#F2E2CF;
+  --shadow:0 1px 2px rgba(36,27,24,.05),0 8px 24px rgba(36,27,24,.07);
+  --shadow-lg:0 18px 50px rgba(36,27,24,.18);
+  --f-display:"Gilda Display","Cormorant Garamond",Georgia,serif;
+  --f-body:"Poppins",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r-sm:8px; --r-md:12px; --r-lg:18px; --r-pill:999px; --r-arch:999px 999px 10px 10px;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+button:focus-visible{outline:2px solid var(--wine);outline-offset:2px;border-radius:6px}
+img{display:block}
+.tab{font-variant-numeric:tabular-nums}
+h1,h2,h3,h4{font-family:var(--f-display);font-weight:400;text-wrap:balance;margin:0;letter-spacing:.005em}
+
+/* ---------- page shell ---------- */
+.page{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:36px 72px;display:grid;grid-template-columns:400px minmax(0,1fr);gap:64px;align-items:start}
+.stage{position:sticky;top:24px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.stage-note{font-size:12px;color:var(--muted);text-align:center;max-width:340px;margin:0}
+.doc{min-width:0;display:flex;flex-direction:column;gap:60px}
+@media (max-width:960px){.page{grid-template-columns:minmax(0,1fr);gap:44px}.stage{position:static}}
+
+.masthead{display:flex;flex-direction:column;gap:14px;position:relative}
+.masthead .logo{width:min(240px,60%);height:auto}
+.masthead h1{font-size:clamp(32px,4.6vw,48px);line-height:1.1;color:var(--wine)}
+.masthead .vine{position:absolute;right:0;top:-10px;width:150px;opacity:.85;pointer-events:none}
+@media (max-width:620px){.masthead .vine{width:96px;top:-20px}}
+.eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;color:var(--gold)}
+.lede{font-size:15.5px;color:var(--muted);max-width:62ch;margin:0}
+
+section.block{display:flex;flex-direction:column;gap:18px}
+.block-head{display:flex;flex-direction:column;gap:4px}
+.block-head h2{font-size:30px;color:var(--wine);display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.block-head p{margin:4px 0 0;color:var(--muted);max-width:64ch}
+
+.pillars{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.pillar{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:18px;display:flex;flex-direction:column;gap:8px}
+.pillar h3{font-size:20px;color:var(--wine)}
+.pillar p{margin:0;font-size:13px;color:var(--muted)}
+.pillar .steal{font-size:12px;border-top:1px solid var(--line);padding-top:8px;margin-top:auto}
+.pillar .steal b{color:var(--gold);font-weight:600}
+
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.sw{border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;background:var(--card)}
+.sw i{display:block;height:68px}
+.sw div{padding:10px 12px;display:flex;flex-direction:column;gap:1px}
+.sw b{font-size:13px;font-weight:600}
+.sw span{font-size:11.5px;color:var(--muted)}
+.sw code{font-size:11px;color:var(--faint)}
+
+.type-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;background:var(--card)}
+.type-row{display:grid;grid-template-columns:150px minmax(0,1fr);gap:16px;padding:14px 16px;align-items:baseline;border-top:1px solid var(--line)}
+.type-row:first-child{border-top:0}
+.type-row code{font-size:11px;color:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+@media (max-width:520px){.type-row{grid-template-columns:minmax(0,1fr);gap:4px}}
+
+.assets{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.asset{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;display:flex;flex-direction:column}
+.asset .pv{height:130px;display:grid;place-items:center;padding:12px}
+.asset .pv img{max-height:100%;max-width:100%;object-fit:contain}
+.asset .meta{padding:10px 12px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:1px}
+.asset b{font-size:13px;font-weight:600}
+.asset span{font-size:11.5px;color:var(--muted)}
+
+.scales{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.scale{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:16px;display:flex;flex-direction:column;gap:10px}
+.scale h3{font-size:18px;color:var(--wine)}
+.space-row{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
+.space-row i{display:block;height:8px;background:var(--gold);border-radius:2px}
+.radius-row{display:flex;gap:10px;flex-wrap:wrap}
+.radius-row div{width:52px;height:60px;background:var(--bg);border:1.5px solid var(--wine);display:grid;place-items:center;font-size:10.5px;color:var(--muted)}
+.motion-row{display:flex;justify-content:space-between;font-size:12px;gap:8px;border-top:1px solid var(--line);padding-top:8px}
+.motion-row:first-of-type{border-top:0;padding-top:0}
+.motion-row span{color:var(--muted)}
+
+.anatomy{display:grid;grid-template-columns:200px minmax(0,1fr);gap:28px;align-items:start}
+@media (max-width:620px){.anatomy{grid-template-columns:minmax(0,1fr)}}
+.wire{border:1.5px solid var(--wine);border-radius:26px;padding:10px;display:flex;flex-direction:column;gap:6px;height:380px;background:var(--card);max-width:200px}
+.wire div{border-radius:8px;font-size:10px;font-weight:600;display:grid;place-items:center;text-align:center;padding:4px}
+.wire .w1{height:40px;background:var(--sunk)}
+.wire .w0{height:34px;background:var(--sage-soft);color:var(--sage)}
+.wire .w2{flex:1;background:var(--bg);color:var(--muted)}
+.wire .w3{height:32px;background:var(--wine);color:var(--on-wine)}
+.wire .w4{height:44px;background:var(--sunk)}
+.anatomy ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:12px}
+.anatomy li b{display:block;font-size:14px;font-weight:600}
+.anatomy li span{color:var(--muted);font-size:13px}
+
+.gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.spec{border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;display:flex;flex-direction:column;background:var(--card)}
+.spec .demo{background:var(--bg);padding:18px;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;min-height:116px}
+.spec .meta{padding:12px 14px;display:flex;flex-direction:column;gap:2px;border-top:1px solid var(--line)}
+.spec .meta b{font-size:13px;font-weight:600}
+.spec .meta span{font-size:12px;color:var(--muted)}
+
+pre.tree{margin:0;background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:16px;font-size:12px;line-height:1.6;overflow-x:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--fg)}
+.plan{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.plan-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:16px;display:flex;flex-direction:column;gap:8px}
+.plan-card h3{font-size:18px;color:var(--wine)}
+.plan-card ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.open-q{background:var(--gold-soft);border-radius:var(--r-md);padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+.open-q b{font-weight:600}
+.open-q ul{margin:0;padding-left:18px;font-size:13px;display:flex;flex-direction:column;gap:5px}
+
+/* ================= APP ================= */
+.phone{width:375px;max-width:100%;height:780px;border-radius:46px;background:#241B18;padding:9px;box-shadow:var(--shadow-lg)}
+@media (max-width:420px){.phone{height:740px;border-radius:38px;padding:7px}}
+.screen{position:relative;height:100%;border-radius:38px;overflow:hidden;background:var(--bg);isolation:isolate}
+@media (max-width:420px){.screen{border-radius:32px}}
+.statusbar{height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-size:12.5px;font-weight:600;position:relative;z-index:3}
+.statusbar .notch{position:absolute;left:50%;top:9px;transform:translateX(-50%);width:96px;height:26px;border-radius:20px;background:#241B18}
+.view{position:absolute;inset:94px 0 0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;padding-bottom:150px}
+.view::-webkit-scrollbar{display:none}
+.view.has-action{padding-bottom:180px}
+
+.ico{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ico.sm{width:16px;height:16px}
+.icon-btn{width:40px;height:40px;border-radius:var(--r-pill);display:grid;place-items:center;flex:none;position:relative;color:var(--fg)}
+.icon-btn.solid{background:var(--card);border:1px solid var(--line)}
+.icon-btn .count{position:absolute;top:3px;right:2px;min-width:17px;height:17px;border-radius:9px;background:var(--wine);color:var(--on-wine);font-size:10px;font-weight:600;display:grid;place-items:center;padding:0 4px}
+
+/* top bar: logo only */
+/* global header: same on every screen */
+.apphead{position:absolute;top:40px;left:0;right:0;height:54px;z-index:5;background:var(--bg);display:flex;align-items:center;gap:2px;padding:0 8px 0 14px}
+.apphead .brand{display:flex;align-items:center;gap:2px;flex:1;min-width:0}
+.apphead .brand img{height:24px;width:auto;margin-left:4px}
+.apphead .brand .icon-btn{margin-left:-8px}
+
+.search{position:sticky;top:0;z-index:4;background:var(--bg);padding:8px 16px 12px}
+.search-box{display:flex;align-items:center;gap:10px;height:44px;border-radius:var(--r-pill);background:var(--card);border:1px solid var(--line);padding:0 16px;color:var(--faint);font-size:13px}
+
+/* current order update */
+.update{margin:4px 16px 0;border-radius:var(--r-md);background:var(--sage);color:var(--on-wine);display:flex;align-items:center;gap:12px;padding:14px;text-align:left;width:calc(100% - 32px)}
+.update .thumb{width:44px;height:56px;border-radius:var(--r-arch);flex:none}
+.update div{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.update small{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;opacity:.75;display:flex;align-items:center;gap:6px}
+.update small i{width:7px;height:7px;border-radius:50%;background:#B9D6B5;animation:pulse 1.8s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(185,214,181,.7)}70%{box-shadow:0 0 0 7px rgba(185,214,181,0)}100%{box-shadow:0 0 0 0 rgba(185,214,181,0)}}
+.update b{font-weight:500;font-size:13.5px;line-height:1.3}
+.update .bar{height:3px;border-radius:2px;background:rgba(255,255,255,.2);margin-top:6px;overflow:hidden}
+.update .bar span{display:block;height:100%;width:62%;background:#F6F1EA;border-radius:2px}
+
+/* section header */
+.sec{display:flex;align-items:flex-end;justify-content:space-between;padding:26px 16px 12px;gap:12px}
+.sec h3{font-size:22px;color:var(--wine);line-height:1.1}
+.sec button{font-size:12.5px;font-weight:500;color:var(--wine);border-bottom:1px solid currentColor;line-height:1.2}
+
+/* product card */
+.hscroll{display:flex;gap:14px;overflow-x:auto;padding:0 16px 4px;scrollbar-width:none;scroll-snap-type:x mandatory;scroll-padding-inline:16px}
+.hscroll::-webkit-scrollbar{display:none}
+.hscroll .pwrap{width:148px;flex:none;scroll-snap-align:start}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px 12px;padding:0 16px}
+.pwrap{position:relative;min-width:0}
+.pcard{display:flex;flex-direction:column;gap:8px;text-align:left;width:100%}
+.pcard .img{position:relative;aspect-ratio:3/4;border-radius:var(--r-arch);overflow:hidden;max-width:100%}
+.pcard .badge{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);white-space:nowrap}
+.pcard .name{font-size:13px;font-weight:500;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;padding-right:24px}
+.pcard .mat{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.fav{position:absolute;right:-6px;width:32px;height:32px;display:grid;place-items:center;color:var(--faint)}
+.fav.on{color:var(--wine)}
+.fav.on .ico{fill:var(--wine)}
+.price{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.price b{font-size:14px;font-weight:600}
+.price s{font-size:11.5px;color:var(--faint)}
+.price .off{font-size:11.5px;font-weight:500;color:var(--sage)}
+
+.badge{display:inline-flex;align-items:center;font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;border-radius:var(--r-pill);padding:3px 9px;background:var(--card);color:var(--fg)}
+.badge.gold{background:var(--card);color:var(--gold)}
+.badge.low{background:var(--warn-soft);color:var(--warn)}
+.badge.soft{background:var(--sunk);color:var(--muted)}
+
+/* occasion tiles */
+.occ{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 16px}
+.occ button{display:flex;flex-direction:column;gap:8px;text-align:left}
+.occ .img{aspect-ratio:1/1.05;border-radius:var(--r-arch);max-width:100%}
+.occ b{font-family:var(--f-display);font-weight:400;font-size:17px;color:var(--fg);line-height:1.1}
+
+.made{margin:30px 16px 0;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding-top:22px;border-top:1px solid var(--line)}
+.made img{width:170px;height:auto}
+.made p{margin:0;font-family:var(--f-display);font-size:18px;color:var(--wine)}
+.made span{font-size:11.5px;color:var(--muted)}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:46px;padding:0 20px;border-radius:var(--r-sm);font-weight:500;font-size:14px;transition:transform .12s}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--wine);color:var(--on-wine)}
+.btn.outline{border:1px solid var(--wine);color:var(--wine)}
+.btn.ghost{background:var(--card);border:1px solid var(--line)}
+.btn.sm{height:36px;font-size:13px;padding:0 14px}
+.btn.block{width:100%}
+
+.chips{display:flex;gap:8px;overflow-x:auto;padding:0 16px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;height:34px;padding:0 15px;border-radius:var(--r-pill);border:1px solid var(--line);font-size:12.5px;font-weight:500;display:inline-flex;align-items:center;gap:6px;background:var(--card);color:var(--fg)}
+.chip.on{background:var(--wine);border-color:var(--wine);color:var(--on-wine)}
+
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--wine);border-radius:var(--r-sm);height:34px;color:var(--wine);font-weight:600;background:var(--card)}
+.stepper button{width:32px;height:100%;display:grid;place-items:center;color:var(--wine);font-size:16px}
+.stepper span{min-width:18px;text-align:center;font-size:13px}
+
+/* floating bag bar */
+.cartbar{position:absolute;left:12px;right:12px;bottom:84px;z-index:6;height:54px;border-radius:var(--r-md);background:var(--wine);color:var(--on-wine);display:flex;align-items:center;justify-content:space-between;padding:0 16px;box-shadow:var(--shadow-lg);transition:transform .28s cubic-bezier(.2,.8,.2,1),opacity .2s}
+.cartbar.hide{transform:translateY(140%);opacity:0;pointer-events:none}
+.cartbar div{display:flex;flex-direction:column;line-height:1.25;text-align:left}
+.cartbar small{font-size:11px;opacity:.75}
+.cartbar b{font-size:15px;font-weight:600}
+.cartbar span{font-weight:500;display:flex;align-items:center;gap:4px;font-size:13.5px}
+
+/* bottom nav */
+.nav{position:absolute;left:0;right:0;bottom:0;z-index:7;height:76px;background:var(--card);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding:8px 6px 18px}
+.nav button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10.5px;font-weight:500;color:var(--faint)}
+.nav button.on{color:var(--wine)}
+.nav button.on .ico{stroke-width:2}
+
+/* sticky action bar: sits directly above the bottom nav on product and bag screens */
+.action{position:absolute;left:0;right:0;bottom:76px;z-index:6;background:var(--card);border-top:1px solid var(--line);box-shadow:0 -8px 20px rgba(36,27,24,.06);padding:10px 16px;display:flex;align-items:center;gap:12px}
+.action[hidden]{display:none}
+.action .sum{display:flex;flex-direction:column;line-height:1.25;flex:none}
+.action .sum small{font-size:11px;color:var(--muted)}
+.action .sum b{font-size:18px;font-weight:600}
+.action .btn{flex:1}
+
+/* product page */
+.pdp-img{position:relative;margin:4px 16px 0;aspect-ratio:4/5;border-radius:180px 180px var(--r-lg) var(--r-lg);max-width:calc(100% - 32px)}
+.pdp-bar{display:flex;justify-content:space-between;padding:4px 10px 0}
+.dots{position:absolute;bottom:14px;left:0;right:0;display:flex;justify-content:center;gap:5px}
+.dots i{width:6px;height:6px;border-radius:3px;background:rgba(255,255,255,.55)}
+.dots i.on{width:18px;background:#fff}
+.sheet{padding:18px 16px 0;display:flex;flex-direction:column;gap:14px}
+.sheet h2{font-size:26px;line-height:1.15;color:var(--wine)}
+.sheet .sub{font-size:12.5px;color:var(--muted);margin-top:-10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rating{display:inline-flex;align-items:center;gap:3px;color:var(--sage);font-weight:600}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--sunk);border-radius:var(--r-md);padding:4px;gap:4px}
+.seg button{border-radius:9px;padding:9px 10px;display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left}
+.seg button b{font-size:13px;font-weight:500}
+.seg button span{font-size:11px;color:var(--muted)}
+.seg button.on{background:var(--card);box-shadow:var(--shadow)}
+.seg button.on b{color:var(--wine)}
+.measure{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:12px}
+.measure .ico{color:var(--gold)}
+.measure div{flex:1;min-width:0;display:flex;flex-direction:column}
+.measure b{font-size:13px;font-weight:500}
+.measure span{font-size:11.5px;color:var(--muted)}
+.measure button{font-size:12px;font-weight:500;color:var(--wine);border-bottom:1px solid currentColor}
+.sizes{display:flex;gap:8px;flex-wrap:wrap}
+.sizes button{min-width:46px;height:40px;border-radius:var(--r-sm);border:1px solid var(--line);background:var(--card);font-weight:500;font-size:13px}
+.sizes button.on{border-color:var(--wine);background:var(--wine);color:var(--on-wine)}
+.trust{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:14px 0}
+.trust div{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;font-size:10.5px;color:var(--muted);line-height:1.3}
+.trust .ico{color:var(--gold)}
+.kv{display:grid;grid-template-columns:100px 1fr;gap:6px 10px;font-size:12.5px}
+.kv span{color:var(--muted)}
+.kv b{font-weight:500}
+
+/* bag */
+.pagehead{display:flex;align-items:center;gap:8px;padding:4px 12px 10px}
+.pagehead h2{font-size:24px;color:var(--wine);flex:1;line-height:1.1}
+.pagehead.pad{padding-left:18px}
+.line{display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.line .thumb{width:72px;height:94px;border-radius:var(--r-arch);flex:none}
+.line .info{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.line .info b{font-size:13.5px;font-weight:500;line-height:1.3}
+.line .info span{font-size:11.5px;color:var(--muted)}
+.line .row{display:flex;align-items:center;justify-content:space-between;margin-top:auto;gap:8px}
+.coupon{margin:14px 16px 0;display:flex;align-items:center;gap:10px;padding:13px 14px;border-radius:var(--r-md);border:1px dashed var(--gold);color:var(--gold);font-weight:500;font-size:13px;width:calc(100% - 32px);text-align:left;background:var(--card)}
+.coupon span{flex:1}
+.bill{margin:14px 16px 0;border:1px solid var(--line);background:var(--card);border-radius:var(--r-md);padding:16px;display:flex;flex-direction:column;gap:8px;font-size:13px}
+.bill h4{font-size:19px;color:var(--wine);margin-bottom:2px}
+.bill div{display:flex;justify-content:space-between}
+.bill div span:first-child{color:var(--muted)}
+.bill .save{color:var(--sage);font-weight:500}
+.bill .total{border-top:1px solid var(--line);padding-top:10px;font-weight:600;font-size:15px}
+.bill .total span:first-child{color:var(--fg)}
+.empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:30px 32px}
+.empty img{width:220px;height:auto}
+.empty h3{font-size:22px;color:var(--wine)}
+.empty p{margin:0;color:var(--muted);font-size:13px}
+
+/* tracker */
+.track-head{margin:4px 16px 0;border-radius:var(--r-lg);background:var(--sage);color:var(--on-wine);padding:18px;display:flex;gap:14px;align-items:center}
+.track-head .thumb{width:62px;height:80px;border-radius:var(--r-arch);flex:none}
+.track-head div{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.track-head small{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;opacity:.75}
+.track-head h2{font-size:24px;line-height:1.1}
+.track-head p{margin:0;font-size:12px;opacity:.8}
+.progress{height:3px;border-radius:2px;background:rgba(255,255,255,.2);overflow:hidden;margin-top:6px}
+.progress i{display:block;height:100%;background:#F6F1EA;border-radius:2px}
+.steps{list-style:none;margin:20px 16px 0;padding:0;display:flex;flex-direction:column}
+.steps li{display:grid;grid-template-columns:26px 1fr;gap:12px;position:relative;padding-bottom:18px}
+.steps li::before{content:"";position:absolute;left:12px;top:24px;bottom:2px;width:1.5px;background:var(--line)}
+.steps li:last-child::before{display:none}
+.steps li.done::before{background:var(--sage)}
+.steps .node{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--card);border:1px solid var(--line);color:var(--faint);position:relative;z-index:1}
+.steps li.done .node{background:var(--sage);border-color:var(--sage);color:#fff}
+.steps li.now .node{background:var(--wine);border-color:var(--wine);color:var(--on-wine);box-shadow:0 0 0 5px var(--blush-soft)}
+.steps b{font-size:13.5px;font-weight:500;display:block}
+.steps span{font-size:12px;color:var(--muted)}
+.steps li.next b{color:var(--muted);font-weight:400}
+.tailor{margin:4px 16px 0;display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);padding:12px}
+.avatar{width:42px;height:42px;border-radius:50%;background:var(--blush-soft);color:var(--wine);display:grid;place-items:center;font-family:var(--f-display);font-size:18px;flex:none}
+.tailor div{flex:1;min-width:0;display:flex;flex-direction:column}
+.tailor b{font-size:13.5px;font-weight:500}
+.tailor span{font-size:11.5px;color:var(--muted)}
+
+/* stitch, orders, account */
+.stitch-intro{margin:0 16px;display:flex;gap:14px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:var(--r-lg);padding:14px}
+.stitch-intro img{width:58px;height:auto;flex:none}
+.stitch-intro div{display:flex;flex-direction:column;gap:2px}
+.stitch-intro h3{font-size:20px;color:var(--wine);line-height:1.15}
+.stitch-intro span{font-size:12px;color:var(--muted)}
+.option{display:flex;gap:12px;align-items:center;margin:0 16px 10px;padding:14px;border-radius:var(--r-md);border:1px solid var(--line);background:var(--card);text-align:left;width:calc(100% - 32px)}
+.option.on{border-color:var(--wine);box-shadow:inset 0 0 0 1px var(--wine)}
+.option .oi{width:42px;height:42px;border-radius:50%;background:var(--bg);display:grid;place-items:center;flex:none;color:var(--gold)}
+.option div{flex:1;min-width:0;display:flex;flex-direction:column}
+.option b{font-size:13.5px;font-weight:500}
+.option span{font-size:12px;color:var(--muted)}
+.option > .ico{color:var(--wine)}
+.ordrow{display:flex;gap:12px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);width:100%;text-align:left}
+.ordrow .thumb{width:52px;height:68px;border-radius:var(--r-arch);flex:none}
+.ordrow div{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ordrow b{font-size:13.5px;font-weight:500}
+.ordrow span{font-size:12px;color:var(--muted)}
+.pill{font-size:10.5px;font-weight:500;border-radius:var(--r-pill);padding:2px 9px;align-self:flex-start}
+.pill.live{background:var(--sage-soft);color:var(--sage)}
+.pill.hold{background:var(--warn-soft);color:var(--warn)}
+.pill.done{background:var(--sunk);color:var(--muted)}
+
+.toast{position:absolute;left:50%;bottom:150px;transform:translate(-50%,20px);background:var(--fg);color:var(--bg);font-size:12.5px;padding:10px 16px;border-radius:var(--r-pill);opacity:0;transition:all .25s;z-index:9;white-space:nowrap;pointer-events:none}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.screen-in{animation:slidein .26s cubic-bezier(.2,.8,.2,1)}
+@keyframes slidein{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.jump{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.jump button{font-size:11.5px;font-weight:500;padding:6px 11px;border-radius:var(--r-pill);border:1px solid var(--line);color:var(--muted);background:var(--card)}
+.jump button.on{color:var(--on-wine);border-color:var(--wine);background:var(--wine)}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></symbol>
+  <symbol id="i-needle" viewBox="0 0 24 24"><path d="M19 3 6 16l-2 5 5-2L22 6z"/><path d="M16.5 5.5 18.5 7.5"/><path d="M4 21c3-3 2-7 6-8"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-bag" viewBox="0 0 24 24"><path d="M5 8h14l-1 13H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.5-9-9a4.8 4.8 0 0 1 9-3 4.8 4.8 0 0 1 9 3c-2 4.5-9 9-9 9z"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5 8 12l7 7"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></symbol>
+  <symbol id="i-tape" viewBox="0 0 24 24"><circle cx="9" cy="12" r="6"/><circle cx="9" cy="12" r="2"/><path d="M15 12h6v5h-6M17 14v3M19 14v3"/></symbol>
+  <symbol id="i-scissors" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.9-4M4 4v4h4M4 13a8 8 0 0 0 14.9 4M20 20v-4h-4"/></symbol>
+  <symbol id="i-cash" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M3 12V3h9l9 9-9 9z"/><circle cx="7.5" cy="7.5" r="1.5"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></symbol>
+  <symbol id="i-wa" viewBox="0 0 24 24"><path d="M3.5 20.5l1.3-4.2A8.5 8.5 0 1 1 8 19.4z"/><path d="M9 8.5c0 3 3.5 6.5 6.5 6.5l1-1.5-2-1-1 .8a5 5 0 0 1-2.8-2.8l.8-1-1-2z" stroke-width="1.3"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></symbol>
+</svg>
+
+<div class="page">
+  <aside class="stage">
+    <div class="phone">
+      <div class="screen">
+        <div class="statusbar"><span class="tab">9:41</span><i class="notch"></i><span>5G ▮▮▮</span></div>
+        <header class="apphead" id="apphead"></header>
+        <div class="view" id="view"></div>
+        <button class="cartbar hide" id="cartbar" type="button"></button>
+        <div class="action" id="actbar" hidden></div>
+        <nav class="nav" id="nav"></nav>
+        <div class="toast" id="toast"></div>
+      </div>
+    </div>
+    <div class="jump" id="jump"></div>
+    <p class="stage-note">Clickable prototype using the five products from the console's seed catalog. Tinted swatches stand in for photos; the real app shows each product's <code>image_url</code> in the same arch frame.</p>
+  </aside>
+
+  <main class="doc">
+    <header class="masthead">
+      <img class="vine" src="assets/vine.png" alt="">
+      <img class="logo" src="assets/varnika-wordmark-lc.png" alt="Varnika">
+      <span class="eyebrow">Customer app · blueprint v0.3</span>
+      <h1>A boutique you carry in your pocket</h1>
+      <p class="lede">The design base for the Varnika customer PWA. The flows borrow what people already know from Swiggy, Zomato and District. The look follows Hyderabad's new Telugu cafes: a calm ivory ground, one elegant serif and a clean sans. The brand colours come straight from the Varnika monogram.</p>
+    </header>
+
+    <section class="block">
+      <div class="block-head"><h2>Five pillars</h2><p>Every screen is checked against these. When two conflict, the one higher on the list wins.</p></div>
+      <div class="pillars">
+        <div class="pillar"><h3>Calm first</h3><p>One serif, one sans, one accent colour. Ornament appears once per screen at most: an arch frame, a vine, an illustration. When in doubt, leave it out.</p><div class="steal"><b>From:</b> Hyderabad's Telugu cafes, where heritage is a quiet detail.</div></div>
+        <div class="pillar"><h3>Thumb-first</h3><p>Primary actions sit in the bottom third of the screen. The header holds the logo, chat, WhatsApp and the bag, the same on every screen. Touch targets are 44px or larger.</p><div class="steal"><b>From:</b> Swiggy's bottom nav and sticky action bars.</div></div>
+        <div class="pillar"><h3>The garment sells</h3><p>Photos sit in arch frames (3:4 in grids, 4:5 on the product page). Text stays short: name, fabric, price.</p><div class="steal"><b>From:</b> District's poster cards.</div></div>
+        <div class="pillar"><h3>One next step</h3><p>One wine-coloured action per screen. Once the bag has items, a slim bag bar follows you until checkout.</p><div class="steal"><b>From:</b> the Zomato "View cart" bar.</div></div>
+        <div class="pillar"><h3>Always know where it is</h3><p>If an order is in progress, it is the first thing on Home. The tracker shows real stages and a ready-by date. Chat and WhatsApp to the boutique are always one tap away in the header.</p><div class="steal"><b>From:</b> Swiggy's live order tracking, applied to a stitching order.</div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="block-head"><h2>Colour</h2><p>Taken from the logo: wine from the monogram, gold-brown from the bird and branch. Sage (from the boutique references) carries live and positive states, and blush (from the pink brand cards) appears only as a soft fill. Wine is the only colour for actions. The ground is always #F1F0EA.</p></div>
+      <div class="swatches">
+        <div class="sw"><i style="background:var(--bg);box-shadow:inset 0 -1px 0 var(--line)"></i><div><b>Ivory</b><span>App background</span><code>#F1F0EA</code></div></div>
+        <div class="sw"><i style="background:var(--card);box-shadow:inset 0 -1px 0 var(--line)"></i><div><b>Paper</b><span>Cards, inputs, nav</span><code>#FAF9F5</code></div></div>
+        <div class="sw"><i style="background:var(--wine)"></i><div><b>Wine</b><span>Logo, actions, headings</span><code>#4A0E19</code></div></div>
+        <div class="sw"><i style="background:var(--gold)"></i><div><b>Bird gold</b><span>Icons, craft tags, small accents</span><code>#8C5A2B</code></div></div>
+        <div class="sw"><i style="background:var(--sage)"></i><div><b>Sage</b><span>Live order, savings</span><code>#3E5F4F</code></div></div>
+        <div class="sw"><i style="background:var(--blush)"></i><div><b>Blush</b><span>Soft fills only</span><code>#E8CFD2</code></div></div>
+        <div class="sw"><i style="background:var(--fg)"></i><div><b>Ink</b><span>Body text</span><code>#241B18</code></div></div>
+        <div class="sw"><i style="background:var(--muted)"></i><div><b>Muted</b><span>Fabric, meta, captions</span><code>#6E6560</code></div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="block-head"><h2>Type</h2><p>Gilda Display is the voice: a light, high-contrast serif in the same family of feeling as the "Thank you" card and the boutique blog. Poppins does the work, as on the brand's existing cards.</p></div>
+      <div class="type-list">
+        <div class="type-row"><code>display · Gilda 30</code><span style="font-family:var(--f-display);font-size:30px;color:var(--wine);line-height:1.15">Bridal blouses, made to measure</span></div>
+        <div class="type-row"><code>section · Gilda 22</code><span><span style="font-family:var(--f-display);font-size:22px;color:var(--wine);display:block;line-height:1.1">Bestsellers</span></span></div>
+        <div class="type-row"><code>body · Poppins 14 · 400</code><span>Raw silk with gold zari, hand-finished at our boutique.</span></div>
+        <div class="type-row"><code>label · Poppins 13.5 · 500</code><span style="font-weight:500">Bridal Zari Work Blouse</span></div>
+        <div class="type-row"><code>price · Poppins 14 · 600</code><span class="price tab"><b>₹5,800</b><s>₹6,800</s><span class="off">15% off</span></span></div>
+        <div class="type-row"><code>caption · Poppins 11.5</code><span style="font-size:11.5px;color:var(--muted)">Pure Mulberry Silk · Sarees</span></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="block-head"><h2>Brand assets</h2><p>Your logo and illustrations, cut out onto transparent backgrounds and saved in <code>design/assets/</code>. Each one has a single job so the screens stay clean.</p></div>
+      <div class="assets">
+        <div class="asset"><div class="pv"><img src="assets/varnika-wordmark-lc.png" alt="Varnika logo"></div><div class="meta"><b>Logo</b><span>Home top bar, splash, invoices</span></div></div>
+        <div class="asset"><div class="pv"><img src="assets/varnika-mark.png" alt="VS monogram"></div><div class="meta"><b>Monogram</b><span>App icon, favicon, loading</span></div></div>
+        <div class="asset"><div class="pv"><img src="assets/artisan.png" alt="Artisan illustration"></div><div class="meta"><b>Artisan</b><span>Home sign-off, empty bag</span></div></div>
+        <div class="asset"><div class="pv"><img src="assets/arch.png" alt="Arch illustration"></div><div class="meta"><b>Arch</b><span>Stitch flow intro</span></div></div>
+        <div class="asset"><div class="pv"><img src="assets/vine.png" alt="Vine illustration"></div><div class="meta"><b>Vine</b><span>Splash and order-confirmed screens</span></div></div>
+        <div class="asset"><div class="pv" style="background:url(assets/paisley.png) center/120px"></div><div class="meta"><b>Paisley</b><span>Texture on photo placeholders only</span></div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="block-head"><h2>Space, shape, motion</h2><p>Small corners everywhere except one shape: the arch. It frames every garment photo, like a temple doorway, and is the only heritage shape in the UI.</p></div>
+      <div class="scales">
+        <div class="scale"><h3>Spacing · 4pt</h3>
+          <div class="space-row"><i style="width:4px"></i>4 · icon gap</div>
+          <div class="space-row"><i style="width:8px"></i>8 · chip gap</div>
+          <div class="space-row"><i style="width:12px"></i>12 · card gap</div>
+          <div class="space-row"><i style="width:16px"></i>16 · screen gutter</div>
+          <div class="space-row"><i style="width:26px"></i>26 · section top</div>
+        </div>
+        <div class="scale"><h3>Radius</h3>
+          <div class="radius-row">
+            <div style="border-radius:var(--r-sm)">8</div>
+            <div style="border-radius:var(--r-md)">12</div>
+            <div style="border-radius:var(--r-arch)">arch</div>
+            <div style="border-radius:var(--r-pill);height:36px;align-self:center">pill</div>
+          </div>
+          <span style="font-size:12px;color:var(--muted)">8 buttons · 12 cards · arch for garment photos · pill for search, chips, badges</span>
+        </div>
+        <div class="scale"><h3>Motion</h3>
+          <div class="motion-row"><b>Press</b><span>scale .97 · 120ms</span></div>
+          <div class="motion-row"><b>Screen push</b><span>14px slide + fade · 260ms</span></div>
+          <div class="motion-row"><b>Bag bar</b><span>rises in · 280ms</span></div>
+          <div class="motion-row"><b>Live order dot</b><span>soft pulse · 1.8s</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="block-head"><h2>Home, top to bottom</h2><p>Nothing above the fold except what the customer needs right now.</p></div>
+      <div class="anatomy">
+        <div class="wire"><div class="w1">Logo · chat · WhatsApp · bag</div><div class="w1" style="height:30px">Search</div><div class="w0">Current order (if any)</div><div class="w2">Bestsellers<br>Shop by occasion</div><div class="w3">Bag bar</div><div class="w4">Bottom nav</div></div>
+        <ol>
+          <li><b>Header (every screen)</b><span>The Varnika logo on the left; chat, WhatsApp and the bag on the right as plain icons. Detail screens add a back arrow before the logo. No location, no greeting.</span></li>
+          <li><b>Search</b><span>Pins to the top when scrolling.</span></li>
+          <li><b>Current order</b><span>Shown only while an order is in progress: garment, stage, ready-by date and a progress line. Tapping it opens the tracker. Without an active order, this slot doesn't appear.</span></li>
+          <li><b>Bestsellers, then Shop by occasion</b><span>A swipeable rail, then a two-column grid of arch tiles. A small artisan illustration signs off the page.</span></li>
+          <li><b>Bottom nav</b><span>Home · Explore · Stitch · Orders · Account, on every screen. Product and bag screens add a slim action bar directly above it.</span></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="block-head"><h2>Core components</h2><p>These are the first to build in <code>apps/store/components</code>. All of them appear in the prototype.</p></div>
+      <div class="gallery">
+        <div class="spec"><div class="demo"><button class="btn primary" type="button">Add to bag</button><button class="btn outline" type="button">Save</button></div><div class="meta"><b>Button</b><span>Primary (wine) · outline · ghost · sm · block. One primary per screen.</span></div></div>
+        <div class="spec"><div class="demo"><span class="chip on">All</span><span class="chip">Blouses</span><span class="chip">Sarees</span></div><div class="meta"><b>Filter chip</b><span>Single-select, from <code>products.category</code>.</span></div></div>
+        <div class="spec"><div class="demo"><span class="badge gold">Handcrafted</span><span class="badge low">Only 4 left</span></div><div class="meta"><b>Badge</b><span><code>featured</code> → Handcrafted · stock ≤ 5 → low-stock note.</span></div></div>
+        <div class="spec"><div class="demo"><div class="stepper"><button type="button" aria-label="Remove one">−</button><span class="tab">2</span><button type="button" aria-label="Add one">+</button></div></div><div class="meta"><b>Quantity stepper</b><span>Replaces "Add" once the item is in the bag.</span></div></div>
+        <div class="spec"><div class="demo" style="padding:12px"><div class="update" style="margin:0;width:100%"><span class="thumb" style="background:linear-gradient(160deg,#7A2431,#4A0E19)"></span><div><small><i></i>Stitching</small><b>Bridal Zari Work Blouse</b><span style="font-size:11.5px;opacity:.8">Ready by Thu, 21 Nov</span></div></div></div><div class="meta"><b>Current order card</b><span>Shown on Home while any order is not yet delivered.</span></div></div>
+        <div class="spec"><div class="demo" style="padding:12px"><div class="measure" style="width:100%"><svg class="ico"><use href="#i-tape"/></svg><div><b>Saved measurements</b><span>Blouse · from your 12 Nov form</span></div></div></div><div class="meta"><b>Measurement card</b><span>Reads the customer's Fillout measurements.</span></div></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="block-head"><h2>Build plan</h2><p>The console stays where it is. The store is a second Next.js 14 app in the same repo and imports the console's Supabase types, so there is one catalog.</p></div>
+<pre class="tree">Varnika/
+├─ app/, components/, lib/        ← console (unchanged)
+├─ lib/supabase/database.types.ts ← shared row types
+└─ apps/store/                    ← customer PWA
+   ├─ app/(tabs)/page.tsx         Home
+   ├─ app/(tabs)/explore/         Category grid + filters
+   ├─ app/(tabs)/stitch/          Book custom stitching
+   ├─ app/(tabs)/orders/          List + [id] tracker
+   ├─ app/p/[sku]/                Product page
+   ├─ app/bag/                    Bag → checkout
+   ├─ components/ui/              components above
+   ├─ lib/tokens.css              this page's :root
+   └─ public/brand/               logo, monogram, illustrations</pre>
+      <div class="plan">
+        <div class="plan-card"><h3>1 · Foundation</h3><ul><li>Scaffold <code>apps/store</code></li><li>Tokens, fonts, brand assets</li><li>App shell: logo bar, nav, bag bar</li></ul></div>
+        <div class="plan-card"><h3>2 · Catalog</h3><ul><li>Public read policy on <code>products</code></li><li>Home, Explore and Product page from <code>listProducts()</code></li><li>Photos from <code>image_url</code> in arch frames</li></ul></div>
+        <div class="plan-card"><h3>3 · Bag &amp; orders</h3><ul><li>Local bag, then checkout creating an <code>orders</code> row</li><li>Phone OTP sign-in linked to <code>customers</code></li><li>Tracker from order status and shipment milestones</li></ul></div>
+        <div class="plan-card"><h3>4 · Stitch &amp; PWA</h3><ul><li>Stitch flow linking the Fillout form</li><li>Chat on <code>conversations</code></li><li>Manifest, install prompt, offline shell</li></ul></div>
+      </div>
+      <div class="open-q"><b>Decisions needed before building</b>
+        <ul>
+          <li><b>Currency:</b> the console formats prices in USD and seed prices are 45–320. The prototype shows illustrative ₹ amounts.</li>
+          <li><b>Payments:</b> UPI/Razorpay at checkout, or pay on confirmation over WhatsApp (as on your "How to order" card) for v1?</li>
+          <li><b>MRP / discounts:</b> <code>products</code> has no MRP column. Add one, or drop the strike-through prices.</li>
+          <li><b>Tracker stages:</b> should the console's "active" be split into cutting, stitching and finishing so customers see progress?</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function(){
+  // Tonal stand-ins for product photos, each with a faint paisley texture.
+  const PA = "url(assets/paisley.png) center/130px";
+  const FABRIC = {
+    cotton:   `${PA},linear-gradient(165deg,#E9D3C8,#D7B4A6)`,
+    zari:     `linear-gradient(165deg,rgba(122,36,49,.86),rgba(74,14,25,.95)),${PA},#4A0E19`,
+    silk:     `linear-gradient(165deg,rgba(201,154,82,.82),rgba(140,90,43,.92)),${PA},#8C5A2B`,
+    georgette:`${PA},linear-gradient(165deg,#F0D9DC,#DDB5BA)`,
+    mirror:   `linear-gradient(165deg,rgba(84,120,102,.85),rgba(62,95,79,.95)),${PA},#3E5F4F`
+  };
+  const P = [
+    {id:"b2",sku:"VAR-BLS-002",name:"Bridal Zari Work Blouse",cat:"Blouses",sub:"Work",price:5800,mrp:6800,stock:6,mat:"Raw Silk with Gold Zari",featured:true,fab:"zari",rating:4.8,days:9},
+    {id:"b3",sku:"VAR-SAR-001",name:"Kanjeevaram Silk Saree",cat:"Sarees",sub:"",price:18500,mrp:21000,stock:4,mat:"Pure Mulberry Silk",featured:true,fab:"silk",rating:4.9,days:3},
+    {id:"b5",sku:"VAR-BLS-003",name:"Mirror Work Blouse",cat:"Blouses",sub:"Work",price:2900,mrp:3400,stock:10,mat:"Cotton Silk with Mirror Work",featured:false,fab:"mirror",rating:4.6,days:7},
+    {id:"b1",sku:"VAR-BLS-001",name:"Everyday Plain Cotton Blouse",cat:"Blouses",sub:"Plain",price:1450,mrp:1700,stock:20,mat:"100% Mulmul Cotton",featured:true,fab:"cotton",rating:4.7,days:5},
+    {id:"b4",sku:"VAR-FRK-001",name:"Georgette Party Frock",cat:"Frocks",sub:"",price:3200,mrp:3200,stock:8,mat:"Floral Georgette with Lining",featured:false,fab:"georgette",rating:4.5,days:6}
+  ];
+  const byId = id => P.find(p=>p.id===id);
+  const inr = n => "₹" + n.toLocaleString("en-IN");
+  const off = p => p.mrp>p.price ? Math.round((1-p.price/p.mrp)*100) : 0;
+  const ico = (n,cls="",style="") => `<svg class="ico ${cls}" ${style?`style="${style}"`:""} aria-hidden="true"><use href="#i-${n}"/></svg>`;
+  const STITCH_FEE = 650;
+
+  const S = { screen:"home", product:"b2", bag:{b5:1}, mode:{}, favs:new Set(["b3"]), cat:"All", size:"M", stitchOpt:"saved", history:[] };
+  try{ const saved = JSON.parse(localStorage.getItem("varnika-proto")||"null"); if(saved&&saved.bag) S.bag = saved.bag; }catch(e){}
+  const persist = () => { try{ localStorage.setItem("varnika-proto", JSON.stringify({bag:S.bag})); }catch(e){} };
+
+  const view = document.getElementById("view"), nav = document.getElementById("nav"), bar = document.getElementById("cartbar"), toastEl = document.getElementById("toast"), jump = document.getElementById("jump");
+  const unit = id => byId(id).price + (S.mode[id]==="stitch" ? STITCH_FEE : 0);
+  const bagCount = () => Object.values(S.bag).reduce((a,b)=>a+b,0);
+  const bagTotal = () => Object.entries(S.bag).reduce((a,[id,q])=>a+unit(id)*q,0);
+  const bagMrp = () => Object.entries(S.bag).reduce((a,[id,q])=>a+(byId(id).mrp+(S.mode[id]==="stitch"?STITCH_FEE:0))*q,0);
+  const coupon = () => bagTotal()>=4000 ? 300 : 0;
+
+  function toast(msg){ toastEl.textContent = msg; toastEl.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(()=>toastEl.classList.remove("show"),1600); }
+  const bagBtn = () => `<button class="icon-btn" type="button" data-go="bag" aria-label="Bag">${ico("bag")}${bagCount()?`<span class="count tab">${bagCount()}</span>`:""}</button>`;
+
+  function card(p){
+    const badge = p.featured ? '<span class="badge gold">Handcrafted</span>' : (p.stock<=5 ? `<span class="badge low">Only ${p.stock} left</span>` : "");
+    return `<div class="pwrap">
+      <button type="button" class="pcard" data-go="pdp" data-id="${p.id}">
+        <div class="img" style="background:${FABRIC[p.fab]}">${badge}</div>
+        <div><div class="name">${p.name}</div><div class="mat">${p.mat}</div></div>
+        <div class="price tab"><b>${inr(p.price)}</b>${off(p)?`<s>${inr(p.mrp)}</s><span class="off">${off(p)}% off</span>`:""}</div>
+      </button>
+      <button type="button" class="fav ${S.favs.has(p.id)?"on":""}" data-fav="${p.id}" aria-label="Save" style="top:calc(100% - 74px)">${ico("heart","sm")}</button>
+    </div>`;
+  }
+
+  const SCREENS = {
+    home(){
+      return `
+      <div class="search"><div class="search-box">${ico("search","sm")}<span>Search blouses, sarees, fabrics</span></div></div>
+      <button type="button" class="update" data-go="track">
+        <span class="thumb" style="background:${FABRIC.zari}"></span>
+        <div><small><i></i>Your order · Stitching</small><b>Bridal Zari Work Blouse</b><span style="font-size:11.5px;opacity:.8">Ready by Thu, 21 Nov</span><span class="bar"><span></span></span></div>
+        ${ico("right","sm")}
+      </button>
+      <div class="sec"><div><h3>Bestsellers</h3></div><button type="button" data-go="explore">See all</button></div>
+      <div class="hscroll">${P.map(card).join("")}</div>
+      <div class="sec"><div><h3>Shop by occasion</h3></div></div>
+      <div class="occ">
+        ${[["Wedding","zari","Blouses"],["Festive","silk","Sarees"],["Everyday","cotton","Blouses"],["Party","georgette","Frocks"]].map(([n,f,c])=>`<button type="button" data-cat="${c}"><span class="img" style="background:${FABRIC[f]}"></span><b>${n}</b></button>`).join("")}
+      </div>
+      <div class="made"><img src="assets/artisan.png" alt=""><p>Made by hand in Hyderabad</p><span>Varnika Boutique by Sujatha Panjam</span></div>`;
+    },
+    explore(){
+      const cats = ["All", ...new Set(P.map(p=>p.cat))];
+      const list = P.filter(p=>S.cat==="All"||p.cat===S.cat);
+      return `
+      <div class="pagehead pad"><h2>Explore</h2></div>
+      <div class="search" style="padding-top:0"><div class="search-box">${ico("search","sm")}<span>Search blouses, sarees, fabrics</span></div></div>
+      <div class="chips">${cats.map(c=>`<button type="button" class="chip ${S.cat===c?"on":""}" data-chip="${c}">${c}</button>`).join("")}<button type="button" class="chip" data-toast="Filters open as a bottom sheet">${ico("sliders","sm")} Filter</button></div>
+      <div class="sec" style="padding-top:18px"><span style="font-size:12.5px;color:var(--muted)">${list.length} styles</span><button type="button" data-toast="Sort: Popular · Price · New">Popular</button></div>
+      <div class="grid2">${list.map(card).join("")}</div>`;
+    },
+    pdp(){
+      const p = byId(S.product), m = S.mode[p.id]||(p.cat==="Sarees"?"ready":"stitch");
+      S.mode[p.id] = m;
+      return `
+      <div class="pdp-bar"><span></span><div style="display:flex"><button class="icon-btn" type="button" data-toast="Share sheet" aria-label="Share">${ico("share")}</button><button class="icon-btn" type="button" data-fav="${p.id}" aria-label="Save" style="${S.favs.has(p.id)?"color:var(--wine)":""}">${ico("heart","",S.favs.has(p.id)?"fill:var(--wine)":"")}</button></div></div>
+      <div class="pdp-img" style="background:${FABRIC[p.fab]}"><div class="dots"><i class="on"></i><i></i><i></i><i></i></div></div>
+      <div class="sheet">
+        <div style="display:flex;gap:6px;flex-wrap:wrap">${p.featured?'<span class="badge gold" style="background:var(--gold-soft)">Handcrafted</span>':''}${p.stock<=5?`<span class="badge low">Only ${p.stock} left</span>`:''}<span class="badge soft">${p.cat}${p.sub?" · "+p.sub:""}</span></div>
+        <h2>${p.name}</h2>
+        <div class="sub"><span>${p.mat}</span><span class="rating">${ico("star","sm","width:12px;height:12px;fill:currentColor;stroke:none")} ${p.rating}</span></div>
+        <div class="price tab" style="gap:8px"><b style="font-size:21px">${inr(unit(p.id))}</b>${off(p)?`<s style="font-size:13px">${inr(p.mrp+(m==="stitch"?STITCH_FEE:0))}</s><span class="off" style="font-size:13px">${off(p)}% off</span>`:""}</div>
+        <div class="seg" role="radiogroup" aria-label="How you want it">
+          <button type="button" role="radio" aria-checked="${m==="stitch"}" class="${m==="stitch"?"on":""}" data-mode="stitch"><b>Stitch to my size</b><span>+${inr(STITCH_FEE)} · ready in ${p.days} days</span></button>
+          <button type="button" role="radio" aria-checked="${m==="ready"}" class="${m==="ready"?"on":""}" data-mode="ready"><b>Standard size</b><span>Ships in 2 days</span></button>
+        </div>
+        ${m==="stitch" ? `<div class="measure">${ico("tape")}<div><b>Saved measurements</b><span>Blouse · from your 12 Nov form</span></div><button type="button" data-toast="Opens your measurement form">Change</button></div>`
+          : `<div class="sizes">${["XS","S","M","L","XL"].map(s=>`<button type="button" class="${S.size===s?"on":""}" data-size="${s}">${s}</button>`).join("")}</div>`}
+        <div class="trust"><div>${ico("scissors")}Free first alteration</div><div>${ico("refresh")}7-day easy return</div><div>${ico("cash")}Pay on delivery</div></div>
+        <div class="kv"><span>Fabric</span><b>${p.mat}</b><span>SKU</span><b class="tab">${p.sku}</b><span>Care</span><b>Dry clean only</b></div>
+      </div>`;
+    },
+    bag(){
+      const ids = Object.keys(S.bag);
+      if(!ids.length) return `<div class="pagehead pad"><h2>Your bag</h2></div>
+        <div class="empty"><img src="assets/artisan.png" alt=""><h3>Your bag is empty</h3><p>Pick a blouse, saree or frock. Choose "Stitch to my size" and we'll make it for you.</p><button class="btn primary" type="button" data-go="explore">Browse styles</button></div>`;
+      const total = bagTotal(), mrp = bagMrp(), c = coupon();
+      return `
+      <div class="pagehead pad"><h2>Your bag <span style="font-family:var(--f-body);font-size:13px;color:var(--muted)">· ${bagCount()} item${bagCount()>1?"s":""}</span></h2></div>
+      ${ids.map(id=>{const p=byId(id),q=S.bag[id];return `<div class="line">
+        <div class="thumb" style="background:${FABRIC[p.fab]}"></div>
+        <div class="info"><b>${p.name}</b><span>${S.mode[id]==="stitch"?"Stitched to your measurements":"Standard size · "+S.size}</span>
+          <div class="price tab"><b>${inr(unit(id))}</b>${off(p)?`<span class="off">${off(p)}% off</span>`:""}</div>
+          <div class="row"><span>${S.mode[id]==="stitch"?ico("clock","sm","width:13px;height:13px;vertical-align:-2px")+" Ready in "+p.days+" days":"Ships in 2 days"}</span><div class="stepper"><button type="button" data-dec="${id}" aria-label="Remove one">−</button><span class="tab">${q}</span><button type="button" data-inc="${id}" aria-label="Add one">+</button></div></div>
+        </div></div>`}).join("")}
+      <button type="button" class="coupon" data-toast="${c?"FESTIVE300 applied":"Add "+inr(4000-total)+" more to unlock FESTIVE300"}">${ico("tag","sm")}<span>${c?"FESTIVE300 applied":"Apply coupon"}</span>${ico("right","sm")}</button>
+      <div class="bill tab">
+        <h4>Price details</h4>
+        <div><span>Bag total (MRP)</span><span>${inr(mrp)}</span></div>
+        <div><span>Discount on MRP</span><span class="save">−${inr(mrp-total)}</span></div>
+        ${c?`<div><span>Coupon FESTIVE300</span><span class="save">−${inr(c)}</span></div>`:""}
+        <div><span>Delivery</span><span class="save">Free</span></div>
+        <div class="total"><span>You pay</span><span>${inr(total-c)}</span></div>
+      </div>
+      <p style="margin:12px 16px 0;font-size:12px;color:var(--sage);font-weight:500">You save ${inr(mrp-total+c)} on this order</p>`;
+    },
+    track(){
+      const steps = [["done","Order placed","Mon, 11 Nov · 4:12 pm"],["done","Measurements confirmed","From your form · Tue, 12 Nov"],["done","Cutting","Wed, 13 Nov"],["now","Stitching","Zari border in progress"],["next","Finishing & press",""],["next","Out for delivery","Expected Thu, 21 Nov"]];
+      return `
+      <div class="pagehead pad"><h2>Your order<small style="display:block;font-family:var(--f-body);font-size:11.5px;color:var(--muted);margin-top:2px">#VAR-1042</small></h2></div>
+      <div class="track-head">
+        <span class="thumb" style="background:${FABRIC.zari}"></span>
+        <div><small>Bridal Zari Work Blouse</small><h2>Ready by Thursday</h2><p>21 Nov · on schedule · step 4 of 6</p><div class="progress"><i style="width:62%"></i></div></div>
+      </div>
+      <ol class="steps">${steps.map(([s,t,d])=>`<li class="${s}"><i class="node">${s==="done"?ico("check","sm","width:13px;height:13px"):s==="now"?ico("needle","sm","width:13px;height:13px"):""}</i><div><b>${t}</b>${d?`<span>${d}</span>`:""}</div></li>`).join("")}</ol>`;
+    },
+    stitch(){
+      const opts = [["saved","tape","Use saved measurements","Blouse · 12 Nov form"],["form","needle","Fill the measurement form","5 minutes, with pictures"],["visit","pin","Book a store visit","We measure you at the boutique"]];
+      return `
+      <div class="pagehead pad"><h2>Stitch with us</h2></div>
+      <div class="stitch-intro"><img src="assets/arch.png" alt=""><div><h3>How should we measure you?</h3><span>Step 1 of 3 · we save it for every order</span></div></div>
+      <div style="height:14px"></div>
+      ${opts.map(([k,i,t,s])=>`<button type="button" class="option ${S.stitchOpt===k?"on":""}" data-opt="${k}"><span class="oi">${ico(i)}</span><div><b>${t}</b><span>${s}</span></div>${S.stitchOpt===k?ico("check"):""}</button>`).join("")}
+      <div class="sec" style="padding-top:16px"><div><h3 style="font-size:19px">What are we stitching?</h3></div></div>
+      <div class="chips" style="flex-wrap:wrap"><span class="chip on">Blouse</span><span class="chip">Saree fall &amp; pico</span><span class="chip">Lehenga</span><span class="chip">Kids frock</span><span class="chip">Alteration</span></div>
+      <div style="padding:20px 16px 0"><button type="button" class="btn primary block" data-toast="Next: choose fabric (yours or ours)">Continue</button></div>`;
+    },
+    orders(){
+      return `
+      <div class="pagehead pad"><h2>Orders</h2></div>
+      <div class="chips" style="padding-bottom:6px"><span class="chip on">In progress · 2</span><span class="chip">Delivered</span></div>
+      <button type="button" class="ordrow" data-go="track"><span class="thumb" style="background:${FABRIC.zari}"></span><div><span class="pill live">Stitching</span><b>Bridal Zari Work Blouse</b><span>#VAR-1042 · ready Thu, 21 Nov</span></div>${ico("right","sm")}</button>
+      <button type="button" class="ordrow" data-toast="We'll message you when the fabric arrives"><span class="thumb" style="background:${FABRIC.silk}"></span><div><span class="pill hold">On hold · fabric</span><b>Kanjeevaram Silk Saree</b><span>#VAR-1038 · fall &amp; pico</span></div>${ico("right","sm")}</button>
+      <button type="button" class="ordrow" data-toast="Adds it to your bag with saved measurements"><span class="thumb" style="background:${FABRIC.cotton}"></span><div><span class="pill done">Delivered 2 Oct</span><b>Everyday Plain Cotton Blouse</b><span>#VAR-0991 · ${inr(1450)}</span></div><span class="btn outline sm" style="pointer-events:none">Reorder</span></button>`;
+    },
+    account(){
+      return `<div class="pagehead pad"><h2>Account</h2></div>
+      <div class="tailor" style="margin:0 16px 12px"><span class="avatar">A</span><div><b>Ananya R.</b><span>Sample profile · signed in with phone</span></div></div>
+      ${[["tape","My measurements","Blouse, saree blouse, kids"],["heart","Saved styles",S.favs.size+" items"],["pin","Addresses","Banjara Hills, 500034"],["chat","Chat with Varnika","Usually replies within 10 minutes"]].map(([i,t,s])=>`<button type="button" class="option" data-toast="${t}"><span class="oi">${ico(i)}</span><div><b>${t}</b><span>${s}</span></div>${ico("right","sm")}</button>`).join("")}`;
+    }
+  };
+
+  const TABS = [["home","home","Home"],["explore","grid","Explore"],["stitch","needle","Stitch"],["orders","box","Orders"],["account","user","Account"]];
+
+  function render(animate=true){
+    const sc = S.screen;
+    view.innerHTML = SCREENS[sc]();
+    const act = document.getElementById("actbar");
+    const isDetail = ["pdp","bag","track"].includes(sc);
+    document.getElementById("apphead").innerHTML =
+      `<div class="brand">${isDetail?'<button class="icon-btn" type="button" data-back aria-label="Back">'+ico("back")+'</button>':''}<img src="assets/varnika-wordmark-lc.png" alt="Varnika"></div>` +
+      `<button class="icon-btn" type="button" data-toast="Opens chat with the Varnika team" aria-label="Chat with Varnika">${ico("chat")}</button>` +
+      `<button class="icon-btn" type="button" data-toast="Opens WhatsApp with Varnika" aria-label="WhatsApp Varnika">${ico("wa")}</button>` +
+      bagBtn();
+    if(animate){ view.classList.remove("screen-in"); void view.offsetWidth; view.classList.add("screen-in"); }
+    let actHtml = "";
+    if(sc==="pdp"){
+      const p = byId(S.product), q = S.bag[p.id]||0;
+      actHtml = `<div class="sum"><small>${S.mode[p.id]==="stitch"?"incl. stitching":"price"}</small><b class="tab">${inr(unit(p.id))}</b></div>` +
+        (q ? `<button type="button" class="btn outline" data-go="bag">In bag (${q}) · View</button>` : `<button type="button" class="btn primary" data-add="${p.id}">Add to bag</button>`);
+    } else if(sc==="bag" && bagCount()){
+      actHtml = `<div class="sum"><small>You pay</small><b class="tab">${inr(bagTotal()-coupon())}</b></div><button type="button" class="btn primary" data-toast="Next: address, then payment">Place order</button>`;
+    }
+    act.innerHTML = actHtml; act.hidden = !actHtml;
+    view.classList.toggle("has-action", !!actHtml);
+    const activeTab = ({pdp:"explore",track:"orders",bag:""})[sc] ?? sc;
+    nav.className = "nav";
+    nav.innerHTML = TABS.map(([k,i,l])=>`<button type="button" class="${activeTab===k?"on":""}" data-tab="${k}">${ico(i)}${l}</button>`).join("");
+    const n = bagCount();
+    bar.classList.toggle("hide", !(n>0 && ["home","explore","orders","account"].includes(sc)));
+    if(n) bar.innerHTML = `<div><small>${n} item${n>1?"s":""} in bag</small><b class="tab">${inr(bagTotal())}</b></div><span>View bag ${ico("right","sm")}</span>`;
+    jump.innerHTML = [["home","Home"],["explore","Explore"],["pdp","Product"],["bag","Bag"],["track","Tracker"],["stitch","Stitch"]].map(([k,l])=>`<button type="button" class="${sc===k?"on":""}" data-jump="${k}">${l}</button>`).join("");
+  }
+
+  function go(screen, opts={}){
+    if(screen!==S.screen) S.history.push(S.screen);
+    S.screen = screen; Object.assign(S, opts); view.scrollTop = 0; render();
+  }
+
+  document.addEventListener("click", e=>{
+    const t = e.target.closest("button"); if(!t) return;
+    const d = t.dataset;
+    if(d.fav){ S.favs.has(d.fav)?S.favs.delete(d.fav):S.favs.add(d.fav); toast(S.favs.has(d.fav)?"Saved":"Removed from saved"); render(false); return; }
+    if(d.go){ go(d.go, d.id?{product:d.id}:{}); return; }
+    if(d.tab){ S.history=[]; go(d.tab); return; }
+    if(d.jump){ go(d.jump); return; }
+    if(d.back!==undefined){ S.screen = S.history.pop()||"home"; view.scrollTop=0; render(); return; }
+    if(d.cat){ S.cat=d.cat; S.history=[]; go("explore"); return; }
+    if(d.chip){ S.cat=d.chip; render(false); return; }
+    if(d.mode){ S.mode[S.product]=d.mode; render(false); return; }
+    if(d.size){ S.size=d.size; render(false); return; }
+    if(d.opt){ S.stitchOpt=d.opt; render(false); return; }
+    if(d.add){ S.bag[d.add]=(S.bag[d.add]||0)+1; persist(); toast("Added to bag"); render(false); return; }
+    if(d.inc){ S.bag[d.inc]++; persist(); render(false); return; }
+    if(d.dec){ if(--S.bag[d.dec]<=0) delete S.bag[d.dec]; persist(); render(false); return; }
+    if(d.toast){ toast(d.toast); return; }
+    if(t===bar){ go("bag"); }
+  });
+
+  render(false);
+})();
+</script>

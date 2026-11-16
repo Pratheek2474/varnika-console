@@ -56,9 +56,8 @@ function LoginForm() {
       <Card className="w-full max-w-sm">
         <CardContent className="p-8 space-y-6">
           <div className="text-center space-y-1">
-            <div className="font-sans text-sm font-semibold tracking-[0.12em] text-black uppercase">
-              Varnika Console
-            </div>
+            <img src="/brand/varnika-wordmark.png" alt="Varnika" className="h-7 w-auto mx-auto" />
+            <div className="text-[10px] uppercase tracking-[0.16em] font-medium text-gold pt-1">Console</div>
             <p className="text-xs text-neutral-500">
               Sign in with your staff account.
             </p>
@@ -75,7 +74,7 @@ function LoginForm() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="e.g. anand"
-                className="w-full px-2.5 py-2 bg-white border border-[#E6E3DB] text-xs focus:outline-none focus:border-black rounded-xs"
+                className="w-full px-2.5 py-2 bg-white border border-line text-xs focus:outline-none focus:border-wine rounded-xs"
               />
             </div>
             <div className="space-y-1">
@@ -86,7 +85,7 @@ function LoginForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-2.5 py-2 bg-white border border-[#E6E3DB] text-xs focus:outline-none focus:border-black rounded-xs"
+                className="w-full px-2.5 py-2 bg-white border border-line text-xs focus:outline-none focus:border-wine rounded-xs"
               />
             </div>
 

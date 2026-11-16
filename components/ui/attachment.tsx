@@ -21,19 +21,19 @@ function Attachment({ className, name, type = "other", size, url, status, progre
   return (
     <div
       className={cn(
-        "flex items-center gap-2.5 p-2.5 bg-white border border-[#E6E3DB] rounded-xs max-w-[240px]",
+        "flex items-center gap-2.5 p-2.5 bg-white border border-line rounded-xs max-w-[240px]",
         isPhoto && "flex-col items-stretch p-0 max-w-[180px] overflow-hidden",
         className
       )}
       {...props}
     >
       {isPhoto ? (
-        <a href={url} target="_blank" rel="noreferrer" className="block relative aspect-square bg-[#F4F2ED]">
+        <a href={url} target="_blank" rel="noreferrer" className="block relative aspect-square bg-sunk">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={url} alt={name} className="absolute inset-0 w-full h-full object-cover" />
         </a>
       ) : (
-        <div className="w-9 h-9 rounded-xs bg-[#F4F2ED] flex items-center justify-center shrink-0">
+        <div className="w-9 h-9 rounded-xs bg-sunk flex items-center justify-center shrink-0">
           <Icon className="w-4.5 h-4.5 text-neutral-500" />
         </div>
       )}
@@ -41,8 +41,8 @@ function Attachment({ className, name, type = "other", size, url, status, progre
         <div className="text-xs font-medium text-black truncate">{name}</div>
         {size && <div className="text-[10px] text-neutral-400 font-mono">{size}</div>}
         {status === "uploading" && progress !== undefined && (
-          <div className="w-full h-1 bg-[#F0ECE1] rounded-full mt-1">
-            <div className="h-full bg-black rounded-full transition-all" style={{ width: `${progress}%` }} />
+          <div className="w-full h-1 bg-sunk rounded-full mt-1">
+            <div className="h-full bg-wine rounded-full transition-all" style={{ width: `${progress}%` }} />
           </div>
         )}
       </div>

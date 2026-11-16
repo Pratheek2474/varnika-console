@@ -19,7 +19,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#1C1C1E",
+  themeColor: "#F1F0EA",
 };
 
 export default function RootLayout({
@@ -33,11 +33,11 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..700;1,400..700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Gilda+Display&family=Poppins:wght@300;400;500;600;700&display=swap"
           rel="stylesheet"
         />
       </head>
-      <body className="h-full font-sans antialiased text-neutral-900 bg-[#FBF9F5]">
+      <body className="h-full font-sans antialiased text-ink bg-ivory">
         <AppProviders>
           <AppShell>{children}</AppShell>
         </AppProviders>

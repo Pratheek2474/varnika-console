@@ -113,9 +113,9 @@ export default function DeliveryPage() {
     >
       <div className="space-y-6 animate-in fade-in duration-200">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-[#E6E3DB]">
+        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-line">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-black tracking-tight">
+            <h1 className="text-2xl sm:text-3xl">
               Delivery & Tracking
             </h1>
             <p className="text-xs text-neutral-500 mt-1">
@@ -138,14 +138,14 @@ export default function DeliveryPage() {
         )}
 
         {/* Search */}
-        <div className="flex items-center bg-white p-3 border border-[#E6E3DB] rounded-xs">
+        <div className="flex items-center bg-white p-3 border border-line rounded-xs">
           <div className="relative flex-1 max-w-sm">
             <input
               type="text"
               placeholder="Search tracking, recipient, city..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-3 pr-3 py-1.5 bg-[#FAF9F6] border border-[#E6E3DB] text-xs focus:outline-none focus:border-black rounded-xs"
+              className="w-full pl-3 pr-3 py-1.5 bg-ivory border border-line text-xs focus:outline-none focus:border-wine rounded-xs"
             />
           </div>
         </div>
@@ -173,7 +173,7 @@ export default function DeliveryPage() {
                     {canWrite && (
                       <button
                         onClick={() => { setEditing(shipment); setFormOpen(true); }}
-                        className="inline-flex items-center justify-center w-7 h-7 rounded-xs border border-[#E6E3DB] hover:border-black hover:bg-[#F4F2ED] transition-colors"
+                        className="inline-flex items-center justify-center w-7 h-7 rounded-xs border border-line hover:border-wine hover:bg-sunk transition-colors"
                         title="Edit delivery"
                       >
                         <Pencil className="w-3.5 h-3.5" />
@@ -182,7 +182,7 @@ export default function DeliveryPage() {
                   </div>
                 </div>
 
-                <div className="p-3 bg-[#FAF9F6] border border-[#E6E3DB] space-y-1.5 text-xs rounded-xs">
+                <div className="p-3 bg-ivory border border-line space-y-1.5 text-xs rounded-xs">
                   <div className="flex items-center justify-between">
                     <span className="text-neutral-500">Customer:</span>
                     {customer ? (
@@ -217,7 +217,7 @@ export default function DeliveryPage() {
                       </p>
                     </div>
                   )}
-                  <div className="flex items-center justify-between pt-1 border-t border-[#F0ECE1]">
+                  <div className="flex items-center justify-between pt-1 border-t border-line-soft">
                     <span className="text-neutral-500">Estimated Delivery:</span>
                     <span className="font-mono font-medium text-black">{shipment.estimated_delivery || "—"}</span>
                   </div>
@@ -230,7 +230,7 @@ export default function DeliveryPage() {
                   <div className="space-y-2">
                     {shipment.shipment_milestones.map((mm) => (
                       <div key={mm.id} className="flex items-start gap-2.5">
-                        <div className="w-1.5 h-1.5 rounded-full bg-black mt-1.5 shrink-0" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-wine mt-1.5 shrink-0" />
                         <div>
                           <div className="font-medium text-black text-xs">{mm.status_text}</div>
                           <div className="text-neutral-400 font-mono text-[11px]">

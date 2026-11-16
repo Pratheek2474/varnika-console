@@ -305,9 +305,9 @@ export default function OrdersPage() {
     <RouteGuard requiredPermission="orders.read" requiredFeature="orders_kanban" moduleName="Orders">
       <div className="space-y-6 animate-in fade-in duration-200">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-[#E6E3DB]">
+        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-line">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-black tracking-tight">Orders</h1>
+            <h1 className="text-2xl sm:text-3xl">Orders</h1>
             <p className="text-xs text-neutral-500 mt-1">
               Track garment pipeline stages, client requests, and ticket fulfillment.
             </p>
@@ -327,7 +327,7 @@ export default function OrdersPage() {
               </Link>
             </Button>
 
-            <div className="flex items-center bg-[#F4F2ED] border border-[#E6E3DB] p-0.5 rounded-xs">
+            <div className="flex items-center bg-sunk border border-line p-0.5 rounded-xs">
               <button
                 onClick={() => setViewMode("kanban")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-all rounded-xs ${
@@ -358,7 +358,7 @@ export default function OrdersPage() {
         )}
 
         {/* Search */}
-        <div className="flex items-center bg-white p-3 border border-[#E6E3DB] rounded-xs">
+        <div className="flex items-center bg-white p-3 border border-line rounded-xs">
           <div className="relative flex-1 max-w-sm">
             <Search className="w-4 h-4 text-neutral-500 absolute left-3 top-2.5" />
             <input
@@ -366,7 +366,7 @@ export default function OrdersPage() {
               placeholder="Search orders, clients, or items..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 bg-[#FAF9F6] border border-[#E6E3DB] text-xs focus:outline-none focus:border-black rounded-xs"
+              className="w-full pl-9 pr-3 py-1.5 bg-ivory border border-line text-xs focus:outline-none focus:border-wine rounded-xs"
             />
           </div>
         </div>
@@ -399,14 +399,14 @@ export default function OrdersPage() {
                     <KanbanColumn
                       key={column.key}
                       value={column.key}
-                      className="w-full lg:w-[240px] shrink-0 bg-[#FAF9F6] border border-[#E6E3DB] rounded-xs"
+                      className="w-full lg:w-[240px] shrink-0 bg-ivory border border-line rounded-xs"
                     >
-                      <div className="px-3 py-2.5 border-b border-[#E6E3DB] flex items-center justify-between bg-white rounded-t-xs">
+                      <div className="px-3 py-2.5 border-b border-line flex items-center justify-between bg-white rounded-t-xs">
                         <span className="text-xs font-medium text-black flex items-center gap-1.5">
                           <span className={`w-2 h-2 rounded-full ${column.dot}`} />
                           {column.label}
                         </span>
-                        <span className="text-[11px] font-mono px-1.5 py-0.5 bg-[#F4F2ED] text-neutral-600 rounded-xs">
+                        <span className="text-[11px] font-mono px-1.5 py-0.5 bg-sunk text-neutral-600 rounded-xs">
                           {columnOrders.length}
                         </span>
                       </div>
@@ -416,7 +416,7 @@ export default function OrdersPage() {
                         className="p-2 gap-2 lg:overflow-y-auto lg:max-h-[calc(100dvh-430px)]"
                       >
                         {columnOrders.length === 0 ? (
-                          <div className="h-24 flex items-center justify-center text-xs text-neutral-400 italic border border-dashed border-[#E6E3DB] rounded-xs bg-white">
+                          <div className="h-24 flex items-center justify-center text-xs text-neutral-400 italic border border-dashed border-line rounded-xs bg-white">
                             Drop here
                           </div>
                         ) : (
@@ -427,7 +427,7 @@ export default function OrdersPage() {
                                   onClick={() => {
                                     if (!draggingRef.current) setSelectedTicket(order);
                                   }}
-                                  className="p-3 bg-white border border-[#E6E3DB] hover:border-black/40 transition-colors space-y-2 rounded-xs select-none cursor-grab active:cursor-grabbing"
+                                  className="p-3 bg-white border border-line hover:border-wine/40 transition-colors space-y-2 rounded-xs select-none cursor-grab active:cursor-grabbing"
                                 >
                                   <div className="flex items-center justify-between gap-2">
                                     <span className="font-mono text-xs font-medium text-black">
@@ -452,7 +452,7 @@ export default function OrdersPage() {
                                     {order.item_summary}
                                   </p>
 
-                                  <div className="pt-2 border-t border-[#F0ECE1] flex items-center justify-between text-xs font-mono">
+                                  <div className="pt-2 border-t border-line-soft flex items-center justify-between text-xs font-mono">
                                     <span className="text-neutral-500">{order.delivery_date ?? "—"}</span>
                                     {showRevenue && (
                                       <span className="text-black font-medium">
@@ -475,7 +475,7 @@ export default function OrdersPage() {
                   const ghost = flatOrders.find((o) => o.id === String(value));
                   if (!ghost) return null;
                   return (
-                    <div className="p-3 bg-white border border-black shadow-lg rounded-xs opacity-95 w-[240px] space-y-2 rotate-1">
+                    <div className="p-3 bg-white border border-wine shadow-lg rounded-xs opacity-95 w-[240px] space-y-2 rotate-1">
                       <span className="font-mono text-xs font-medium text-black">
                         {ghost.order_number}
                       </span>
@@ -495,7 +495,7 @@ export default function OrdersPage() {
               <div
                 key={order.id}
                 onClick={() => setSelectedTicket(order)}
-                className="p-4 bg-white border border-[#E6E3DB] hover:border-black cursor-pointer transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-xs"
+                className="p-4 bg-white border border-line hover:border-wine cursor-pointer transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-xs"
               >
                 <div className="space-y-1 min-w-0">
                   <div className="flex items-center gap-2">
@@ -588,7 +588,7 @@ export default function OrdersPage() {
               </DialogHeader>
 
               <div className="space-y-4 py-2 text-xs">
-                <div className="p-3 bg-[#FAF9F6] border border-[#E6E3DB] space-y-1">
+                <div className="p-3 bg-ivory border border-line space-y-1">
                   <span className="text-[11px] text-neutral-500">Item Description</span>
                   <div className="font-medium text-black text-sm">{selectedTicket.item_summary}</div>
                   {showRevenue && (
@@ -601,18 +601,18 @@ export default function OrdersPage() {
                 {selectedTicket.notes && (
                   <div className="space-y-1">
                     <span className="text-[11px] text-neutral-500">Tailor Notes</span>
-                    <p className="text-neutral-700 bg-white p-3 border border-[#E6E3DB] leading-relaxed">
+                    <p className="text-neutral-700 bg-white p-3 border border-line leading-relaxed">
                       {selectedTicket.notes}
                     </p>
                   </div>
                 )}
 
                 <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                  <div className="p-2.5 border border-[#E6E3DB] bg-[#FAF9F6]">
+                  <div className="p-2.5 border border-line bg-ivory">
                     <div className="text-neutral-500">Target Delivery</div>
                     <div className="font-medium text-black mt-0.5">{selectedTicket.delivery_date ?? "—"}</div>
                   </div>
-                  <div className="p-2.5 border border-[#E6E3DB] bg-[#FAF9F6]">
+                  <div className="p-2.5 border border-line bg-ivory">
                     <div className="text-neutral-500">Priority</div>
                     <div className="font-medium text-black mt-0.5 capitalize">{selectedTicket.priority}</div>
                   </div>

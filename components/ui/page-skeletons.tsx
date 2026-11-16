@@ -12,7 +12,7 @@ function PageShell({ children }: { children: React.ReactNode }) {
 
 function PageHeaderSkeleton() {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-[#E6E3DB]">
+    <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-line">
       <div className="space-y-2">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-3 w-72" />
@@ -24,7 +24,7 @@ function PageHeaderSkeleton() {
 
 function SearchSkeleton() {
   return (
-    <div className="bg-white p-3 border border-[#E6E3DB] rounded-xs">
+    <div className="bg-white p-3 border border-line rounded-xs">
       <Skeleton className="h-8 w-full max-w-sm" />
     </div>
   );
@@ -35,13 +35,13 @@ export function TableListSkeleton({ rows = 6, cols = 5 }: { rows?: number; cols?
     <PageShell>
       <PageHeaderSkeleton />
       <SearchSkeleton />
-      <div className="hidden md:block bg-white border border-[#E6E3DB] rounded-xs overflow-hidden">
-        <div className="bg-[#FAF9F6] border-b border-[#E6E3DB] px-6 py-3.5 flex gap-6">
+      <div className="hidden md:block bg-white border border-line rounded-xs overflow-hidden">
+        <div className="bg-ivory border-b border-line px-6 py-3.5 flex gap-6">
           {Array.from({ length: cols }).map((_, i) => (
             <Skeleton key={i} className="h-3 flex-1" />
           ))}
         </div>
-        <div className="divide-y divide-[#F0ECE1]">
+        <div className="divide-y divide-line-soft">
           {Array.from({ length: rows }).map((_, r) => (
             <div key={r} className="px-6 py-4 flex items-center gap-4">
               <Skeleton className="h-8 w-8 rounded-full shrink-0" />
@@ -57,7 +57,7 @@ export function TableListSkeleton({ rows = 6, cols = 5 }: { rows?: number; cols?
       </div>
       <div className="md:hidden space-y-3">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="p-4 bg-white border border-[#E6E3DB] rounded-xs space-y-2">
+          <div key={i} className="p-4 bg-white border border-line rounded-xs space-y-2">
             <Skeleton className="h-4 w-2/3" />
             <Skeleton className="h-3 w-1/2" />
             <Skeleton className="h-3 w-1/3" />
@@ -75,7 +75,7 @@ export function CardsListSkeleton({ cards = 4 }: { cards?: number }) {
       <SearchSkeleton />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {Array.from({ length: cards }).map((_, i) => (
-          <div key={i} className="p-5 bg-white border border-[#E6E3DB] rounded-xs space-y-3">
+          <div key={i} className="p-5 bg-white border border-line rounded-xs space-y-3">
             <div className="flex items-center justify-between">
               <Skeleton className="h-4 w-40" />
               <Skeleton className="h-5 w-20" />
@@ -97,7 +97,7 @@ export function CustomerDetailSkeleton() {
     <PageShell>
       <Skeleton className="h-4 w-32" />
       {/* Header card */}
-      <div className="bg-white border border-[#E6E3DB] rounded-xs p-6 flex flex-col sm:flex-row sm:items-center gap-4">
+      <div className="bg-white border border-line rounded-xs p-6 flex flex-col sm:flex-row sm:items-center gap-4">
         <Skeleton className="h-16 w-16 rounded-full shrink-0" />
         <div className="flex-1 space-y-2">
           <Skeleton className="h-6 w-48" />
@@ -116,7 +116,7 @@ export function CustomerDetailSkeleton() {
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Measurements */}
-        <div className="bg-white border border-[#E6E3DB] rounded-xs p-6 space-y-4">
+        <div className="bg-white border border-line rounded-xs p-6 space-y-4">
           <Skeleton className="h-5 w-36" />
           <Skeleton className="h-10 w-full" />
           <div className="grid grid-cols-3 gap-2">
@@ -127,10 +127,10 @@ export function CustomerDetailSkeleton() {
           <Skeleton className="h-10 w-full" />
         </div>
         {/* Order history */}
-        <div className="bg-white border border-[#E6E3DB] rounded-xs p-6 space-y-3">
+        <div className="bg-white border border-line rounded-xs p-6 space-y-3">
           <Skeleton className="h-5 w-36" />
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="p-3 border border-[#E6E3DB] rounded-xs space-y-2">
+            <div key={i} className="p-3 border border-line rounded-xs space-y-2">
               <div className="flex items-center justify-between">
                 <Skeleton className="h-3.5 w-24" />
                 <Skeleton className="h-5 w-20" />
@@ -150,7 +150,7 @@ export function OrderDetailSkeleton() {
     <PageShell>
       <Skeleton className="h-4 w-32" />
       {/* Header card */}
-      <div className="bg-white border border-[#E6E3DB] rounded-xs p-6 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+      <div className="bg-white border border-line rounded-xs p-6 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div className="space-y-2">
           <Skeleton className="h-6 w-40" />
           <Skeleton className="h-4 w-80" />
@@ -160,7 +160,7 @@ export function OrderDetailSkeleton() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           {/* Timeline */}
-          <div className="bg-white border border-[#E6E3DB] rounded-xs p-6 space-y-4">
+          <div className="bg-white border border-line rounded-xs p-6 space-y-4">
             <Skeleton className="h-5 w-36" />
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex gap-3">
@@ -173,7 +173,7 @@ export function OrderDetailSkeleton() {
             ))}
           </div>
           {/* Photos */}
-          <div className="bg-white border border-[#E6E3DB] rounded-xs p-6 space-y-3">
+          <div className="bg-white border border-line rounded-xs p-6 space-y-3">
             <Skeleton className="h-5 w-28" />
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {Array.from({ length: 3 }).map((_, i) => (
@@ -184,7 +184,7 @@ export function OrderDetailSkeleton() {
         </div>
         <div className="space-y-6">
           {/* Details + documents */}
-          <div className="bg-white border border-[#E6E3DB] rounded-xs p-6 space-y-3">
+          <div className="bg-white border border-line rounded-xs p-6 space-y-3">
             <Skeleton className="h-5 w-32" />
             <Skeleton className="h-16 w-full" />
             <div className="grid grid-cols-2 gap-2">
@@ -192,7 +192,7 @@ export function OrderDetailSkeleton() {
               <Skeleton className="h-14 w-full" />
             </div>
           </div>
-          <div className="bg-white border border-[#E6E3DB] rounded-xs p-6 space-y-2">
+          <div className="bg-white border border-line rounded-xs p-6 space-y-2">
             <Skeleton className="h-5 w-32" />
             {Array.from({ length: 3 }).map((_, i) => (
               <Skeleton key={i} className="h-12 w-full" />

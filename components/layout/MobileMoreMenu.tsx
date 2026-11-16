@@ -42,9 +42,9 @@ export function MobileMoreMenu() {
         aria-hidden="true"
       />
 
-      <div className="w-full bg-[#FFFFFF] max-h-[80vh] flex flex-col border-t border-[#E6E3DB] shadow-xl animate-in slide-in-from-bottom duration-200">
+      <div className="w-full bg-white max-h-[80vh] flex flex-col border-t border-line shadow-xl animate-in slide-in-from-bottom duration-200">
         {/* Header */}
-        <div className="py-4 px-6 flex items-center justify-between border-b border-[#F0ECE1]">
+        <div className="py-4 px-6 flex items-center justify-between border-b border-line-soft">
           <span className="font-sans text-sm font-semibold tracking-wide uppercase text-black">
             Navigation Menu
           </span>
@@ -66,7 +66,7 @@ export function MobileMoreMenu() {
               placeholder="Search destinations..."
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-[#F7F5F0] border border-[#E6E3DB] text-xs font-sans text-black placeholder:text-neutral-500 focus:outline-none focus:border-black transition-colors"
+              className="w-full pl-9 pr-4 py-2 bg-ivory border border-line text-xs font-sans text-black placeholder:text-neutral-500 focus:outline-none focus:border-wine transition-colors"
             />
           </div>
         </div>
@@ -84,7 +84,7 @@ export function MobileMoreMenu() {
                   {group.label}
                 </div>
 
-                <div className="divide-y divide-[#F0ECE1] border border-[#E6E3DB] bg-[#FAF9F6]">
+                <div className="divide-y divide-line-soft border border-line bg-ivory">
                   {items.map((item) => {
                     const isActive = pathname.startsWith(item.href);
 
@@ -104,7 +104,7 @@ export function MobileMoreMenu() {
                             <div className="text-xs font-medium text-black flex items-center gap-2">
                               <span className="truncate">{item.label}</span>
                               {item.badge != null && (
-                                <span className="text-[10px] px-1.5 py-0.5 font-mono shrink-0 rounded-xs bg-[#EAE6DD] text-neutral-600">
+                                <span className="text-[10px] px-1.5 py-0.5 font-mono shrink-0 rounded-xs bg-sunk text-neutral-600">
                                   {item.badge}
                                 </span>
                               )}
@@ -130,7 +130,7 @@ export function MobileMoreMenu() {
             </div>
             <button
               onClick={signOut}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#E6E3DB] text-xs text-neutral-600 rounded-xs"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-line text-xs text-neutral-600 rounded-xs"
             >
               <LogOut className="w-3.5 h-3.5" />
               Sign Out

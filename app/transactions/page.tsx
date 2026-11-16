@@ -126,9 +126,9 @@ export default function TransactionsPage() {
     <RouteGuard requiredPermission="transactions.read" moduleName="Transactions">
       <div className="space-y-6 animate-in fade-in duration-200">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-[#E6E3DB]">
+        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-line">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-black tracking-tight">
+            <h1 className="text-2xl sm:text-3xl">
               Transactions
             </h1>
             <p className="text-xs text-neutral-500 mt-1">
@@ -151,7 +151,7 @@ export default function TransactionsPage() {
         )}
 
         {/* Search */}
-        <div className="flex items-center bg-white p-3 border border-[#E6E3DB] rounded-xs">
+        <div className="flex items-center bg-white p-3 border border-line rounded-xs">
           <div className="relative flex-1 max-w-sm">
             <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-2.5" />
             <input
@@ -159,15 +159,15 @@ export default function TransactionsPage() {
               placeholder="Search by customer, order, payment ref..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 bg-[#FAF9F6] border border-[#E6E3DB] text-xs focus:outline-none focus:border-black rounded-xs"
+              className="w-full pl-9 pr-3 py-1.5 bg-ivory border border-line text-xs focus:outline-none focus:border-wine rounded-xs"
             />
           </div>
         </div>
 
         {/* Desktop Table View */}
-        <div className="hidden md:block bg-white border border-[#E6E3DB] rounded-xs overflow-hidden">
+        <div className="hidden md:block bg-white border border-line rounded-xs overflow-hidden">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#FAF9F6] text-neutral-400 font-medium text-[11px] border-b border-[#E6E3DB]">
+            <thead className="bg-ivory text-neutral-400 font-medium text-[11px] border-b border-line">
               <tr>
                 <th className="py-3.5 px-4">S.No</th>
                 <th className="py-3.5 px-4">Customer</th>
@@ -179,9 +179,9 @@ export default function TransactionsPage() {
                 {canWrite && <th className="py-3.5 px-4 text-center">Edit</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#F0ECE1]">
+            <tbody className="divide-y divide-line-soft">
               {filteredTransactions.map((txn) => (
-                <tr key={txn.id} className="hover:bg-[#FAF9F6] transition-colors">
+                <tr key={txn.id} className="hover:bg-ivory transition-colors">
                   <td className="py-3 px-4 font-mono text-neutral-500">
                     {String(txn.serial_number).padStart(3, "0")}
                   </td>
@@ -229,7 +229,7 @@ export default function TransactionsPage() {
                     <td className="py-3 px-4 text-center">
                       <button
                         onClick={() => { setEditing(txn); setFormOpen(true); }}
-                        className="inline-flex items-center justify-center w-7 h-7 rounded-xs border border-[#E6E3DB] hover:border-black hover:bg-[#F4F2ED] transition-colors"
+                        className="inline-flex items-center justify-center w-7 h-7 rounded-xs border border-line hover:border-wine hover:bg-sunk transition-colors"
                         title="Edit transaction"
                       >
                         <Pencil className="w-3.5 h-3.5" />
@@ -252,7 +252,7 @@ export default function TransactionsPage() {
           {filteredTransactions.map((txn) => (
             <div
               key={txn.id}
-              className="p-4 bg-white border border-[#E6E3DB] rounded-xs space-y-3"
+              className="p-4 bg-white border border-line rounded-xs space-y-3"
             >
               <div className="flex items-center justify-between">
                 <span className="font-mono text-[11px] text-neutral-400">
@@ -265,7 +265,7 @@ export default function TransactionsPage() {
                   {canWrite && (
                     <button
                       onClick={() => { setEditing(txn); setFormOpen(true); }}
-                      className="inline-flex items-center justify-center w-7 h-7 rounded-xs border border-[#E6E3DB]"
+                      className="inline-flex items-center justify-center w-7 h-7 rounded-xs border border-line"
                     >
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
@@ -301,7 +301,7 @@ export default function TransactionsPage() {
                 )}
               </div>
 
-              <div className="pt-2 border-t border-[#F0ECE1] flex items-center justify-between text-xs">
+              <div className="pt-2 border-t border-line-soft flex items-center justify-between text-xs">
                 <span className="font-mono text-[11px] text-neutral-500">
                   {txn.payment_ref}
                 </span>

@@ -3,38 +3,51 @@
 @tailwind utilities;
 
 :root {
-  --background: 0 0% 100%;
-  --foreground: 0 0% 8%;
-  --border: 43 18% 89%;
-  --input: 43 18% 89%;
-  --ring: 0 0% 0%;
-  --primary: 0 0% 0%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 40 20% 95%;
-  --secondary-foreground: 0 0% 8%;
-  --muted: 40 20% 95%;
-  --muted-foreground: 0 0% 45%;
-  --accent: 40 20% 93%;
-  --accent-foreground: 0 0% 8%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 8%;
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 30%;
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 0 0% 100%;
+  /* Varnika brand tokens (HSL) — see design/store-blueprint.html */
+  --background: 50 18% 93%;        /* ivory #F1F0EA */
+  --foreground: 13 20% 12%;        /* ink #241B18 */
+  --border: 44 20% 84%;            /* line #DFDBCF */
+  --input: 44 20% 84%;
+  --ring: 350 68% 17%;             /* wine */
+  --primary: 350 68% 17%;          /* wine #4A0E19 */
+  --primary-foreground: 37 41% 94%;
+  --secondary: 46 14% 89%;         /* sunk #E9E7DF */
+  --secondary-foreground: 13 20% 12%;
+  --muted: 46 14% 89%;
+  --muted-foreground: 17 6% 41%;   /* #6E6560 */
+  --accent: 46 14% 89%;
+  --accent-foreground: 13 20% 12%;
+  --popover: 48 33% 97%;           /* paper #FAF9F5 */
+  --popover-foreground: 13 20% 12%;
+  --card: 48 33% 97%;
+  --card-foreground: 13 20% 12%;
+  --destructive: 4 62% 45%;
+  --destructive-foreground: 48 33% 97%;
 }
 
 html {
   font-size: 112.5%; /* 18px if base is 16px */
-  font-weight: 500; /* medium */
+  font-weight: 400;
 }
 
 @layer base {
   body {
-    @apply bg-background text-foreground text-base font-medium;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    letter-spacing: -0.011em;
+    @apply bg-background text-foreground text-base;
   }
+  /* Page titles: Gilda Display in wine, like the store blueprint */
+  h1 {
+    @apply font-serif font-normal text-wine;
+    letter-spacing: 0.005em;
+  }
+  ::selection {
+    background: #4A0E19;
+    color: #FAF9F5;
+  }
+}
+
+/* Former monospace labels/IDs keep aligned digits */
+.font-mono {
+  font-variant-numeric: tabular-nums;
 }
 
 /* Subtle minimal scrollbars */
@@ -46,8 +59,8 @@ html {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #D8D4CA;
+  background: #DFDBCF;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #AFAAA0;
+  background: #A39B93;
 }

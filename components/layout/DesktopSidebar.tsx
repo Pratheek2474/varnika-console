@@ -24,7 +24,7 @@ export function DesktopSidebar() {
     <TooltipProvider delayDuration={150}>
       <aside
         className={cn(
-          "hidden lg:flex flex-col border-r border-[#E6E3DB] bg-[#F7F5F0] text-[#141414] transition-all duration-200 ease-out select-none z-30 shrink-0",
+          "hidden lg:flex flex-col border-r border-line bg-ivory text-ink transition-all duration-200 ease-out select-none z-30 shrink-0",
           // Sticky viewport-height column: the nav list scrolls on its own,
           // the page scrolls separately.
           "lg:sticky lg:top-14 lg:h-[calc(100dvh-3.5rem)]",
@@ -42,7 +42,7 @@ export function DesktopSidebar() {
                   {group.label}
                 </div>
               ) : (
-                <div className="w-6 mx-auto border-t border-[#E6E3DB] my-1" />
+                <div className="w-6 mx-auto border-t border-line my-1" />
               )}
 
               <div className="space-y-0.5">
@@ -59,8 +59,8 @@ export function DesktopSidebar() {
                       className={cn(
                         "flex items-center gap-3 px-3 py-2 text-xs font-normal transition-all rounded-sm group relative",
                         isActive
-                          ? "bg-black text-white font-medium"
-                          : "text-neutral-600 hover:text-black hover:bg-[#EFECE5]",
+                          ? "bg-wine text-white font-medium"
+                          : "text-neutral-600 hover:text-black hover:bg-sunk",
                         sidebarCollapsed && "justify-center px-0 py-2"
                       )}
                     >
@@ -85,8 +85,8 @@ export function DesktopSidebar() {
                               className={cn(
                                 "text-[10px] px-1.5 py-0.5 font-mono shrink-0 rounded-xs",
                                 isActive
-                                  ? "bg-neutral-800 text-neutral-200"
-                                  : "bg-[#EAE6DD] text-neutral-600"
+                                  ? "bg-white/15 text-white"
+                                  : "bg-sunk text-neutral-600"
                               )}
                             >
                               {item.badge}
@@ -116,17 +116,17 @@ export function DesktopSidebar() {
         </div>
 
         {/* Footer: User Profile */}
-        <div className="border-t border-[#E6E3DB] p-3 bg-[#F2EFE8]">
+        <div className="border-t border-line p-3 bg-sunk">
           {sidebarCollapsed ? (
             <div className="flex justify-center">
-              <div className="w-8 h-8 rounded-full bg-black text-white text-xs font-medium flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-wine text-white text-xs font-medium flex items-center justify-center">
                 {(user?.name ?? "?").charAt(0)}
               </div>
             </div>
           ) : (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-full bg-black text-white text-xs font-medium flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-full bg-wine text-white text-xs font-medium flex items-center justify-center shrink-0">
                   {(user?.name ?? "?").charAt(0)}
                 </div>
                 <div className="min-w-0">
@@ -141,7 +141,7 @@ export function DesktopSidebar() {
 
               <span
                 title="Console role"
-                className="text-[10px] px-2 py-0.5 border border-[#D5D0C4] bg-white text-neutral-700 rounded-xs uppercase font-mono"
+                className="text-[10px] px-2 py-0.5 border border-neutral-300 bg-white text-neutral-700 rounded-xs uppercase font-mono"
               >
                 {role === "admin" ? "Admin" : "Staff"}
               </span>

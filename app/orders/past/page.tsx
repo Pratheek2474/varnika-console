@@ -57,9 +57,9 @@ export default function PastOrdersPage() {
         </Link>
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-[#E6E3DB]">
+        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-line">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-black tracking-tight">
+            <h1 className="text-2xl sm:text-3xl">
               Past Orders
             </h1>
             <p className="text-xs text-neutral-500 mt-1">
@@ -69,7 +69,7 @@ export default function PastOrdersPage() {
         </div>
 
         {/* Search */}
-        <div className="flex items-center bg-white p-3 border border-[#E6E3DB] rounded-xs">
+        <div className="flex items-center bg-white p-3 border border-line rounded-xs">
           <div className="relative flex-1 max-w-sm">
             <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-2.5" />
             <input
@@ -77,15 +77,15 @@ export default function PastOrdersPage() {
               placeholder="Search past orders..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 bg-[#FAF9F6] border border-[#E6E3DB] text-xs focus:outline-none focus:border-black rounded-xs"
+              className="w-full pl-9 pr-3 py-1.5 bg-ivory border border-line text-xs focus:outline-none focus:border-wine rounded-xs"
             />
           </div>
         </div>
 
         {/* Desktop Table View */}
-        <div className="hidden md:block bg-white border border-[#E6E3DB] rounded-xs overflow-hidden">
+        <div className="hidden md:block bg-white border border-line rounded-xs overflow-hidden">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#FAF9F6] text-neutral-400 font-medium text-[11px] border-b border-[#E6E3DB]">
+            <thead className="bg-ivory text-neutral-400 font-medium text-[11px] border-b border-line">
               <tr>
                 <th className="py-3.5 px-6">Order</th>
                 <th className="py-3.5 px-6">Customer</th>
@@ -95,9 +95,9 @@ export default function PastOrdersPage() {
                 <th className="py-3.5 px-6 text-center">Details</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#F0ECE1]">
+            <tbody className="divide-y divide-line-soft">
               {filteredOrders.map((order) => (
-                <tr key={order.id} className="hover:bg-[#FAF9F6] transition-colors">
+                <tr key={order.id} className="hover:bg-ivory transition-colors">
                   <td className="py-4 px-6">
                     <Link
                       href={`/orders/${order.id}`}
@@ -131,7 +131,7 @@ export default function PastOrdersPage() {
                   </td>
                   <td className="py-4 px-6 text-center">
                     <Link href={`/orders/${order.id}`}>
-                      <span className="inline-flex items-center justify-center w-7 h-7 rounded-xs border border-[#E6E3DB] hover:border-black hover:bg-black hover:text-white transition-colors">
+                      <span className="inline-flex items-center justify-center w-7 h-7 rounded-xs border border-line hover:border-wine hover:bg-wine hover:text-white transition-colors">
                         <ExternalLink className="w-3.5 h-3.5" />
                       </span>
                     </Link>
@@ -153,7 +153,7 @@ export default function PastOrdersPage() {
             <div
               key={order.id}
               onClick={() => router.push(`/orders/${order.id}`)}
-              className="p-4 bg-white border border-[#E6E3DB] hover:border-black/40 transition-colors rounded-xs block cursor-pointer"
+              className="p-4 bg-white border border-line hover:border-wine/40 transition-colors rounded-xs block cursor-pointer"
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="font-mono text-xs font-medium text-black">

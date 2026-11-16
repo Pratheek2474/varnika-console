@@ -203,9 +203,9 @@ export default function ReportsPage() {
       moduleName="Reports"
     >
       <div className="space-y-6 animate-in fade-in duration-200">
-        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-[#E6E3DB]">
+        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-line">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-black tracking-tight">
+            <h1 className="text-2xl sm:text-3xl">
               Reports
             </h1>
             <p className="text-xs text-neutral-500 mt-1">
@@ -254,7 +254,7 @@ export default function ReportsPage() {
             </Button>
           </Card>
 
-          <Card className="p-5 space-y-3 md:col-span-3 border-black">
+          <Card className="p-5 space-y-3 md:col-span-3 border-wine">
             <h3 className="text-sm font-semibold text-black">
               Full Backup (Excel)
             </h3>

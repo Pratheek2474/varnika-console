@@ -95,7 +95,7 @@ function FeedItem({ item }: { item: ActivityRow }) {
   const noun = ENTITY_NOUN[item.entity_type] ?? item.entity_type;
 
   return (
-    <div className="p-4 bg-white border border-[#E6E3DB] rounded-xs">
+    <div className="p-4 bg-white border border-line rounded-xs">
       <div className="text-xs text-black leading-relaxed">
         <span className="font-semibold">{item.actor_name}</span>{" "}
         <span className="text-neutral-500">{verb}</span>{" "}
@@ -235,8 +235,8 @@ export default function UpdatesPage() {
     <RouteGuard requiredPermission="home.read" moduleName="Updates">
       <div className="space-y-6 animate-in fade-in duration-200">
         {/* Header */}
-        <div className="pb-4 border-b border-[#E6E3DB]">
-          <h1 className="text-2xl sm:text-3xl font-semibold text-black tracking-tight">
+        <div className="pb-4 border-b border-line">
+          <h1 className="text-2xl sm:text-3xl">
             Updates
           </h1>
           <p className="text-xs text-neutral-500 mt-1">
@@ -266,8 +266,8 @@ export default function UpdatesPage() {
                 className={cn(
                   "px-3 py-1.5 transition-colors rounded-xs whitespace-nowrap flex items-center gap-1.5",
                   isActive
-                    ? "bg-black text-white font-medium"
-                    : "bg-white border border-[#E6E3DB] text-neutral-600 hover:text-black hover:border-black"
+                    ? "bg-wine text-white font-medium"
+                    : "bg-white border border-line text-neutral-600 hover:text-black hover:border-wine"
                 )}
               >
                 {f.label}
@@ -283,7 +283,7 @@ export default function UpdatesPage() {
         <div className="space-y-8 max-w-3xl">
           {groups.map((group) => (
             <section key={group.key} className="space-y-3">
-              <div className="px-1 py-2 bg-[#FBF9F5]">
+              <div className="px-1 py-2 bg-ivory">
                 <div className="flex items-center gap-3">
                   <span className="text-xs font-semibold text-black whitespace-nowrap">
                     {group.label}
@@ -291,7 +291,7 @@ export default function UpdatesPage() {
                   <span className="text-[10px] font-mono text-neutral-400">
                     {group.rows.length} update{group.rows.length === 1 ? "" : "s"}
                   </span>
-                  <div className="flex-1 h-px bg-[#E6E3DB]" />
+                  <div className="flex-1 h-px bg-line" />
                 </div>
               </div>
               {group.rows.map((item) => (

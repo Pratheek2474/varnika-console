@@ -168,7 +168,7 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
               <button
                 onClick={() => customer.avatar_url && setLightbox({ url: customer.avatar_url, label: customer.customer_name })}
-                className="w-16 h-16 rounded-full overflow-hidden relative shrink-0 border border-[#E6E3DB] bg-[#F4F2ED] flex items-center justify-center cursor-pointer disabled:cursor-default"
+                className="w-16 h-16 rounded-full overflow-hidden relative shrink-0 border border-line bg-sunk flex items-center justify-center cursor-pointer disabled:cursor-default"
                 disabled={!customer.avatar_url}
                 title={customer.avatar_url ? "Open photo" : undefined}
               >
@@ -187,7 +187,7 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
               </button>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <h1 className="text-xl font-semibold text-black tracking-tight">
+                  <h1 className="text-xl">
                     {customer.customer_name}
                   </h1>
                 </div>
@@ -246,7 +246,7 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
               {m ? (
                 <div className="grid grid-cols-3 gap-2 text-center font-mono">
                   {MEASUREMENT_FIELDS.map((f) => (
-                    <div key={f.key} className="p-2.5 bg-white border border-[#E6E3DB] rounded-xs">
+                    <div key={f.key} className="p-2.5 bg-white border border-line rounded-xs">
                       <div className="text-[10px] text-neutral-400 font-sans">{f.label}</div>
                       <div className="text-sm font-semibold text-black mt-0.5">
                         {Number((m as unknown as Record<string, number>)[f.key])}"
@@ -262,7 +262,7 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
               )}
 
               {customer.special_notes && (
-                <div className="p-3 bg-[#FAF9F6] border border-[#E6E3DB] text-neutral-600 leading-relaxed text-xs rounded-xs">
+                <div className="p-3 bg-ivory border border-line text-neutral-600 leading-relaxed text-xs rounded-xs">
                   {customer.special_notes}
                 </div>
               )}
@@ -287,7 +287,7 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
                     <Link
                       key={order.id}
                       href={`/orders/${order.id}`}
-                      className="block p-3 bg-white border border-[#E6E3DB] hover:border-black/40 transition-colors rounded-xs group"
+                      className="block p-3 bg-white border border-line hover:border-wine/40 transition-colors rounded-xs group"
                     >
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-mono text-xs font-medium text-black inline-flex items-center gap-1">
@@ -342,7 +342,7 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
                       <button
                         key={att.id}
                         onClick={() => att.url && !att.url.startsWith("#") && setLightbox({ url: att.url, label: att.name || "Photo" })}
-                        className="relative aspect-square bg-[#FAF9F6] border border-[#E6E3DB] rounded-xs overflow-hidden group cursor-pointer hover:border-black/40 transition-colors"
+                        className="relative aspect-square bg-ivory border border-line rounded-xs overflow-hidden group cursor-pointer hover:border-wine/40 transition-colors"
                         title={att.name || "Open photo"}
                       >
                         {att.url && !att.url.startsWith("#") ? (
@@ -361,7 +361,7 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
                     href={att.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-3 p-2.5 bg-white border border-[#E6E3DB] rounded-xs hover:border-black/40 transition-colors"
+                    className="flex items-center gap-3 p-2.5 bg-white border border-line rounded-xs hover:border-wine/40 transition-colors"
                   >
                     <FileText className="w-4 h-4 text-neutral-400 shrink-0" />
                     <div className="flex-1 min-w-0">

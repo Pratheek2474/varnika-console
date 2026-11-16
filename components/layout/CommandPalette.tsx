@@ -33,9 +33,9 @@ export function CommandPalette() {
 
   return (
     <Dialog open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen}>
-      <DialogContent className="max-w-xl p-0 overflow-hidden bg-white border border-[#E6E3DB] shadow-lg">
+      <DialogContent className="max-w-xl p-0 overflow-hidden bg-white border border-line shadow-lg">
         {/* Search Input */}
-        <div className="flex items-center px-5 py-4 border-b border-[#F0ECE1] bg-[#FAF9F6]">
+        <div className="flex items-center px-5 py-4 border-b border-line-soft bg-ivory">
           <Search className="w-4 h-4 text-neutral-500 mr-3 shrink-0" />
           <input
             type="text"
@@ -45,7 +45,7 @@ export function CommandPalette() {
             className="w-full bg-transparent text-sm text-black placeholder:text-neutral-500 focus:outline-none font-sans"
             autoFocus
           />
-          <kbd className="text-[10px] bg-white border border-[#E6E3DB] px-1.5 py-0.5 text-neutral-500 font-mono">
+          <kbd className="text-[10px] bg-white border border-line px-1.5 py-0.5 text-neutral-500 font-mono">
             ESC
           </kbd>
         </div>
@@ -66,7 +66,7 @@ export function CommandPalette() {
                   <button
                     key={item.id}
                     onClick={() => handleSelectRoute(item.href)}
-                    className="w-full flex items-center justify-between px-3 py-2.5 text-xs text-neutral-700 hover:bg-[#F7F5F0] hover:text-black transition-colors text-left group rounded-xs"
+                    className="w-full flex items-center justify-between px-3 py-2.5 text-xs text-neutral-700 hover:bg-ivory hover:text-black transition-colors text-left group rounded-xs"
                   >
                     <div className="flex items-center gap-3">
                       <NavIcon
@@ -89,7 +89,7 @@ export function CommandPalette() {
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-2.5 border-t border-[#F0ECE1] bg-[#FAF9F6] flex items-center justify-between text-[11px] text-neutral-500 font-sans">
+        <div className="px-5 py-2.5 border-t border-line-soft bg-ivory flex items-center justify-between text-[11px] text-neutral-500 font-sans">
           <span>Varnika Console</span>
           <span>Shortcut: ⌘B toggles sidebar</span>
         </div>

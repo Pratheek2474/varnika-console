@@ -68,9 +68,9 @@ export default function AnalyticsPage() {
       moduleName="Analytics"
     >
       <div className="space-y-6 animate-in fade-in duration-200">
-        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-[#E6E3DB]">
+        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-line">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-black tracking-tight">
+            <h1 className="text-2xl sm:text-3xl">
               Analytics & Trends
             </h1>
             <p className="text-xs text-neutral-500 mt-1">
@@ -93,13 +93,13 @@ export default function AnalyticsPage() {
                     layout="vertical"
                     margin={{ top: 10, right: 30, left: 40, bottom: 5 }}
                   >
-                    <XAxis type="number" stroke="#A3A3A3" fontSize={11} tickLine={false} allowDecimals={false} />
-                    <YAxis dataKey="stage" type="category" stroke="#A3A3A3" fontSize={11} tickLine={false} width={130} />
+                    <XAxis type="number" stroke="#A39B93" fontSize={11} tickLine={false} allowDecimals={false} />
+                    <YAxis dataKey="stage" type="category" stroke="#A39B93" fontSize={11} tickLine={false} width={130} />
                     <RechartsTooltip
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
                           return (
-                            <div className="bg-black text-white p-2.5 text-xs border border-neutral-800 rounded-xs">
+                            <div className="bg-ink text-white p-2.5 text-xs border border-ink rounded-xs">
                               <span>{payload[0].payload.stage}: {payload[0].value}</span>
                             </div>
                           );
@@ -107,7 +107,7 @@ export default function AnalyticsPage() {
                         return null;
                       }}
                     />
-                    <Bar dataKey="count" fill="#141414" />
+                    <Bar dataKey="count" fill="#4A0E19" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -125,17 +125,17 @@ export default function AnalyticsPage() {
                   <AreaChart data={byMonth} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>
                       <linearGradient id="anaAreaMono" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#141414" stopOpacity={0.25} />
-                        <stop offset="95%" stopColor="#141414" stopOpacity={0.0} />
+                        <stop offset="5%" stopColor="#4A0E19" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#4A0E19" stopOpacity={0.0} />
                       </linearGradient>
                     </defs>
-                    <XAxis dataKey="month" stroke="#A3A3A3" fontSize={11} tickLine={false} />
-                    <YAxis stroke="#A3A3A3" fontSize={11} tickLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
+                    <XAxis dataKey="month" stroke="#A39B93" fontSize={11} tickLine={false} />
+                    <YAxis stroke="#A39B93" fontSize={11} tickLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
                     <RechartsTooltip
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
                           return (
-                            <div className="bg-black text-white p-2.5 text-xs border border-neutral-800 rounded-xs">
+                            <div className="bg-ink text-white p-2.5 text-xs border border-ink rounded-xs">
                               <span>{formatCurrency(payload[0].value as number)}</span>
                             </div>
                           );
@@ -143,7 +143,7 @@ export default function AnalyticsPage() {
                         return null;
                       }}
                     />
-                    <Area type="monotone" dataKey="revenue" stroke="#141414" strokeWidth={2} fill="url(#anaAreaMono)" />
+                    <Area type="monotone" dataKey="revenue" stroke="#4A0E19" strokeWidth={2} fill="url(#anaAreaMono)" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -169,13 +169,13 @@ export default function AnalyticsPage() {
                     layout="vertical"
                     margin={{ top: 10, right: 30, left: 40, bottom: 5 }}
                   >
-                    <XAxis type="number" stroke="#A3A3A3" fontSize={11} tickLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
-                    <YAxis dataKey="name" type="category" stroke="#A3A3A3" fontSize={11} tickLine={false} width={130} />
+                    <XAxis type="number" stroke="#A39B93" fontSize={11} tickLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
+                    <YAxis dataKey="name" type="category" stroke="#A39B93" fontSize={11} tickLine={false} width={130} />
                     <RechartsTooltip
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
                           return (
-                            <div className="bg-black text-white p-2.5 text-xs border border-neutral-800 rounded-xs">
+                            <div className="bg-ink text-white p-2.5 text-xs border border-ink rounded-xs">
                               <span>{payload[0].payload.name}: {formatCurrency(payload[0].value as number)}</span>
                             </div>
                           );
@@ -183,7 +183,7 @@ export default function AnalyticsPage() {
                         return null;
                       }}
                     />
-                    <Bar dataKey="total" fill="#141414" />
+                    <Bar dataKey="total" fill="#4A0E19" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

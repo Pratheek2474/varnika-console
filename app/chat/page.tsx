@@ -51,16 +51,11 @@ import { Attachment } from "@/components/ui/attachment";
 type ThreadMessage = ChatMessageRow & { chat_attachments: ChatAttachmentRow[] };
 
 const AVATAR_COLORS = [
-  "bg-rose-500",
-  "bg-blue-500",
-  "bg-emerald-500",
-  "bg-amber-500",
-  "bg-violet-500",
-  "bg-pink-500",
-  "bg-teal-500",
-  "bg-orange-500",
-  "bg-indigo-500",
-  "bg-cyan-500",
+  "bg-wine",
+  "bg-gold",
+  "bg-sage",
+  "bg-wine-2",
+  "bg-neutral-600",
 ];
 function avatarColor(name: string) {
   let h = 0;
@@ -302,18 +297,18 @@ export default function ChatPage() {
       requiredFeature="chat"
       moduleName="Customer Chat"
     >
-      <div className="h-[calc(100dvh-3.5rem)] lg:h-[calc(100dvh-3.5rem)] flex flex-col bg-[#FAF9F6] overflow-hidden">
+      <div className="h-[calc(100dvh-3.5rem)] lg:h-[calc(100dvh-3.5rem)] flex flex-col bg-ivory overflow-hidden">
         <div className="flex-1 flex overflow-hidden min-h-0">
           {/* ─── Conversation list ─── */}
           <div
             className={cn(
-              "w-full lg:w-80 border-r border-[#E6E3DB] bg-white flex flex-col overflow-hidden min-h-0",
+              "w-full lg:w-80 border-r border-line bg-white flex flex-col overflow-hidden min-h-0",
               selectedId && "hidden lg:flex",
             )}
           >
             {/* List header: "Chats" + search + refresh + new */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[#E6E3DB] shrink-0">
-              <h1 className="text-lg font-semibold text-black">Chats</h1>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-line shrink-0">
+              <h1 className="text-lg">Chats</h1>
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => {
@@ -323,7 +318,7 @@ export default function ChatPage() {
                         setThread(d?.messages ?? []),
                       );
                   }}
-                  className="p-1.5 border border-[#E6E3DB] hover:border-black rounded-full text-neutral-500 hover:text-black transition-colors"
+                  className="p-1.5 border border-line hover:border-wine rounded-full text-neutral-500 hover:text-black transition-colors"
                   title="Refresh"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
@@ -331,7 +326,7 @@ export default function ChatPage() {
                 {canWrite && (
                   <button
                     onClick={openMessageDialog}
-                    className="p-1.5 bg-black text-white rounded-full hover:bg-neutral-800 transition-colors"
+                    className="p-1.5 bg-wine text-white rounded-full hover:bg-wine-2 transition-colors"
                     title="New chat"
                   >
                     <Plus className="w-4 h-4" />
@@ -364,8 +359,8 @@ export default function ChatPage() {
                     href={`/chat/${conv.id}`}
                     onClick={() => setSelectedId(conv.id)}
                     className={cn(
-                      "w-full text-left px-4 py-3 border-b border-[#F0ECE1] hover:bg-[#FAF9F6] transition-colors flex items-center gap-3",
-                      isActive && "bg-[#F4F2ED]",
+                      "w-full text-left px-4 py-3 border-b border-line-soft hover:bg-ivory transition-colors flex items-center gap-3",
+                      isActive && "bg-sunk",
                     )}
                   >
                     <div
@@ -422,14 +417,14 @@ export default function ChatPage() {
           {/* ─── Chat thread ─── */}
           <div
             className={cn(
-              "flex-1 flex flex-col bg-[#F0EDE6] min-h-0",
+              "flex-1 flex flex-col bg-sunk min-h-0",
               !selectedId && "hidden lg:flex",
             )}
           >
             {selected ? (
               <>
                 {/* Thread header — fixed to top */}
-                <div className="px-3 py-2 border-b border-[#E6E3DB] bg-white flex items-center gap-3 shrink-0">
+                <div className="px-3 py-2 border-b border-line bg-white flex items-center gap-3 shrink-0">
                   <Link
                     href="/chat"
                     onClick={() => setSelectedId(null)}
@@ -510,7 +505,7 @@ export default function ChatPage() {
 
                 {/* Composer — fixed to bottom */}
                 {canWrite && (
-                  <div className="px-3 py-2.5 border-t border-[#E6E3DB] bg-white shrink-0">
+                  <div className="px-3 py-2.5 border-t border-line bg-white shrink-0">
                     {pendingFiles.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mb-2">
                         {pendingFiles.map(({ file, previewUrl }, i) => (
@@ -553,7 +548,7 @@ export default function ChatPage() {
                       />
                       <button
                         onClick={() => fileRef.current?.click()}
-                        className="p-2 border border-[#E6E3DB] hover:border-black rounded-full text-neutral-500 hover:text-black transition-colors shrink-0"
+                        className="p-2 border border-line hover:border-wine rounded-full text-neutral-500 hover:text-black transition-colors shrink-0"
                         title={
                           effectiveOrderId
                             ? "Attach — will also appear on the customer and latest order"
@@ -572,7 +567,7 @@ export default function ChatPage() {
                           }
                         }}
                         placeholder="Message…"
-                        className="flex-1 px-3.5 py-2 bg-[#F4F2ED] border border-[#E6E3DB] text-sm focus:outline-none focus:border-black rounded-full"
+                        className="flex-1 px-3.5 py-2 bg-sunk border border-line text-sm focus:outline-none focus:border-wine rounded-full"
                       />
                       <Button
                         variant="default"

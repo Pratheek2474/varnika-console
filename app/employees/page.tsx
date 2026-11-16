@@ -104,9 +104,9 @@ export default function EmployeesPage() {
     <RouteGuard requiredPermission="employees.read" moduleName="Employees">
       <div className="space-y-6 animate-in fade-in duration-200">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-[#E6E3DB]">
+        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-line">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-black tracking-tight">
+            <h1 className="text-2xl sm:text-3xl">
               Employees
             </h1>
             <p className="text-xs text-neutral-500 mt-1">
@@ -140,7 +140,7 @@ export default function EmployeesPage() {
         )}
 
         {/* Search */}
-        <div className="flex items-center bg-white p-3 border border-[#E6E3DB] rounded-xs">
+        <div className="flex items-center bg-white p-3 border border-line rounded-xs">
           <div className="relative flex-1 max-w-sm">
             <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-2.5" />
             <input
@@ -148,15 +148,15 @@ export default function EmployeesPage() {
               placeholder="Search by name or role..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 bg-[#FAF9F6] border border-[#E6E3DB] text-xs focus:outline-none focus:border-black rounded-xs"
+              className="w-full pl-9 pr-3 py-1.5 bg-ivory border border-line text-xs focus:outline-none focus:border-wine rounded-xs"
             />
           </div>
         </div>
 
         {/* Desktop Table View */}
-        <div className="hidden md:block bg-white border border-[#E6E3DB] rounded-xs overflow-hidden">
+        <div className="hidden md:block bg-white border border-line rounded-xs overflow-hidden">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#FAF9F6] text-neutral-400 font-medium text-[11px] border-b border-[#E6E3DB]">
+            <thead className="bg-ivory text-neutral-400 font-medium text-[11px] border-b border-line">
               <tr>
                 <th className="py-3.5 px-6">Name</th>
                 <th className="py-3.5 px-6">Role</th>
@@ -165,12 +165,12 @@ export default function EmployeesPage() {
                 {canWrite && <th className="py-3.5 px-6 text-center">Actions</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#F0ECE1]">
+            <tbody className="divide-y divide-line-soft">
               {visible.map((emp) => (
-                <tr key={emp.id} className="hover:bg-[#FAF9F6] transition-colors">
+                <tr key={emp.id} className="hover:bg-ivory transition-colors">
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-black text-white text-xs font-medium flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-wine text-white text-xs font-medium flex items-center justify-center shrink-0">
                         {emp.name.charAt(0)}
                       </div>
                       <div>
@@ -195,14 +195,14 @@ export default function EmployeesPage() {
                       <div className="flex items-center justify-center gap-1.5">
                         <button
                           onClick={() => { setEditing(emp); setFormOpen(true); }}
-                          className="inline-flex items-center justify-center w-7 h-7 rounded-xs border border-[#E6E3DB] hover:border-black hover:bg-[#F4F2ED] transition-colors"
+                          className="inline-flex items-center justify-center w-7 h-7 rounded-xs border border-line hover:border-wine hover:bg-sunk transition-colors"
                           title="Edit employee"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => toggleActive(emp)}
-                          className="inline-flex items-center justify-center w-7 h-7 rounded-xs border border-[#E6E3DB] hover:border-black hover:bg-[#F4F2ED] transition-colors"
+                          className="inline-flex items-center justify-center w-7 h-7 rounded-xs border border-line hover:border-wine hover:bg-sunk transition-colors"
                           title={emp.is_active ? "Deactivate" : "Reactivate"}
                         >
                           {emp.is_active ? (
@@ -228,7 +228,7 @@ export default function EmployeesPage() {
         {/* Mobile Card List */}
         <div className="md:hidden space-y-3">
           {visible.map((emp) => (
-            <div key={emp.id} className="p-4 bg-white border border-[#E6E3DB] rounded-xs space-y-2">
+            <div key={emp.id} className="p-4 bg-white border border-line rounded-xs space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-black">{emp.name}</span>
                 <Badge variant={emp.is_active ? "secondary" : "outline"} className="text-[10px]">
@@ -239,7 +239,7 @@ export default function EmployeesPage() {
                 {emp.role}{emp.phone ? ` · ${emp.phone}` : ""}
               </div>
               {canWrite && (
-                <div className="flex gap-2 pt-2 border-t border-[#F0ECE1]">
+                <div className="flex gap-2 pt-2 border-t border-line-soft">
                   <Button variant="outline" size="sm" className="flex-1 h-7 text-[11px]" onClick={() => { setEditing(emp); setFormOpen(true); }}>
                     <Pencil className="w-3 h-3 mr-1.5" />
                     Edit

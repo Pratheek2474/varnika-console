@@ -19,10 +19,10 @@ export function Field({
 }
 
 export const inputCls =
-  "w-full px-2.5 py-1.5 bg-white border border-[#E6E3DB] text-xs focus:outline-none focus:border-black rounded-xs";
+  "w-full px-2.5 py-1.5 bg-white border border-line text-xs focus:outline-none focus:border-wine rounded-xs";
 
 export const selectCls =
-  "w-full px-2.5 py-1.5 bg-white border border-[#E6E3DB] text-xs focus:outline-none focus:border-black rounded-xs";
+  "w-full px-2.5 py-1.5 bg-white border border-line text-xs focus:outline-none focus:border-wine rounded-xs";
 
 /**
  * Blank-by-default numeric input: plain text field with a numeric keypad on

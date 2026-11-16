@@ -76,7 +76,7 @@ export function NavigationProgress() {
   return (
     <div className="fixed top-0 left-0 right-0 z-[100] h-0.5 pointer-events-none">
       <div
-        className="h-full bg-black"
+        className="h-full bg-wine"
         style={{
           width: `${width}%`,
           opacity: active || width === 100 ? 1 : 0,

@@ -42,7 +42,7 @@ export function MobileBottomNav() {
 
   return (
     <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#FFFFFF]/95 backdrop-blur-md border-t border-[#E6E3DB] shadow-sm pb-[env(safe-area-inset-bottom)] select-none"
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-line shadow-sm pb-[env(safe-area-inset-bottom)] select-none"
       aria-label="Mobile Navigation"
     >
       <div className="flex items-center justify-around h-16 px-1">
@@ -64,7 +64,7 @@ export function MobileBottomNav() {
               )}
             >
               {isActive && (
-                <div className="absolute top-0 w-8 h-[2px] bg-black" />
+                <div className="absolute top-0 w-8 h-[2px] bg-wine" />
               )}
 
               <div className="relative">
@@ -76,7 +76,7 @@ export function MobileBottomNav() {
                   )}
                 />
                 {item.badge != null && (
-                  <span className="absolute -top-2 -right-3 min-w-[18px] h-[18px] px-1 rounded-full bg-black text-white text-[10px] font-mono flex items-center justify-center">
+                  <span className="absolute -top-2 -right-3 min-w-[18px] h-[18px] px-1 rounded-full bg-wine text-white text-[10px] font-mono flex items-center justify-center">
                     {item.badge}
                   </span>
                 )}
@@ -102,7 +102,7 @@ export function MobileBottomNav() {
           )}
         >
           {(mobileMoreOpen || isMoreActive) && (
-            <div className="absolute top-0 w-8 h-[2px] bg-black" />
+            <div className="absolute top-0 w-8 h-[2px] bg-wine" />
           )}
 
           <div className="relative">
@@ -113,7 +113,7 @@ export function MobileBottomNav() {
               )}
             />
             {moreHasBadge && (
-              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-black" />
+              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-wine" />
             )}
           </div>
 

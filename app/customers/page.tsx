@@ -105,9 +105,9 @@ export default function CustomersPage() {
     >
       <div className="space-y-6 animate-in fade-in duration-200">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-[#E6E3DB]">
+        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-line">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-black tracking-tight">
+            <h1 className="text-2xl sm:text-3xl">
               Customers
             </h1>
             <p className="text-xs text-neutral-500 mt-1">
@@ -130,7 +130,7 @@ export default function CustomersPage() {
         )}
 
         {/* Search */}
-        <div className="flex items-center bg-white p-3 border border-[#E6E3DB] rounded-xs">
+        <div className="flex items-center bg-white p-3 border border-line rounded-xs">
           <div className="relative flex-1 max-w-sm">
             <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-2.5" />
             <input
@@ -138,15 +138,15 @@ export default function CustomersPage() {
               placeholder="Search by client name or email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 bg-[#FAF9F6] border border-[#E6E3DB] text-xs focus:outline-none focus:border-black rounded-xs"
+              className="w-full pl-9 pr-3 py-1.5 bg-ivory border border-line text-xs focus:outline-none focus:border-wine rounded-xs"
             />
           </div>
         </div>
 
         {/* Desktop Table View */}
-        <div className="hidden md:block bg-white border border-[#E6E3DB] rounded-xs overflow-hidden">
+        <div className="hidden md:block bg-white border border-line rounded-xs overflow-hidden">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#FAF9F6] text-neutral-400 font-medium text-[11px] border-b border-[#E6E3DB]">
+            <thead className="bg-ivory text-neutral-400 font-medium text-[11px] border-b border-line">
               <tr>
                 <th className="py-3.5 px-6">Client Name</th>
                 <th className="py-3.5 px-6">Orders</th>
@@ -155,19 +155,19 @@ export default function CustomersPage() {
                 <th className="py-3.5 px-6 text-center">Profile</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#F0ECE1]">
+            <tbody className="divide-y divide-line-soft">
               {filteredCustomers.map((cust) => (
                 <tr
                   key={cust.id}
-                  className="hover:bg-[#FAF9F6] transition-colors"
+                  className="hover:bg-ivory transition-colors"
                 >
                   <td className="py-4 px-6">
                     <Link href={`/customers/${cust.id}`} className="flex items-center gap-3 group">
-                      <div className="w-8 h-8 rounded-full overflow-hidden relative shrink-0 border border-[#E6E3DB]">
+                      <div className="w-8 h-8 rounded-full overflow-hidden relative shrink-0 border border-line">
                         {cust.avatar_url ? (
                           <Image src={cust.avatar_url} alt={cust.customer_name} fill className="object-cover" />
                         ) : (
-                          <div className="w-full h-full bg-[#F4F2ED] flex items-center justify-center text-xs font-medium text-neutral-500">
+                          <div className="w-full h-full bg-sunk flex items-center justify-center text-xs font-medium text-neutral-500">
                             {cust.customer_name.charAt(0)}
                           </div>
                         )}
@@ -204,14 +204,14 @@ export default function CustomersPage() {
                       {canWrite && (
                         <button
                           onClick={() => { setEditing(cust); setFormOpen(true); }}
-                          className="inline-flex items-center justify-center w-7 h-7 rounded-xs border border-[#E6E3DB] hover:border-black hover:bg-[#F4F2ED] transition-colors"
+                          className="inline-flex items-center justify-center w-7 h-7 rounded-xs border border-line hover:border-wine hover:bg-sunk transition-colors"
                           title="Edit customer"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
                       )}
                       <Link href={`/customers/${cust.id}`}>
-                        <span className="inline-flex items-center justify-center w-7 h-7 rounded-xs border border-[#E6E3DB] hover:border-black hover:bg-black hover:text-white transition-colors">
+                        <span className="inline-flex items-center justify-center w-7 h-7 rounded-xs border border-line hover:border-wine hover:bg-wine hover:text-white transition-colors">
                           <ChevronRight className="w-3.5 h-3.5" />
                         </span>
                       </Link>
@@ -231,10 +231,10 @@ export default function CustomersPage() {
         {/* Mobile Card List */}
         <div className="md:hidden space-y-3">
           {filteredCustomers.map((cust) => (
-            <div key={cust.id} className="p-4 bg-white border border-[#E6E3DB] rounded-xs">
+            <div key={cust.id} className="p-4 bg-white border border-line rounded-xs">
               <Link
                 href={`/customers/${cust.id}`}
-                className="active:bg-[#FAF9F6] transition-colors flex items-center justify-between"
+                className="active:bg-ivory transition-colors flex items-center justify-between"
               >
                 <div className="space-y-1.5 min-w-0 pr-3">
                   <h3 className="text-sm font-medium text-black truncate">
@@ -254,7 +254,7 @@ export default function CustomersPage() {
                 <ChevronRight className="w-5 h-5 text-neutral-300 shrink-0" />
               </Link>
               {canWrite && (
-                <div className="pt-3 mt-1 border-t border-[#F0ECE1]">
+                <div className="pt-3 mt-1 border-t border-line-soft">
                   <Button variant="outline" size="sm" className="w-full h-7 text-[11px]" onClick={() => { setEditing(cust); setFormOpen(true); }}>
                     <Pencil className="w-3 h-3 mr-1.5" />
                     Edit

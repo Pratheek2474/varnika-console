@@ -17,30 +17,31 @@ const config: Config = {
     },
     extend: {
       fontFamily: {
-        sans: [
-          "Plus Jakarta Sans",
-          "Inter",
-          "-apple-system",
-          "BlinkMacSystemFont",
-          "Segoe UI",
-          "Roboto",
-          "sans-serif",
-        ],
-        serif: [
-          "Playfair Display",
-          "Didot",
-          "Bodoni MT",
-          "Georgia",
-          "serif",
-        ],
-        mono: [
-          "JetBrains Mono",
-          "SF Mono",
-          "Menlo",
-          "monospace",
-        ],
+        sans: ["Poppins", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
+        serif: ["Gilda Display", "Cormorant Garamond", "Georgia", "serif"],
+        // Labels/IDs previously used a monospace face; the brand uses Poppins with tabular figures.
+        mono: ["Poppins", "-apple-system", "Segoe UI", "sans-serif"],
+      },
+      borderRadius: {
+        xs: "8px",
       },
       colors: {
+        // Varnika brand (shared with design/store-blueprint.html)
+        black: "#241B18", // ink: every text-black / hover:text-black becomes warm ink
+        white: "#FAF9F5", // paper: cards and text on wine
+        ink: "#241B18",
+        ivory: "#F1F0EA",
+        paper: "#FAF9F5",
+        sunk: "#E9E7DF",
+        line: { DEFAULT: "#DFDBCF", soft: "#E8E5DC" },
+        wine: { DEFAULT: "#4A0E19", 2: "#6B1A28", soft: "#F4E7E8" },
+        gold: { DEFAULT: "#8C5A2B", soft: "#EFE3D3" },
+        sage: { DEFAULT: "#3E5F4F", soft: "#DDE5DD" },
+        blush: "#E8CFD2",
+        neutral: {
+          50: "#F7F6F2", 100: "#EFEDE7", 200: "#E2DFD7", 300: "#C9C3BA", 400: "#A39B93",
+          500: "#6E6560", 600: "#5A524D", 700: "#463F3B", 800: "#332C29", 900: "#241B18", 950: "#1A1311",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -75,11 +76,11 @@ const config: Config = {
           foreground: "hsl(var(--card-foreground))",
         },
         cream: {
-          DEFAULT: "#FAF9F6",
-          surface: "#F4F2ED",
-          muted: "#ECE9E2",
-          border: "#E6E3DB",
-          dark: "#D6D1C4",
+          DEFAULT: "#F1F0EA",
+          surface: "#E9E7DF",
+          muted: "#E9E7DF",
+          border: "#DFDBCF",
+          dark: "#C9C3BA",
         },
       },
     },

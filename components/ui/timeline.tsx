@@ -25,21 +25,21 @@ export function Timeline({ items, className }: TimelineProps) {
           <div key={idx} className="relative flex gap-3 pb-5 last:pb-0">
             {/* Vertical line */}
             {!isLast && (
-              <div className="absolute left-[7px] top-5 bottom-0 w-px bg-[#E6E3DB]" />
+              <div className="absolute left-[7px] top-5 bottom-0 w-px bg-line" />
             )}
 
             {/* Dot */}
             <div className="relative z-10 mt-0.5 shrink-0">
               {state === "completed" && (
-                <div className="w-4 h-4 rounded-full bg-black flex items-center justify-center">
+                <div className="w-4 h-4 rounded-full bg-wine flex items-center justify-center">
                   <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
                 </div>
               )}
               {state === "current" && (
-                <div className="w-4 h-4 rounded-full border-2 border-black bg-white" />
+                <div className="w-4 h-4 rounded-full border-2 border-wine bg-white" />
               )}
               {state === "upcoming" && (
-                <div className="w-4 h-4 rounded-full border border-[#E6E3DB] bg-white" />
+                <div className="w-4 h-4 rounded-full border border-line bg-white" />
               )}
             </div>
 

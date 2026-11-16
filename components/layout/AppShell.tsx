@@ -16,7 +16,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // Login is a standalone screen — just the login box, no nav/sidebar chrome.
   if (pathname === "/login" || pathname.startsWith("/login/")) {
     return (
-      <div className="min-h-screen bg-[#FAF9F6] text-[#141414] flex flex-col font-sans antialiased selection:bg-neutral-900 selection:text-white">
+      <div className="min-h-screen bg-ivory text-ink flex flex-col font-sans antialiased selection:bg-neutral-900 selection:text-white">
         <main className="flex-1 flex flex-col w-full mx-auto">
           {children}
         </main>
@@ -26,7 +26,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="h-[100dvh] bg-[#FAF9F6] text-[#141414] flex flex-col font-sans antialiased selection:bg-neutral-900 selection:text-white overflow-hidden">
+    <div className="h-[100dvh] bg-ivory text-ink flex flex-col font-sans antialiased selection:bg-neutral-900 selection:text-white overflow-hidden">
       {/* Instant navigation feedback (shows on link click, before route loads) */}
       <NavigationProgress />
 

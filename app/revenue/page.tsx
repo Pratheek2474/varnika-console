@@ -76,9 +76,9 @@ export default function RevenuePage() {
     >
       <div className="space-y-8 animate-in fade-in duration-200">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-[#E6E3DB]">
+        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-line">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-black tracking-tight">
+            <h1 className="text-2xl sm:text-3xl">
               Revenue & Ledger
             </h1>
             <p className="text-xs text-neutral-500 mt-1">
@@ -151,17 +151,17 @@ export default function RevenuePage() {
                   <AreaChart data={stats?.byMonth.map((b) => ({ month: b.label, revenue: b.revenue })) ?? []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>
                       <linearGradient id="revAreaMono" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#141414" stopOpacity={0.25} />
-                        <stop offset="95%" stopColor="#141414" stopOpacity={0.0} />
+                        <stop offset="5%" stopColor="#4A0E19" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#4A0E19" stopOpacity={0.0} />
                       </linearGradient>
                     </defs>
-                    <XAxis dataKey="month" stroke="#A3A3A3" fontSize={11} tickLine={false} />
-                    <YAxis stroke="#A3A3A3" fontSize={11} tickLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
+                    <XAxis dataKey="month" stroke="#A39B93" fontSize={11} tickLine={false} />
+                    <YAxis stroke="#A39B93" fontSize={11} tickLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
                     <RechartsTooltip
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
                           return (
-                            <div className="bg-black text-white p-2.5 text-xs border border-neutral-800 rounded-xs">
+                            <div className="bg-ink text-white p-2.5 text-xs border border-ink rounded-xs">
                               <span className="font-medium">
                                 {formatCurrency(payload[0].value as number)}
                               </span>
@@ -171,7 +171,7 @@ export default function RevenuePage() {
                         return null;
                       }}
                     />
-                    <Area type="monotone" dataKey="revenue" stroke="#141414" strokeWidth={2} fill="url(#revAreaMono)" />
+                    <Area type="monotone" dataKey="revenue" stroke="#4A0E19" strokeWidth={2} fill="url(#revAreaMono)" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -188,13 +188,13 @@ export default function RevenuePage() {
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={(stats?.byMode ?? []).map((m) => ({ mode: MODE_LABELS[m.mode] ?? m.mode, total: m.total }))} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <XAxis dataKey="mode" stroke="#A3A3A3" fontSize={11} tickLine={false} />
-                    <YAxis stroke="#A3A3A3" fontSize={11} tickLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
+                    <XAxis dataKey="mode" stroke="#A39B93" fontSize={11} tickLine={false} />
+                    <YAxis stroke="#A39B93" fontSize={11} tickLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
                     <RechartsTooltip
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
                           return (
-                            <div className="bg-black text-white p-2.5 text-xs border border-neutral-800 space-y-1 rounded-xs">
+                            <div className="bg-ink text-white p-2.5 text-xs border border-ink space-y-1 rounded-xs">
                               <div>{payload[0].payload.mode}: {formatCurrency(payload[0].value as number)}</div>
                             </div>
                           );
@@ -202,7 +202,7 @@ export default function RevenuePage() {
                         return null;
                       }}
                     />
-                    <Bar dataKey="total" fill="#141414" name="Total" />
+                    <Bar dataKey="total" fill="#4A0E19" name="Total" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -224,7 +224,7 @@ export default function RevenuePage() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-[#FAF9F6] text-neutral-400 font-medium text-[11px] border-b border-[#E6E3DB]">
+                  <thead className="bg-ivory text-neutral-400 font-medium text-[11px] border-b border-line">
                     <tr>
                       <th className="py-3.5 px-6">Transaction Ref</th>
                       <th className="py-3.5 px-6">Client</th>
@@ -233,9 +233,9 @@ export default function RevenuePage() {
                       <th className="py-3.5 px-6 text-right">Settled Amount</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#F0ECE1]">
+                  <tbody className="divide-y divide-line-soft">
                     {txns.map((t) => (
-                      <tr key={t.id} className="hover:bg-[#FAF9F6]">
+                      <tr key={t.id} className="hover:bg-ivory">
                         <td className="py-4 px-6 font-mono text-black">{t.payment_ref}</td>
                         <td className="py-4 px-6 font-medium text-black">
                           {t.customers ? (

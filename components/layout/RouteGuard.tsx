@@ -39,7 +39,7 @@ export function RouteGuard({
   if (loading || !user) {
     return (
       <div className="flex-1 min-h-[60vh] flex items-center justify-center p-6">
-        <div className="w-8 h-8 border-2 border-[#E6E3DB] border-t-black rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-line border-t-black rounded-full animate-spin" />
       </div>
     );
   }
@@ -48,8 +48,8 @@ export function RouteGuard({
   if (requiredFeature && !isFeatureEnabled(requiredFeature)) {
     return (
       <div className="flex-1 min-h-[60vh] flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-white border border-[#E6E3DB] p-8 text-center">
-          <div className="w-12 h-12 mx-auto mb-4 bg-[#F7F5F0] border border-[#E6E3DB] flex items-center justify-center text-neutral-600">
+        <div className="max-w-md w-full bg-white border border-line p-8 text-center">
+          <div className="w-12 h-12 mx-auto mb-4 bg-ivory border border-line flex items-center justify-center text-neutral-600">
             <Lock className="w-5 h-5" />
           </div>
 
@@ -82,8 +82,8 @@ export function RouteGuard({
   if (requiredPermission && !hasPermission(requiredPermission)) {
     return (
       <div className="flex-1 min-h-[60vh] flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-white border border-[#E6E3DB] p-8 text-center">
-          <div className="w-12 h-12 mx-auto mb-4 bg-[#F7F5F0] border border-[#E6E3DB] flex items-center justify-center text-neutral-600">
+        <div className="max-w-md w-full bg-white border border-line p-8 text-center">
+          <div className="w-12 h-12 mx-auto mb-4 bg-ivory border border-line flex items-center justify-center text-neutral-600">
             <Lock className="w-5 h-5" />
           </div>
 

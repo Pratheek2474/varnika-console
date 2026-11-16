@@ -122,13 +122,13 @@ export default function ChatDetailPage() {
 
   return (
     <RouteGuard requiredPermission="chat.read" requiredFeature="chat" moduleName="Customer Chat">
-      <div className="h-[100dvh] lg:h-[calc(100dvh-3.5rem)] flex flex-col bg-[#FAF9F6] overflow-hidden">
+      <div className="h-[100dvh] lg:h-[calc(100dvh-3.5rem)] flex flex-col bg-ivory overflow-hidden">
         {/* Thread header — fixed to top */}
-        <div className="px-3 py-2 border-b border-[#E6E3DB] bg-white flex items-center gap-3 shrink-0">
+        <div className="px-3 py-2 border-b border-line bg-white flex items-center gap-3 shrink-0">
           <Link href="/chat" className="lg:hidden p-1.5 text-neutral-500 hover:text-black">
             <ArrowLeft className="w-4 h-4" />
           </Link>
-          <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-white font-medium text-sm shrink-0">
+          <div className="w-10 h-10 rounded-full bg-wine flex items-center justify-center text-white font-medium text-sm shrink-0">
             {conversation?.customers?.customer_name.charAt(0) ?? "?"}
           </div>
           <div className="flex-1 min-w-0">
@@ -178,7 +178,7 @@ export default function ChatDetailPage() {
 
         {/* Composer */}
         {canWrite && (
-          <div className="px-3 py-2.5 border-t border-[#E6E3DB] bg-white shrink-0">
+          <div className="px-3 py-2.5 border-t border-line bg-white shrink-0">
             {pendingFiles.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {pendingFiles.map(({ file, previewUrl }, i) => (
@@ -213,7 +213,7 @@ export default function ChatDetailPage() {
               />
               <button
                 onClick={() => fileRef.current?.click()}
-                className="p-2 border border-[#E6E3DB] hover:border-black rounded-full text-neutral-500 hover:text-black transition-colors shrink-0"
+                className="p-2 border border-line hover:border-wine rounded-full text-neutral-500 hover:text-black transition-colors shrink-0"
               >
                 <Paperclip className="w-4 h-4" />
               </button>
@@ -222,7 +222,7 @@ export default function ChatDetailPage() {
                 onChange={(e) => setReply(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                 placeholder="Message…"
-                className="flex-1 px-3.5 py-2 bg-[#F4F2ED] border border-[#E6E3DB] text-sm focus:outline-none focus:border-black rounded-full"
+                className="flex-1 px-3.5 py-2 bg-sunk border border-line text-sm focus:outline-none focus:border-wine rounded-full"
               />
               <Button variant="default" size="sm" className="h-9 w-9 p-0 rounded-full shrink-0" disabled={sending || (!reply.trim() && pendingFiles.length === 0)} onClick={handleSend}>
                 <Send className="w-4 h-4" />

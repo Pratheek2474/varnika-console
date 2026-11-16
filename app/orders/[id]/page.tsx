@@ -417,7 +417,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <h1 className="text-xl font-semibold text-black tracking-tight font-mono">
+                  <h1 className="text-xl font-mono">
                     {order.order_number}
                   </h1>
                   <Badge variant="outline" className="text-[10px] capitalize">
@@ -494,7 +494,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
               </CardHeader>
               <CardContent>
                 {items.length > 0 ? (
-                  <div className="divide-y divide-[#F0ECE1] border border-[#E6E3DB] rounded-xs overflow-hidden">
+                  <div className="divide-y divide-line-soft border border-line rounded-xs overflow-hidden">
                     {items.map((it) => (
                       <div key={it.id} className="p-3 bg-white flex items-center justify-between gap-3">
                         <div className="min-w-0">
@@ -561,7 +561,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                       <button
                         key={photo.id}
                         onClick={() => setLightbox({ url: photo.url, label: photo.caption })}
-                        className="group relative aspect-square bg-[#FAF9F6] border border-[#E6E3DB] rounded-xs overflow-hidden cursor-pointer hover:border-black/40 transition-colors"
+                        className="group relative aspect-square bg-ivory border border-line rounded-xs overflow-hidden cursor-pointer hover:border-wine/40 transition-colors"
                         title="Open photo"
                       >
                         <Image
@@ -599,7 +599,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="p-3 bg-[#FAF9F6] border border-[#E6E3DB] rounded-xs space-y-2">
+                <div className="p-3 bg-ivory border border-line rounded-xs space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] text-neutral-500">Customer</span>
                     {order.customers ? (
@@ -625,13 +625,13 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                  <div className="p-2.5 border border-[#E6E3DB] bg-[#FAF9F6] rounded-xs">
+                  <div className="p-2.5 border border-line bg-ivory rounded-xs">
                     <div className="text-neutral-500">Created</div>
                     <div className="font-medium text-black mt-0.5">
                       {formatDate(order.created_at)}
                     </div>
                   </div>
-                  <div className="p-2.5 border border-[#E6E3DB] bg-[#FAF9F6] rounded-xs">
+                  <div className="p-2.5 border border-line bg-ivory rounded-xs">
                     <div className="text-neutral-500">Delivery</div>
                     <div className="font-medium text-black mt-0.5">
                       {order.delivery_date ?? "—"}
@@ -642,7 +642,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                 {order.notes && (
                   <div className="space-y-1">
                     <span className="text-[11px] text-neutral-500">Tailor Notes</span>
-                    <p className="text-neutral-700 bg-white p-3 border border-[#E6E3DB] leading-relaxed text-xs rounded-xs">
+                    <p className="text-neutral-700 bg-white p-3 border border-line leading-relaxed text-xs rounded-xs">
                       {order.notes}
                     </p>
                   </div>
@@ -662,7 +662,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <div className="flex items-center justify-between p-2.5 border border-[#E6E3DB] bg-white rounded-xs text-xs">
+                <div className="flex items-center justify-between p-2.5 border border-line bg-white rounded-xs text-xs">
                   <span className="text-neutral-500">Status</span>
                   {paid ? (
                     <Badge className="text-[10px] border-green-300 bg-green-50 text-green-700">
@@ -675,7 +675,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                 {transactions.length > 0 ? (
                   <>
                     {transactions.map((t) => (
-                      <div key={t.id} className="p-3 bg-[#FAF9F6] border border-[#E6E3DB] rounded-xs space-y-1.5 text-xs">
+                      <div key={t.id} className="p-3 bg-ivory border border-line rounded-xs space-y-1.5 text-xs">
                         <div className="flex items-center justify-between">
                           <span className="text-neutral-500">Amount</span>
                           <span className="font-mono font-semibold text-black">
@@ -707,7 +707,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                   </>
                 ) : (
                   <>
-                    <div className="p-3 bg-[#FAF9F6] border border-[#E6E3DB] rounded-xs text-xs text-neutral-500 text-center">
+                    <div className="p-3 bg-ivory border border-line rounded-xs text-xs text-neutral-500 text-center">
                       Not paid yet.
                     </div>
                     {canTransact && (
@@ -746,7 +746,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                 {shipments.length > 0 ? (
                   <>
                     {shipments.map((s) => (
-                      <div key={s.id} className="p-3 bg-[#FAF9F6] border border-[#E6E3DB] rounded-xs space-y-1.5 text-xs">
+                      <div key={s.id} className="p-3 bg-ivory border border-line rounded-xs space-y-1.5 text-xs">
                         <div className="flex items-center justify-between gap-2">
                           <span className="font-mono font-semibold text-black truncate">{s.tracking_number}</span>
                           <Badge variant="outline" className="text-[10px] capitalize shrink-0">
@@ -774,10 +774,10 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                           <span className="font-mono text-[11px] text-black">{s.estimated_delivery || "—"}</span>
                         </div>
                         {s.shipment_milestones.length > 0 && (
-                          <div className="pt-1.5 border-t border-[#F0ECE1] space-y-1.5">
+                          <div className="pt-1.5 border-t border-line-soft space-y-1.5">
                             {s.shipment_milestones.map((m) => (
                               <div key={m.id} className="flex items-start gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-black mt-1 shrink-0" />
+                                <div className="w-1.5 h-1.5 rounded-full bg-wine mt-1 shrink-0" />
                                 <div>
                                   <div className="font-medium text-black">{m.status_text}</div>
                                   <div className="text-neutral-400 font-mono text-[11px]">
@@ -802,7 +802,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                   </>
                 ) : (
                   <>
-                    <div className="p-3 bg-[#FAF9F6] border border-[#E6E3DB] rounded-xs text-xs text-neutral-500 text-center">
+                    <div className="p-3 bg-ivory border border-line rounded-xs text-xs text-neutral-500 text-center">
                       Not shipped yet.
                     </div>
                     {canShip && (
@@ -859,7 +859,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                         href={doc.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center gap-3 p-2.5 bg-white border border-[#E6E3DB] hover:border-black/40 transition-colors rounded-xs group"
+                        className="flex items-center gap-3 p-2.5 bg-white border border-line hover:border-wine/40 transition-colors rounded-xs group"
                       >
                         <span className="text-lg">{DOCUMENT_ICONS[doc.kind]}</span>
                         <div className="flex-1 min-w-0">

@@ -115,9 +115,9 @@ export default function CatalogPage() {
     >
       <div className="space-y-6 animate-in fade-in duration-200">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-[#E6E3DB]">
+        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-4 pb-4 border-b border-line">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold text-black tracking-tight">
+            <h1 className="text-2xl sm:text-3xl">
               Catalog
             </h1>
             <p className="text-xs text-neutral-500 mt-1">
@@ -149,8 +149,8 @@ export default function CatalogPage() {
                 onClick={() => { setSelectedCategory(cat); setSelectedSub("All"); }}
                 className={`px-3.5 py-1.5 transition-colors rounded-xs whitespace-nowrap ${
                   isSelected
-                    ? "bg-black text-white font-medium"
-                    : "bg-white border border-[#E6E3DB] text-neutral-600 hover:text-black hover:border-black"
+                    ? "bg-wine text-white font-medium"
+                    : "bg-white border border-line text-neutral-600 hover:text-black hover:border-wine"
                 }`}
               >
                 {cat}
@@ -170,8 +170,8 @@ export default function CatalogPage() {
                   onClick={() => setSelectedSub(sub)}
                   className={`px-3 py-1 transition-colors rounded-xs whitespace-nowrap ${
                     isSelected
-                      ? "bg-black text-white font-medium"
-                      : "bg-white border border-[#E6E3DB] text-neutral-600 hover:text-black hover:border-black"
+                      ? "bg-wine text-white font-medium"
+                      : "bg-white border border-line text-neutral-600 hover:text-black hover:border-wine"
                   }`}
                 >
                   {sub}
@@ -182,7 +182,7 @@ export default function CatalogPage() {
         )}
 
         {/* Search */}
-        <div className="flex items-center bg-white p-3 border border-[#E6E3DB] rounded-xs">
+        <div className="flex items-center bg-white p-3 border border-line rounded-xs">
           <div className="relative flex-1 max-w-sm">
             <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-2.5" />
             <input
@@ -190,7 +190,7 @@ export default function CatalogPage() {
               placeholder="Search garments, knitwear, SKU..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 bg-[#FAF9F6] border border-[#E6E3DB] text-xs focus:outline-none focus:border-black rounded-xs"
+              className="w-full pl-9 pr-3 py-1.5 bg-ivory border border-line text-xs focus:outline-none focus:border-wine rounded-xs"
             />
           </div>
         </div>
@@ -201,10 +201,10 @@ export default function CatalogPage() {
             <div
               key={product.id}
               onClick={() => setSelectedProduct(product)}
-              className="group cursor-pointer flex flex-col bg-white border border-[#E6E3DB] hover:border-black transition-colors rounded-xs overflow-hidden"
+              className="group cursor-pointer flex flex-col bg-white border border-line hover:border-wine transition-colors rounded-xs overflow-hidden"
             >
               {/* Product Image Frame */}
-              <div className="aspect-[3/4] relative overflow-hidden bg-[#F7F5F0]">
+              <div className="aspect-[3/4] relative overflow-hidden bg-ivory">
                 {product.image_url ? (
                   <Image
                     src={product.image_url}
@@ -221,7 +221,7 @@ export default function CatalogPage() {
                 {canWrite && (
                   <button
                     onClick={(e) => { e.stopPropagation(); setEditing(product); setFormOpen(true); }}
-                    className="absolute top-2 right-2 inline-flex items-center justify-center w-7 h-7 rounded-xs bg-white border border-[#E6E3DB] hover:border-black opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-2 right-2 inline-flex items-center justify-center w-7 h-7 rounded-xs bg-white border border-line hover:border-wine opacity-0 group-hover:opacity-100 transition-opacity"
                     title="Edit product"
                   >
                     <Pencil className="w-3.5 h-3.5" />
@@ -243,7 +243,7 @@ export default function CatalogPage() {
                   </p>
                 </div>
 
-                <div className="pt-2.5 mt-2.5 border-t border-[#F0ECE1] flex items-center justify-between">
+                <div className="pt-2.5 mt-2.5 border-t border-line-soft flex items-center justify-between">
                   <span className="font-mono text-xs sm:text-sm font-semibold text-black">
                     ${Number(product.price)}
                   </span>
@@ -287,7 +287,7 @@ export default function CatalogPage() {
               </DialogHeader>
 
               <div className="space-y-4 py-2 text-xs">
-                <div className="aspect-[4/3] relative overflow-hidden bg-[#F7F5F0] border border-[#E6E3DB]">
+                <div className="aspect-[4/3] relative overflow-hidden bg-ivory border border-line">
                   {selectedProduct.image_url ? (
                     <Image
                       src={selectedProduct.image_url}
@@ -303,13 +303,13 @@ export default function CatalogPage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                  <div className="p-3 bg-[#FAF9F6] border border-[#E6E3DB]">
+                  <div className="p-3 bg-ivory border border-line">
                     <span className="text-neutral-400 text-[10px]">Price</span>
                     <div className="text-base font-semibold text-black mt-0.5">
                       ${Number(selectedProduct.price)}
                     </div>
                   </div>
-                  <div className="p-3 bg-[#FAF9F6] border border-[#E6E3DB]">
+                  <div className="p-3 bg-ivory border border-line">
                     <span className="text-neutral-400 text-[10px]">Inventory</span>
                     <div className="text-base font-semibold text-black mt-0.5">
                       {selectedProduct.stock} Available

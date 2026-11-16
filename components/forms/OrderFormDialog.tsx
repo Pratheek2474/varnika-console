@@ -119,7 +119,7 @@ export function OrderFormDialog({ open, onOpenChange, initial, customers, onSave
               </button>
             </div>
             {items.map((it, idx) => (
-              <div key={idx} className="p-2 bg-[#FAF9F6] border border-[#E6E3DB] rounded-xs space-y-2">
+              <div key={idx} className="p-2 bg-ivory border border-line rounded-xs space-y-2">
                 <div className="flex items-center gap-2">
                   <input
                     className={inputCls}

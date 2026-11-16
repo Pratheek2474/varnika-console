@@ -180,10 +180,10 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
                 <img
                   src={imagePreview}
                   alt="Product preview"
-                  className="w-full aspect-[4/3] object-cover border border-[#E6E3DB] rounded-xs bg-[#F7F5F0]"
+                  className="w-full aspect-[4/3] object-cover border border-line rounded-xs bg-ivory"
                 />
               ) : (
-                <div className="w-full aspect-[4/3] flex items-center justify-center text-[11px] text-neutral-400 border border-dashed border-[#E6E3DB] rounded-xs bg-[#F7F5F0]">
+                <div className="w-full aspect-[4/3] flex items-center justify-center text-[11px] text-neutral-400 border border-dashed border-line rounded-xs bg-ivory">
                   No image yet — choose a file below.
                 </div>
               )}
@@ -191,7 +191,7 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
                 type="file"
                 accept="image/*"
                 onChange={(e) => handleFileChange(e.target.files?.[0])}
-                className="w-full text-xs text-neutral-600 file:mr-2 file:px-3 file:py-1.5 file:text-xs file:font-medium file:bg-[#F4F2ED] file:border file:border-[#E6E3DB] file:rounded-xs hover:file:border-black file:cursor-pointer"
+                className="w-full text-xs text-neutral-600 file:mr-2 file:px-3 file:py-1.5 file:text-xs file:font-medium file:bg-sunk file:border file:border-line file:rounded-xs hover:file:border-wine file:cursor-pointer"
               />
               {uploadError && (
                 <div className="text-[11px] text-red-600">{uploadError}</div>
