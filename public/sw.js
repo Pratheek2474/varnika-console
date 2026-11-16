@@ -1,5 +1,5 @@
 // Varnika Service Worker for Non-Desktop and Tablet Caching
-const CACHE_NAME = "varnika-console-v1";
+const CACHE_NAME = "varnika-console-v2";
 const STATIC_ASSETS = ["/", "/manifest.json"];
 
 self.addEventListener("install", (event) => {
