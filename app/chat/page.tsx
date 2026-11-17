@@ -12,30 +12,17 @@ import {
   ChatAttachmentRow,
 } from "@/lib/supabase/database.types";
 import {
-  createConversation,
   getConversation,
   listConversations,
   sendMessage,
   uploadChatFile,
 } from "@/lib/supabase/queries-chat";
-import { listCustomers } from "@/lib/supabase/queries-customers";
 import { listOrders } from "@/lib/supabase/queries-orders";
-import { logActivity } from "@/lib/supabase/activity";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { CardsListSkeleton } from "@/components/ui/page-skeletons";
-import { Field, inputCls, selectCls } from "@/components/forms/fields";
 import {
   ArrowLeft,
   ExternalLink,
-  Plus,
   Send,
   Paperclip,
   FileText,
@@ -93,16 +80,8 @@ export default function ChatPage() {
   const [orders, setOrders] = useState<
     { id: string; order_number: string; customer_id: string | null }[]
   >([]);
-  const [allCustomers, setAllCustomers] = useState<
-    { id: string; customer_name: string }[]
-  >([]);
   const [reply, setReply] = useState("");
 
-  // "Message" dialog — pick who to message.
-  const [msgOpen, setMsgOpen] = useState(false);
-  const [msgCustomerId, setMsgCustomerId] = useState("");
-  const [msgBody, setMsgBody] = useState("");
-  const [msgSending, setMsgSending] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<{ file: File; previewUrl?: string }[]>([]);
   const [sending, setSending] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -131,15 +110,11 @@ export default function ChatPage() {
   useEffect(() => {
     (async () => {
       try {
-        const [convs, custs, ords] = await Promise.all([
+        const [convs, ords] = await Promise.all([
           listConversations(),
-          listCustomers(),
           listOrders(),
         ]);
         setConversations(convs);
-        setAllCustomers(
-          custs.map((c) => ({ id: c.id, customer_name: c.customer_name })),
-        );
         setOrders(
           ords.map((o) => ({
             id: o.id,
@@ -221,74 +196,6 @@ export default function ChatPage() {
     }
   };
 
-  const openMessageDialog = () => {
-    const firstCustomer = allCustomers[0];
-    setMsgCustomerId(firstCustomer?.id ?? "");
-    setMsgBody("");
-    setMsgOpen(true);
-  };
-
-  const handleMessageSubmit = async () => {
-    if (!msgCustomerId) return;
-    setMsgSending(true);
-    try {
-      // One chat per customer — find existing or create new
-      const existing = conversations.find(
-        (c) => c.customer_id === msgCustomerId,
-      );
-      const customerName =
-        allCustomers.find((c) => c.id === msgCustomerId)?.customer_name ?? "";
-      if (existing) {
-        if (msgBody.trim()) {
-          await sendMessage({
-            conversation_id: existing.id,
-            sender: "staff",
-            sender_name: actor,
-            body: msgBody.trim(),
-          });
-        }
-        setMsgOpen(false);
-        setMsgBody("");
-        await refreshList();
-        setSelectedId(existing.id);
-        return;
-      }
-      const conv = await createConversation({
-        customer_id: msgCustomerId,
-        order_id: null,
-        subject: `Chat with ${customerName}`,
-      });
-      if (msgBody.trim()) {
-        await sendMessage({
-          conversation_id: conv.id,
-          sender: "staff",
-          sender_name: actor,
-          body: msgBody.trim(),
-        });
-      }
-      await logActivity({
-        actor,
-        action: "added",
-        entityType: "conversation",
-        entityId: conv.id,
-        entityLabel: conv.subject,
-        customerId: msgCustomerId,
-        customerName,
-        orderId: null,
-        orderNumber: "",
-      });
-      setMsgOpen(false);
-      setMsgBody("");
-      await refreshList();
-      setSelectedId(conv.id);
-    } catch (e) {
-      console.error(e);
-      toast.error(`Could not open chat: ${(e as Error).message}`);
-    } finally {
-      setMsgSending(false);
-    }
-  };
-
   if (loading) return <CardsListSkeleton cards={3} />;
 
   return (
@@ -323,15 +230,6 @@ export default function ChatPage() {
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                 </button>
-                {canWrite && (
-                  <button
-                    onClick={openMessageDialog}
-                    className="p-1.5 bg-wine text-white rounded-full hover:bg-wine-2 transition-colors"
-                    title="New chat"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                )}
               </div>
             </div>
 
@@ -597,62 +495,6 @@ export default function ChatPage() {
             )}
           </div>
         </div>
-
-        {/* Message dialog */}
-        {canWrite && (
-          <Dialog open={msgOpen} onOpenChange={setMsgOpen}>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Message</DialogTitle>
-                <DialogDescription>
-                  Choose a customer to message — opens their chat.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid grid-cols-2 gap-3 py-2 text-xs">
-                <Field label="Customer" className="col-span-2">
-                  <select
-                    className={selectCls}
-                    value={msgCustomerId}
-                    onChange={(e) => setMsgCustomerId(e.target.value)}
-                  >
-                    <option value="">Select…</option>
-                    {allCustomers.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.customer_name}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Message (optional)" className="col-span-2">
-                  <textarea
-                    rows={3}
-                    className={inputCls}
-                    value={msgBody}
-                    onChange={(e) => setMsgBody(e.target.value)}
-                    placeholder="Type the first message…"
-                  />
-                </Field>
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setMsgOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="default"
-                  size="sm"
-                  disabled={!msgCustomerId || msgSending}
-                  onClick={handleMessageSubmit}
-                >
-                  {msgSending ? "Opening…" : "Open Chat"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
       </div>
     </RouteGuard>
   );
