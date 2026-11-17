@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { InstallButton } from "./InstallButton";
 import { useAuth } from "@/lib/context/auth-context";
 
 export function MobileHeader() {
@@ -22,8 +23,10 @@ export function MobileHeader() {
         <img src="/brand/varnika-wordmark.png" alt="Varnika" className="h-4 w-auto" />
       </Link>
 
-      {/* Right: spacer keeps the logo centred */}
-      <span className="w-[52px]" aria-hidden />
+      {/* Right: install button (hidden once installed) */}
+      <div className="min-w-[72px] flex justify-end">
+        <InstallButton />
+      </div>
     </header>
   );
 }

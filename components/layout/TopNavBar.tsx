@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/context/auth-context";
 import { useNavigation } from "@/lib/context/navigation-context";
 import { useActor } from "@/lib/context/actor-context";
+import { InstallButton } from "./InstallButton";
 import { Search, Menu, X, LogOut } from "lucide-react";
 
 export function TopNavBar() {
@@ -36,6 +37,7 @@ export function TopNavBar() {
           <img src="/brand/varnika-wordmark.png" alt="Varnika" className="h-[18px] w-auto" />
           <span className="text-[10px] uppercase tracking-[0.16em] font-medium text-gold">Console</span>
         </Link>
+        <InstallButton />
       </div>
 
       {/* Center: Search */}
