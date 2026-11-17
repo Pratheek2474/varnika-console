@@ -46,8 +46,39 @@ export async function updateProduct(
   throwIf(error, "Failed to update product");
 }
 
+const MAX_EDGE = 1600;
+const WEBP_QUALITY = 0.82;
+
+/** Shrink a photo to <=1600px on its longest side and re-encode as WebP.
+ *  Falls back to the original file if anything goes wrong or it gets no smaller. */
+export async function compressImage(file: File): Promise<File> {
+  if (!file.type.startsWith("image/") || file.type === "image/gif" || file.type === "image/svg+xml") {
+    return file;
+  }
+  try {
+    const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+    const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+    const w = Math.round(bitmap.width * scale);
+    const h = Math.round(bitmap.height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    bitmap.close();
+    const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/webp", WEBP_QUALITY));
+    if (!blob || blob.type !== "image/webp" || blob.size >= file.size) return file;
+    const name = file.name.replace(/\.[^.]+$/, "") + ".webp";
+    return new File([blob], name, { type: "image/webp" });
+  } catch {
+    return file;
+  }
+}
+
 /** Upload a catalog image to R2 (catalog/images). Falls back to Supabase. */
-export async function uploadProductImage(file: File): Promise<string> {
+export async function uploadProductImage(original: File): Promise<string> {
+  const file = await compressImage(original);
   const form = new FormData();
   form.append("file", file);
   form.append("bucket", "catalog");
