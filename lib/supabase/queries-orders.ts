@@ -182,7 +182,7 @@ export async function createOrder(input: OrderInput): Promise<OrderWithCustomer>
       customer_id: input.customer_id,
       item_summary: input.item_summary,
       total: input.total,
-      currency: "USD",
+      currency: "INR",
       status: input.status,
       priority: input.priority,
       delivery_date: input.delivery_date || null,

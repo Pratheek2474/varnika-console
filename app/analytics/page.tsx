@@ -130,7 +130,7 @@ export default function AnalyticsPage() {
                       </linearGradient>
                     </defs>
                     <XAxis dataKey="month" stroke="#A39B93" fontSize={11} tickLine={false} />
-                    <YAxis stroke="#A39B93" fontSize={11} tickLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
+                    <YAxis stroke="#A39B93" fontSize={11} tickLine={false} tickFormatter={(v) => `₹${v / 1000}k`} />
                     <RechartsTooltip
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
@@ -169,7 +169,7 @@ export default function AnalyticsPage() {
                     layout="vertical"
                     margin={{ top: 10, right: 30, left: 40, bottom: 5 }}
                   >
-                    <XAxis type="number" stroke="#A39B93" fontSize={11} tickLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
+                    <XAxis type="number" stroke="#A39B93" fontSize={11} tickLine={false} tickFormatter={(v) => `₹${v / 1000}k`} />
                     <YAxis dataKey="name" type="category" stroke="#A39B93" fontSize={11} tickLine={false} width={130} />
                     <RechartsTooltip
                       content={({ active, payload }) => {

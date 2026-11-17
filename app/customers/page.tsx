@@ -51,7 +51,7 @@ export default function CustomersPage() {
 
   const filteredCustomers = customers.filter((c) =>
     c.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.email.toLowerCase().includes(searchQuery.toLowerCase())
+    (c.email ?? "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleSave = async (values: CustomerInput) => {
@@ -176,9 +176,11 @@ export default function CustomersPage() {
                         <div className="font-medium text-black group-hover:underline">
                           {cust.customer_name}
                         </div>
-                        <div className="text-[11px] text-neutral-400">
-                          {cust.email}
-                        </div>
+                        {cust.email && (
+                          <div className="text-[11px] text-neutral-400">
+                            {cust.email}
+                          </div>
+                        )}
                       </div>
                     </Link>
                   </td>

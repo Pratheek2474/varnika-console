@@ -5,10 +5,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatCurrency(amount: number, currency: string = "USD"): string {
-  return new Intl.NumberFormat("en-US", {
+export function formatCurrency(amount: number, _currency?: string): string {
+  // Varnika works in rupees only; stored currency codes are ignored for display.
+  return new Intl.NumberFormat("en-IN", {
     style: "currency",
-    currency: currency,
+    currency: "INR",
     maximumFractionDigits: 0,
   }).format(amount);
 }

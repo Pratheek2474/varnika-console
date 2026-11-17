@@ -110,7 +110,7 @@ export default function TransactionsPage() {
         entityType: "transaction",
         entityId: created.id,
         entityLabel: values.payment_ref,
-        detail: `${values.amount} USD`,
+        detail: `${values.amount} INR`,
         customerId: values.customer_id,
         customerName,
         orderId: values.order_id,

@@ -21,6 +21,8 @@ function isBlouseCategory(category: string): boolean {
   return c === "blouse" || c === "blouses";
 }
 
+type Photo = { key: string; url: string; file?: File };
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -37,19 +39,13 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
   const [subcategory, setSubcategory] = useState("");
   const [price, setPrice] = useState("");
   const [stock, setStock] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState("");
+  // Photos: existing URLs (kept) and newly chosen files (uploaded on save). First one is the cover.
+  const [photos, setPhotos] = useState<Photo[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [onDemand, setOnDemand] = useState(false);
   const [material, setMaterial] = useState("");
   const [featured, setFeatured] = useState(false);
-
-  useEffect(() => {
-    return () => {
-      if (imagePreview.startsWith("blob:")) URL.revokeObjectURL(imagePreview);
-    };
-  }, [imagePreview]);
 
   useEffect(() => {
     if (open) {
@@ -61,9 +57,9 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
         setSubcategory(initial.subcategory || "");
         setPrice(Number(initial.price) ? String(Number(initial.price)) : "");
         setStock(initial.stock ? String(initial.stock) : "");
-        setImageUrl(initial.image_url);
-        setImageFile(null);
-        setImagePreview(initial.image_url);
+        const urls = initial.images?.length ? initial.images : initial.image_url ? [initial.image_url] : [];
+        setPhotos(urls.map((u, i) => ({ key: `old-${i}-${u}`, url: u })));
+        setOnDemand(Boolean(initial.on_demand));
         setUploadError(null);
         setMaterial(initial.material);
         setFeatured(initial.featured);
@@ -75,9 +71,8 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
         setSubcategory("");
         setPrice("");
         setStock("");
-        setImageUrl("");
-        setImageFile(null);
-        setImagePreview("");
+        setPhotos([]);
+        setOnDemand(false);
         setUploadError(null);
         setMaterial("");
         setFeatured(false);
@@ -88,36 +83,55 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
   const finalCategory =
     category === "__custom" ? customCategory.trim() : category;
 
-  const handleFileChange = (file: File | undefined) => {
-    if (!file) return;
-    setImageFile(file);
+  const addFiles = (files: FileList | null) => {
+    if (!files || files.length === 0) return;
     setUploadError(null);
-    if (imagePreview.startsWith("blob:")) URL.revokeObjectURL(imagePreview);
-    setImagePreview(URL.createObjectURL(file));
+    const added = Array.from(files).map((file, i) => ({
+      key: `new-${Date.now()}-${i}-${file.name}`,
+      url: URL.createObjectURL(file),
+      file,
+    }));
+    setPhotos((p) => [...p, ...added]);
   };
+
+  const removePhoto = (key: string) => {
+    setPhotos((p) => {
+      const gone = p.find((x) => x.key === key);
+      if (gone?.file) URL.revokeObjectURL(gone.url);
+      return p.filter((x) => x.key !== key);
+    });
+  };
+
+  const makeCover = (key: string) =>
+    setPhotos((p) => {
+      const hit = p.find((x) => x.key === key);
+      return hit ? [hit, ...p.filter((x) => x.key !== key)] : p;
+    });
 
   const handleSave = async () => {
     setUploadError(null);
-    let finalImageUrl = imageUrl;
-    if (imageFile) {
-      setUploading(true);
-      try {
-        finalImageUrl = await uploadProductImage(imageFile);
-      } catch (e) {
-        setUploading(false);
-        setUploadError((e as Error).message);
-        return;
-      }
+    setUploading(true);
+    let urls: string[];
+    try {
+      urls = await Promise.all(
+        photos.map((ph) => (ph.file ? uploadProductImage(ph.file) : Promise.resolve(ph.url)))
+      );
+    } catch (e) {
       setUploading(false);
+      setUploadError((e as Error).message);
+      return;
     }
+    setUploading(false);
     onSave({
       name: name.trim(),
       sku: sku.trim(),
       category: finalCategory,
       subcategory: isBlouseCategory(finalCategory) ? subcategory : "",
       price: Number(price) || 0,
-      stock: Math.floor(Number(stock) || 0),
-      image_url: finalImageUrl,
+      stock: onDemand ? 0 : Math.floor(Number(stock) || 0),
+      on_demand: onDemand,
+      image_url: urls[0] ?? "",
+      images: urls,
       material,
       featured,
     });
@@ -167,32 +181,67 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
               </select>
             </Field>
           )}
-          <Field label="Price (USD)">
+          <Field label="Price (₹)">
             <NumberField value={price} onChange={setPrice} placeholder="0" />
           </Field>
           <Field label="Stock">
-            <NumberField value={stock} allowDecimals={false} onChange={setStock} placeholder="0" />
+            {onDemand ? (
+              <div className={`${inputCls} text-neutral-400 bg-sunk`}>Made on demand</div>
+            ) : (
+              <NumberField value={stock} allowDecimals={false} onChange={setStock} placeholder="0" />
+            )}
           </Field>
-          <Field label="Product Image" className="col-span-2">
+          <label className="col-span-2 flex items-center gap-2 text-xs text-neutral-700">
+            <input type="checkbox" checked={onDemand} onChange={(e) => setOnDemand(e.target.checked)} className="accent-wine" />
+            On demand (made to order, so inventory is not tracked or shown)
+          </label>
+          <Field label="Product Photos" className="col-span-2">
             <div className="space-y-2">
-              {imagePreview ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={imagePreview}
-                  alt="Product preview"
-                  className="w-full aspect-[4/3] object-cover border border-line rounded-xs bg-ivory"
-                />
+              {photos.length > 0 ? (
+                <div className="grid grid-cols-3 gap-2">
+                  {photos.map((ph, i) => (
+                    <div key={ph.key} className="relative aspect-[3/4] border border-line rounded-xs overflow-hidden bg-ivory group">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={ph.url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
+                      {i === 0 && (
+                        <span className="absolute top-1 left-1 text-[9px] px-1.5 py-0.5 bg-wine text-white rounded-xs">Cover</span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removePhoto(ph.key)}
+                        className="absolute top-1 right-1 w-5 h-5 leading-none text-xs bg-white border border-line rounded-xs hover:border-wine"
+                        title="Remove photo"
+                      >
+                        ×
+                      </button>
+                      {i !== 0 && (
+                        <button
+                          type="button"
+                          onClick={() => makeCover(ph.key)}
+                          className="absolute bottom-1 left-1 right-1 text-[9px] py-0.5 bg-white/90 border border-line rounded-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          Make cover
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
               ) : (
                 <div className="w-full aspect-[4/3] flex items-center justify-center text-[11px] text-neutral-400 border border-dashed border-line rounded-xs bg-ivory">
-                  No image yet — choose a file below.
+                  No photos yet. Choose files below.
                 </div>
               )}
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => handleFileChange(e.target.files?.[0])}
+                multiple
+                onChange={(e) => {
+                  addFiles(e.target.files);
+                  e.target.value = "";
+                }}
                 className="w-full text-xs text-neutral-600 file:mr-2 file:px-3 file:py-1.5 file:text-xs file:font-medium file:bg-sunk file:border file:border-line file:rounded-xs hover:file:border-wine file:cursor-pointer"
               />
+              <div className="text-[10px] text-neutral-400">Select several at once. The first photo is the cover.</div>
               {uploadError && (
                 <div className="text-[11px] text-red-600">{uploadError}</div>
               )}

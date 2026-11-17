@@ -53,7 +53,6 @@ export function CustomerFormDialog({ open, onOpenChange, initial, onSave }: Prop
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState("");
   const [specialNotes, setSpecialNotes] = useState("");
   const [measurement, setMeasurement] = useState<MeasurementInput>(EMPTY_MEASUREMENT);
 
@@ -63,7 +62,6 @@ export function CustomerFormDialog({ open, onOpenChange, initial, onSave }: Prop
         setName(initial.customer_name);
         setEmail(initial.email);
         setPhone(initial.phone);
-        setAvatarUrl(initial.avatar_url);
         setSpecialNotes(initial.special_notes);
         setMeasurement(
           initial.measurements
@@ -85,7 +83,6 @@ export function CustomerFormDialog({ open, onOpenChange, initial, onSave }: Prop
         setName("");
         setEmail("");
         setPhone("");
-        setAvatarUrl("");
         setSpecialNotes("");
         setMeasurement(EMPTY_MEASUREMENT);
       }
@@ -108,25 +105,19 @@ export function CustomerFormDialog({ open, onOpenChange, initial, onSave }: Prop
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-3 py-2 text-xs">
-          <Field label="Full Name">
+          <Field label="Full Name" className="col-span-2">
             <input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} placeholder="Aarav Mehta" />
           </Field>
-          <Field label="Email">
+          <Field label="Email (optional)">
             <input className={inputCls} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@email.com" />
           </Field>
           <Field label="Phone">
             <input className={inputCls} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91 ..." />
           </Field>
-          <Field label="Avatar URL" className="col-span-2">
-            <input className={inputCls} value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} />
-          </Field>
 
           <div className="col-span-2 pt-2 text-[11px] font-medium text-neutral-500 uppercase tracking-wide">
             Blouse Measurements (inches)
           </div>
-          <Field label="Label" className="col-span-2">
-            <input className={inputCls} value={measurement.label} onChange={(e) => setM("label", e.target.value)} placeholder="Name — Blouse" />
-          </Field>
           {MEASUREMENT_FIELDS.map((f) => (
             <Field key={f.key} label={`${f.label} (in)`}>
               <NumberField
@@ -146,17 +137,17 @@ export function CustomerFormDialog({ open, onOpenChange, initial, onSave }: Prop
           <Button
             variant="default"
             size="sm"
-            disabled={!name.trim() || !email.trim()}
+            disabled={!name.trim()}
             onClick={() => {
               onSave({
                 customer_name: name.trim(),
                 email: email.trim(),
                 phone,
-                avatar_url: avatarUrl,
+                avatar_url: initial?.avatar_url ?? "",
                 special_notes: specialNotes,
                 measurement: {
                   ...measurement,
-                  label: measurement.label.trim() || `${name.trim()} — Blouse`,
+                  label: `${name.trim()} — Blouse`,
                 },
               });
               onOpenChange(false);

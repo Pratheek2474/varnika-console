@@ -205,7 +205,7 @@ export default function HomePage() {
                     tickLine={false}
                     stroke="#A39B93"
                     fontSize={11}
-                    tickFormatter={(val) => `$${val / 1000}k`}
+                    tickFormatter={(val) => `₹${val / 1000}k`}
                   />
                   <RechartsTooltip
                     content={({ active, payload }) => {

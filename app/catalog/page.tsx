@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { CardsListSkeleton } from "@/components/ui/page-skeletons";
 import { Search, Plus, Pencil } from "lucide-react";
 import { ProductFormDialog, CATALOG_CATEGORIES } from "@/components/forms/ProductFormDialog";
+import { formatCurrency } from "@/lib/utils";
 import { useActor } from "@/lib/context/actor-context";
 import { logActivity } from "@/lib/supabase/activity";
 
@@ -28,6 +29,7 @@ export default function CatalogPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [products, setProducts] = useState<ProductRow[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<ProductRow | null>(null);
+  const [galleryIdx, setGalleryIdx] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -200,7 +202,7 @@ export default function CatalogPage() {
           {filteredProducts.map((product) => (
             <div
               key={product.id}
-              onClick={() => setSelectedProduct(product)}
+              onClick={() => { setGalleryIdx(0); setSelectedProduct(product); }}
               className="group cursor-pointer flex flex-col bg-white border border-line hover:border-wine transition-colors rounded-xs overflow-hidden"
             >
               {/* Product Image Frame */}
@@ -245,10 +247,10 @@ export default function CatalogPage() {
 
                 <div className="pt-2.5 mt-2.5 border-t border-line-soft flex items-center justify-between">
                   <span className="font-mono text-xs sm:text-sm font-semibold text-black">
-                    ${Number(product.price)}
+                    {formatCurrency(Number(product.price))}
                   </span>
                   <span className="text-[11px] text-neutral-400 font-mono">
-                    {product.stock} in stock
+                    {product.on_demand ? "On demand" : `${product.stock} in stock`}
                   </span>
                 </div>
               </div>
@@ -287,32 +289,52 @@ export default function CatalogPage() {
               </DialogHeader>
 
               <div className="space-y-4 py-2 text-xs">
-                <div className="aspect-[4/3] relative overflow-hidden bg-ivory border border-line">
-                  {selectedProduct.image_url ? (
-                    <Image
-                      src={selectedProduct.image_url}
-                      alt={selectedProduct.name}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-4xl font-medium text-neutral-300">
-                      {selectedProduct.name.charAt(0)}
+                {(() => {
+                  const gallery = selectedProduct.images?.length
+                    ? selectedProduct.images
+                    : selectedProduct.image_url
+                    ? [selectedProduct.image_url]
+                    : [];
+                  const shown = gallery[Math.min(galleryIdx, gallery.length - 1)];
+                  return (
+                    <div className="space-y-2">
+                      <div className="aspect-[4/3] relative overflow-hidden bg-ivory border border-line">
+                        {shown ? (
+                          <Image src={shown} alt={selectedProduct.name} fill className="object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-4xl font-medium text-neutral-300">
+                            {selectedProduct.name.charAt(0)}
+                          </div>
+                        )}
+                      </div>
+                      {gallery.length > 1 && (
+                        <div className="flex gap-2 overflow-x-auto">
+                          {gallery.map((u, i) => (
+                            <button
+                              key={u + i}
+                              onClick={() => setGalleryIdx(i)}
+                              className={`relative w-14 h-14 shrink-0 overflow-hidden border rounded-xs ${i === galleryIdx ? "border-wine" : "border-line"}`}
+                            >
+                              <Image src={u} alt="" fill className="object-cover" sizes="56px" />
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  );
+                })()}
 
                 <div className="grid grid-cols-2 gap-2 text-xs font-mono">
                   <div className="p-3 bg-ivory border border-line">
                     <span className="text-neutral-400 text-[10px]">Price</span>
                     <div className="text-base font-semibold text-black mt-0.5">
-                      ${Number(selectedProduct.price)}
+                      {formatCurrency(Number(selectedProduct.price))}
                     </div>
                   </div>
                   <div className="p-3 bg-ivory border border-line">
                     <span className="text-neutral-400 text-[10px]">Inventory</span>
                     <div className="text-base font-semibold text-black mt-0.5">
-                      {selectedProduct.stock} Available
+                      {selectedProduct.on_demand ? "On demand" : `${selectedProduct.stock} Available`}
                     </div>
                   </div>
                 </div>

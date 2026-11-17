@@ -143,7 +143,7 @@ export default function RevenuePage() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle>Revenue Progression</CardTitle>
-              <CardDescription>Monthly collected total (USD)</CardDescription>
+              <CardDescription>Monthly collected total (₹)</CardDescription>
             </CardHeader>
             <CardContent className="pt-2">
               <div className="h-64 w-full">
@@ -156,7 +156,7 @@ export default function RevenuePage() {
                       </linearGradient>
                     </defs>
                     <XAxis dataKey="month" stroke="#A39B93" fontSize={11} tickLine={false} />
-                    <YAxis stroke="#A39B93" fontSize={11} tickLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
+                    <YAxis stroke="#A39B93" fontSize={11} tickLine={false} tickFormatter={(v) => `₹${v / 1000}k`} />
                     <RechartsTooltip
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
@@ -189,7 +189,7 @@ export default function RevenuePage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={(stats?.byMode ?? []).map((m) => ({ mode: MODE_LABELS[m.mode] ?? m.mode, total: m.total }))} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <XAxis dataKey="mode" stroke="#A39B93" fontSize={11} tickLine={false} />
-                    <YAxis stroke="#A39B93" fontSize={11} tickLine={false} tickFormatter={(v) => `$${v / 1000}k`} />
+                    <YAxis stroke="#A39B93" fontSize={11} tickLine={false} tickFormatter={(v) => `₹${v / 1000}k`} />
                     <RechartsTooltip
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {

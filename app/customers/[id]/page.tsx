@@ -192,10 +192,12 @@ export default function CustomerDetailPage({ params }: { params: { id: string } 
                   </h1>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs text-neutral-500">
-                  <span className="flex items-center gap-1.5">
-                    <Mail className="w-3 h-3" />
-                    {customer.email}
-                  </span>
+                  {customer.email && (
+                    <span className="flex items-center gap-1.5">
+                      <Mail className="w-3 h-3" />
+                      {customer.email}
+                    </span>
+                  )}
                   {customer.phone && (
                     <span className="flex items-center gap-1.5">
                       <Phone className="w-3 h-3" />

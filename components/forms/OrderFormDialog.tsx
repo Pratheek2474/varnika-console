@@ -166,7 +166,7 @@ export function OrderFormDialog({ open, onOpenChange, initial, customers, onSave
             )}
           </div>
 
-          <Field label="Total (USD)">
+          <Field label="Total (₹)">
             <NumberField value={total} onChange={setTotal} placeholder="0" />
           </Field>
           <Field label="Delivery Date">

@@ -79,7 +79,7 @@ export function TransactionFormDialog({ open, onOpenChange, initial, customers, 
               ))}
             </select>
           </Field>
-          <Field label="Amount (USD)">
+          <Field label="Amount (₹)">
             <NumberField value={amount} onChange={setAmount} placeholder="0" />
           </Field>
           <Field label="Date">

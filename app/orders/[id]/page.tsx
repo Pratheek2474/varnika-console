@@ -242,7 +242,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
       entityType: "transaction",
       entityId: detail.order.id,
       entityLabel: values.payment_ref,
-      detail: `${values.amount} USD`,
+      detail: `${values.amount} INR`,
       customerId: values.customer_id,
       customerName: detail.order.customers?.customer_name ?? "",
       orderId: detail.order.id,

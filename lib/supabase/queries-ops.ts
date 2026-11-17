@@ -45,7 +45,7 @@ export async function createTransaction(
       customer_id: input.customer_id,
       order_id: input.order_id,
       amount: input.amount,
-      currency: "USD",
+      currency: "INR",
       payment_mode: input.payment_mode,
       payment_ref: input.payment_ref,
       occurred_at: new Date(input.date).toISOString(),

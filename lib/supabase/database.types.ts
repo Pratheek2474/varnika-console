@@ -78,6 +78,8 @@ export interface ProductRow {
   price: number;
   stock: number;
   image_url: string;
+  images: string[];
+  on_demand: boolean;
   material: string;
   featured: boolean;
   measurement_id: string | null;
