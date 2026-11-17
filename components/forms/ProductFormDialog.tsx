@@ -33,7 +33,6 @@ interface Props {
 
 export function ProductFormDialog({ open, onOpenChange, initial, categories, onSave }: Props) {
   const [name, setName] = useState("");
-  const [sku, setSku] = useState("");
   const [category, setCategory] = useState("");
   const [customCategory, setCustomCategory] = useState("");
   const [subcategory, setSubcategory] = useState("");
@@ -51,7 +50,6 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
     if (open) {
       if (initial) {
         setName(initial.name);
-        setSku(initial.sku);
         setCategory(initial.category);
         setCustomCategory("");
         setSubcategory(initial.subcategory || "");
@@ -65,7 +63,6 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
         setFeatured(initial.featured);
       } else {
         setName("");
-        setSku("");
         setCategory(categories[0] ?? "Blouse");
         setCustomCategory("");
         setSubcategory("");
@@ -124,7 +121,7 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
     setUploading(false);
     onSave({
       name: name.trim(),
-      sku: sku.trim(),
+      sku: initial?.sku ?? "",
       category: finalCategory,
       subcategory: isBlouseCategory(finalCategory) ? subcategory : "",
       price: Number(price) || 0,
@@ -149,12 +146,14 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-3 py-2 text-xs">
-          <Field label="Name" className="col-span-2">
+          <Field label="Name" className={initial ? "" : "col-span-2"}>
             <input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} placeholder="Reversible Angora Cardigan" />
           </Field>
-          <Field label="SKU">
-            <input className={inputCls} value={sku} onChange={(e) => setSku(e.target.value)} placeholder="VAR-CRD-091" />
-          </Field>
+          {initial && (
+            <Field label="SKU">
+              <div className={`${inputCls} bg-sunk text-neutral-500 font-mono`}>{initial.sku}</div>
+            </Field>
+          )}
           <Field label="Category">
             <select className={selectCls} value={category} onChange={(e) => setCategory(e.target.value)}>
               {categories.map((c) => (
@@ -261,7 +260,7 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
           <Button
             variant="default"
             size="sm"
-            disabled={!name.trim() || !sku.trim() || !finalCategory || uploading}
+            disabled={!name.trim() || !finalCategory || uploading}
             onClick={handleSave}
           >
             {uploading ? "Uploading…" : initial ? "Save Changes" : "Add Product"}
