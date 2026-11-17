@@ -3,12 +3,9 @@
 import React from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/context/auth-context";
-import { useNavigation } from "@/lib/context/navigation-context";
-import { Search } from "lucide-react";
 
 export function MobileHeader() {
   const { role } = useAuth();
-  const { setCommandPaletteOpen } = useNavigation();
 
   return (
     <header className="lg:hidden h-14 bg-ivory/95 backdrop-blur-md border-b border-line px-4 flex items-center justify-between sticky top-0 z-30 select-none">
@@ -25,14 +22,8 @@ export function MobileHeader() {
         <img src="/brand/varnika-wordmark.png" alt="Varnika" className="h-4 w-auto" />
       </Link>
 
-      {/* Right: Search */}
-      <button
-        onClick={() => setCommandPaletteOpen(true)}
-        className="p-2 text-neutral-700 hover:text-black active:scale-95 transition-transform"
-        aria-label="Search"
-      >
-        <Search className="w-4 h-4" />
-      </button>
+      {/* Right: spacer keeps the logo centred */}
+      <span className="w-[52px]" aria-hidden />
     </header>
   );
 }
