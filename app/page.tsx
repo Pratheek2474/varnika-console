@@ -83,7 +83,7 @@ export default function HomePage() {
             Overview
           </h1>
           <p className="text-xs text-neutral-500 mt-1">
-            Real-time atelier activity, client orders, and performance summary.
+            Real-time activity, client orders, and performance summary.
           </p>
         </div>
 

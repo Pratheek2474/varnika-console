@@ -110,7 +110,7 @@ export default function EmployeesPage() {
               Employees
             </h1>
             <p className="text-xs text-neutral-500 mt-1">
-              Atelier staff directory — changes are recorded under your sign-in name.
+              Staff directory — changes are recorded under your sign-in name.
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">

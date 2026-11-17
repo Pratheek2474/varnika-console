@@ -77,7 +77,7 @@ export const PRESET_ROLES: Record<Exclude<RoleId, "custom">, RoleDefinition> = {
   staff: {
     id: "staff",
     name: "Staff",
-    description: "Day-to-day atelier operations: orders, catalog, customers, shipments, queries, payments, and team",
+    description: "Day-to-day operations: orders, catalog, customers, shipments, queries, payments, and team",
     permissions: [
       "home.read",
       "orders.read",

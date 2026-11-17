@@ -50,7 +50,7 @@ export const FEATURE_FLAGS_METADATA: FeatureFlagMeta[] = [
   },
   {
     key: "catalog",
-    label: "Luxury Catalog",
+    label: "Catalog",
     description: "Collection management, product grids, lookbooks, and SKU details",
     defaultValue: true,
     category: "core",

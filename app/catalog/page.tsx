@@ -123,7 +123,7 @@ export default function CatalogPage() {
               Catalog
             </h1>
             <p className="text-xs text-neutral-500 mt-1">
-              Garments, knitwear, bags, and atelier inventory records.
+              Garments and inventory records.
             </p>
           </div>
           {canWrite && (

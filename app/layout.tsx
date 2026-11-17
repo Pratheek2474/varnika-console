@@ -4,13 +4,13 @@ import { AppProviders } from "@/components/providers/AppProviders";
 import { AppShell } from "@/components/layout/AppShell";
 
 export const metadata: Metadata = {
-  title: "Varnika — Luxury Atelier Admin Console",
+  title: "Varnika Console",
   description:
     "Production-quality, responsive business administration console with independent RBAC, Feature Flags, and responsive dual-tier navigation architecture.",
   manifest: "/manifest.json",
   icons: {
-    icon: "/icon-192.png?v=3",
-    apple: "/icon-192.png?v=3",
+    icon: "/icon-192.png?v=4",
+    apple: "/apple-touch-icon.png?v=4",
   },
 };
 

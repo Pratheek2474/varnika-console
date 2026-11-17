@@ -79,7 +79,7 @@ export const MASTER_NAVIGATION: NavigationItem[] = [
     mobile: {
       primary: true,
     },
-    description: "Luxury apparel, lookbooks, sizes, material inventory, and SKUs",
+    description: "Garments, sizes, material inventory, and SKUs",
     keywords: ["catalog", "products", "apparel", "angora", "garments", "bags", "shoes"],
   },
   {
@@ -192,7 +192,7 @@ export const MASTER_NAVIGATION: NavigationItem[] = [
     mobile: {
       primary: false,
     },
-    description: "Atelier staff directory and change attribution",
+    description: "Staff directory and change attribution",
     keywords: ["employees", "staff", "team", "people", "tailors"],
   },
   {

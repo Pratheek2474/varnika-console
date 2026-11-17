@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Varnika is a **luxury atelier admin console** built with Next.js 14 (App Router), TypeScript, and Tailwind CSS. It manages bespoke fashion orders, clients, measurements, deliveries, and support tickets.
+Varnika is a **boutique admin console** built with Next.js 14 (App Router), TypeScript, and Tailwind CSS. It manages bespoke fashion orders, clients, measurements, deliveries, and support tickets.
 
 ## Tech Stack
 

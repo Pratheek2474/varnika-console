@@ -1,5 +1,5 @@
 -- ============================================================================
--- Varnika Atelier Console — Initial Schema (0001)
+-- Varnika Console — Initial Schema (0001)
 -- Run this in the Supabase SQL Editor (or via `supabase db push`).
 -- Covers: customers, measurements, products, orders (+ timeline/photos/
 --         documents), transactions, shipments (+ milestones), tickets,

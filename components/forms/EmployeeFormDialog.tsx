@@ -64,7 +64,7 @@ export function EmployeeFormDialog({ open, onOpenChange, initial, onSave }: Prop
         <DialogHeader>
           <DialogTitle>{initial ? "Edit Employee" : "Add Employee"}</DialogTitle>
           <DialogDescription>
-            {initial ? "Update staff details." : "Add someone to the atelier team."}
+            {initial ? "Update staff details." : "Add someone to the team."}
           </DialogDescription>
         </DialogHeader>
 
