@@ -80,6 +80,9 @@ export interface ProductRow {
   image_url: string;
   images: string[];
   on_demand: boolean;
+  mrp: number;
+  description: string;
+  occasions: string[];
   material: string;
   featured: boolean;
   measurement_id: string | null;
@@ -100,6 +103,9 @@ export interface OrderRow {
   notes: string;
   /** Manual paid tick — added by 0009; absent until that migration is applied. */
   is_paid: boolean;
+  /** Delivery address from the customer app (migration 0014). */
+  ship_to?: string;
+  kind?: "ready" | "stitch" | "custom";
   created_at: string;
   updated_at: string;
 }

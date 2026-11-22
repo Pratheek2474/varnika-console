@@ -14,6 +14,8 @@ import { ProductRow } from "@/lib/supabase/database.types";
 import { ProductInput, uploadProductImage } from "@/lib/supabase/queries-products";
 import { Field, NumberField, inputCls, selectCls } from "./fields";
 
+export const OCCASIONS = ["Wedding", "Festive", "Everyday", "Party", "Office"] as const;
+
 export const CATALOG_CATEGORIES = ["Blouse", "Skirt", "Saree"] as const;
 
 function isBlouseCategory(category: string): boolean {
@@ -37,6 +39,9 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
   const [customCategory, setCustomCategory] = useState("");
   const [subcategory, setSubcategory] = useState("");
   const [price, setPrice] = useState("");
+  const [mrp, setMrp] = useState("");
+  const [description, setDescription] = useState("");
+  const [occasions, setOccasions] = useState<string[]>([]);
   const [stock, setStock] = useState("");
   // Photos: existing URLs (kept) and newly chosen files (uploaded on save). First one is the cover.
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -54,6 +59,9 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
         setCustomCategory("");
         setSubcategory(initial.subcategory || "");
         setPrice(Number(initial.price) ? String(Number(initial.price)) : "");
+        setMrp(Number(initial.mrp) ? String(Number(initial.mrp)) : "");
+        setDescription(initial.description ?? "");
+        setOccasions(initial.occasions ?? []);
         setStock(initial.stock ? String(initial.stock) : "");
         const urls = initial.images?.length ? initial.images : initial.image_url ? [initial.image_url] : [];
         setPhotos(urls.map((u, i) => ({ key: `old-${i}-${u}`, url: u })));
@@ -67,6 +75,9 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
         setCustomCategory("");
         setSubcategory("");
         setPrice("");
+        setMrp("");
+        setDescription("");
+        setOccasions([]);
         setStock("");
         setPhotos([]);
         setOnDemand(false);
@@ -127,6 +138,9 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
       price: Number(price) || 0,
       stock: onDemand ? 0 : Math.floor(Number(stock) || 0),
       on_demand: onDemand,
+      mrp: Number(mrp) || 0,
+      description: description.trim(),
+      occasions,
       image_url: urls[0] ?? "",
       images: urls,
       material,
@@ -182,6 +196,9 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
           )}
           <Field label="Price (₹)">
             <NumberField value={price} onChange={setPrice} placeholder="0" />
+          </Field>
+          <Field label="MRP (₹, optional)">
+            <NumberField value={mrp} onChange={setMrp} placeholder="Shows “% off” in the app" />
           </Field>
           <Field label="Stock">
             {onDemand ? (
@@ -245,6 +262,26 @@ export function ProductFormDialog({ open, onOpenChange, initial, categories, onS
                 <div className="text-[11px] text-red-600">{uploadError}</div>
               )}
             </div>
+          </Field>
+          <Field label="Occasions" className="col-span-2">
+            <div className="flex flex-wrap gap-1.5">
+              {OCCASIONS.map((o) => {
+                const on = occasions.includes(o);
+                return (
+                  <button
+                    key={o}
+                    type="button"
+                    onClick={() => setOccasions((p) => (on ? p.filter((x) => x !== o) : [...p, o]))}
+                    className={`px-2.5 py-1 text-[11px] rounded-full border transition-colors ${on ? "bg-wine text-white border-wine" : "border-line text-neutral-600 hover:border-wine"}`}
+                  >
+                    {o}
+                  </button>
+                );
+              })}
+            </div>
+          </Field>
+          <Field label="Description (shown in the app)" className="col-span-2">
+            <textarea rows={2} className={inputCls} value={description} onChange={(e) => setDescription(e.target.value)} />
           </Field>
           <Field label="Material" className="col-span-2">
             <input className={inputCls} value={material} onChange={(e) => setMaterial(e.target.value)} placeholder="70% Angora, 30% Virgin Wool" />

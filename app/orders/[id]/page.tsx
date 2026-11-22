@@ -540,10 +540,19 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                   </div>
                 </div>
 
+                {order.ship_to && (
+                  <div className="space-y-1">
+                    <span className="text-[11px] text-neutral-500">Deliver To</span>
+                    <p className="text-neutral-700 bg-white p-3 border border-line leading-relaxed text-xs rounded-xs">
+                      {order.ship_to}
+                    </p>
+                  </div>
+                )}
+
                 {order.notes && (
                   <div className="space-y-1">
                     <span className="text-[11px] text-neutral-500">Tailor Notes</span>
-                    <p className="text-neutral-700 bg-white p-3 border border-line leading-relaxed text-xs rounded-xs">
+                    <p className="text-neutral-700 bg-white p-3 border border-line leading-relaxed text-xs rounded-xs whitespace-pre-line">
                       {order.notes}
                     </p>
                   </div>

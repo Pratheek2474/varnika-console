@@ -24,6 +24,9 @@ export interface ProductInput {
   image_url: string;
   images: string[];
   on_demand: boolean;
+  mrp: number;
+  description: string;
+  occasions: string[];
   material: string;
   featured: boolean;
 }
