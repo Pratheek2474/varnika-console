@@ -1,5 +1,5 @@
 // Varnika customer app: network first, offline shell fallback.
-const CACHE = "varnika-store-v1";
+const CACHE = "varnika-store-v2";
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(["/", "/manifest.json"])));
   self.skipWaiting();

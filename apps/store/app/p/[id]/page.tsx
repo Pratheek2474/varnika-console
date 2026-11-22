@@ -63,6 +63,8 @@ export default function ProductPage({ params }: { params: { id: string } }) {
 
   return (
     <>
+      <div className="pdp-grid">
+      <div className="pdp-left">
       <div className="pdp-bar">
         <span />
         <div style={{ display: "flex" }}>
@@ -109,6 +111,8 @@ export default function ProductPage({ params }: { params: { id: string } }) {
             ))}
           </div>
         )}
+      </div>
+
       </div>
 
       <div className="sheet">
@@ -230,6 +234,8 @@ export default function ProductPage({ params }: { params: { id: string } }) {
           <span>Want a change to this design? Ask us</span>
           <Ico n="right" sm />
         </button>
+      </div>
+
       </div>
 
       {others.length > 0 && (

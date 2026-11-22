@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   title: "Varnika",
   description: "Varnika Boutique by Sujatha Panjam. Blouses, sarees and custom stitching, made by hand in Hyderabad.",
   manifest: "/manifest.json",
-  icons: { icon: "/icon-192.png?v=1", apple: "/apple-touch-icon.png?v=1" },
+  icons: { icon: "/icon-192.png?v=2", apple: "/apple-touch-icon.png?v=2" },
   appleWebApp: { capable: true, title: "Varnika", statusBarStyle: "default" },
 };
 

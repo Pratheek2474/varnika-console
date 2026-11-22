@@ -9,6 +9,7 @@ import { useStore } from "@/lib/store";
 import { inr } from "@/lib/format";
 import { WHATSAPP_NUMBER } from "@/lib/config";
 import { Sheet } from "./Sheet";
+import { InstallButton } from "./InstallButton";
 
 const TABS: [string, IconName, string, string][] = [
   ["/", "home", "Home", "home"],
@@ -56,6 +57,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const [scrollKey, setScrollKey] = useState(path);
 
   const bare = path.startsWith("/sign-in");
+  const wide = path === "/" || path.startsWith("/explore") || path.startsWith("/search") || path.startsWith("/saved") || path.startsWith("/p/");
   const root = ROOTS.has(path);
   const tab = tabOf(path);
 
@@ -88,6 +90,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 <img src="/brand/varnika-wordmark.png" alt="Varnika" />
               </Link>
             </div>
+            <nav className="dtabs" aria-label="Main">
+              {TABS.map(([href, , label, key]) => (
+                <Link key={key} href={href} className={tab === key ? "on" : ""}>
+                  {label}
+                </Link>
+              ))}
+            </nav>
+            <InstallButton />
             <Link href="/chat" className="icon-btn" aria-label="Chat with Varnika">
               <Ico n="chat" />
             </Link>
@@ -102,7 +112,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         )}
 
         <main id="view" key={scrollKey} className={`view screen-in ${bare ? "bare" : ""} ${hasAction ? "has-action" : ""}`}>
-          {children}
+          <div className={`page ${wide ? "wide" : ""}`}>{children}</div>
         </main>
 
         <div id="actbar" className="action" hidden={!hasAction} />
