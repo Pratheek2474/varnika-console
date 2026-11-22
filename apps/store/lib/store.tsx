@@ -2,11 +2,9 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "./supabase";
-import { ensureCustomer, fetchProducts, lineUnit } from "./data";
+import { fetchProducts, getCustomer, lineUnit, signInWithPhone } from "./data";
 import { SHIPPING, STITCH_FEE } from "./config";
 import type { BagLine, Customer, Product } from "./types";
-import type { Session } from "@supabase/supabase-js";
 
 export interface StitchDraft {
   garment: string;
@@ -37,12 +35,10 @@ interface Ctx {
   reloadProducts: () => Promise<void>;
   byId: (id: string) => Product | undefined;
 
-  ready: boolean; // auth state known
-  session: Session | null;
+  ready: boolean; // sign-in state known
   customer: Customer | null;
   setCustomer: (c: Customer) => void;
-  sendCode: (digits: string) => Promise<void>;
-  verifyCode: (digits: string, code: string) => Promise<Customer>;
+  signIn: (digits: string) => Promise<Customer>;
   signOut: () => Promise<void>;
   requireAuth: (nextPath: string) => boolean;
   consumeAfter: () => string | null;
@@ -101,7 +97,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [productsError, setProductsError] = useState<string | null>(null);
 
   const [ready, setReady] = useState(false);
-  const [session, setSession] = useState<Session | null>(null);
   const [customer, setCustomer] = useState<Customer | null>(null);
   const afterRef = useRef<string | null>(null);
 
@@ -148,52 +143,46 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (hydrated) writeJson("varnika-favs", Array.from(favs));
   }, [favs, hydrated]);
 
-  // auth
-  const attach = useCallback(async (s: Session | null) => {
-    setSession(s);
-    if (!s) {
-      setCustomer(null);
-      return;
-    }
-    try {
-      setCustomer(await ensureCustomer(s.user.id, s.user.phone ?? ""));
-    } catch (e) {
-      console.error(e);
-    }
-  }, []);
+  // sign-in: the customer id is remembered on this device
   useEffect(() => {
     let alive = true;
-    supabase.auth.getSession().then(async ({ data }) => {
-      await attach(data.session);
-      if (alive) setReady(true);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
-      if (event === "SIGNED_OUT") attach(null);
-    });
+    (async () => {
+      try {
+        const id = localStorage.getItem("varnika-customer");
+        if (id) {
+          const c = await getCustomer(id);
+          if (alive) {
+            if (c) setCustomer(c);
+            else localStorage.removeItem("varnika-customer");
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        if (alive) setReady(true);
+      }
+    })();
     return () => {
       alive = false;
-      sub.subscription.unsubscribe();
     };
-  }, [attach]);
-
-  const sendCode = useCallback(async (digits: string) => {
-    const { error } = await supabase.auth.signInWithOtp({ phone: `+91${digits}` });
-    if (error) throw new Error(error.message);
   }, []);
-  const verifyCode = useCallback(
-    async (digits: string, code: string) => {
-      const { data, error } = await supabase.auth.verifyOtp({ phone: `+91${digits}`, token: code, type: "sms" });
-      if (error || !data.session) throw new Error(error?.message ?? "That code didn't work");
-      const c = await ensureCustomer(data.session.user.id, `+91${digits}`);
-      setSession(data.session);
-      setCustomer(c);
-      return c;
-    },
-    []
-  );
+
+  const signIn = useCallback(async (digits: string) => {
+    const c = await signInWithPhone(digits);
+    try {
+      localStorage.setItem("varnika-customer", c.id);
+    } catch {
+      /* private mode: stays signed in until reload */
+    }
+    setCustomer(c);
+    return c;
+  }, []);
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
-    setSession(null);
+    try {
+      localStorage.removeItem("varnika-customer");
+    } catch {
+      /* ignore */
+    }
     setCustomer(null);
   }, []);
   const requireAuth = useCallback(
@@ -263,11 +252,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     reloadProducts,
     byId,
     ready,
-    session,
     customer,
     setCustomer,
-    sendCode,
-    verifyCode,
+    signIn,
     signOut,
     requireAuth,
     consumeAfter,

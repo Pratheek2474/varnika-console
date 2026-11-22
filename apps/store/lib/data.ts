@@ -48,41 +48,31 @@ export async function fetchProducts(): Promise<Product[]> {
 
 const CUSTOMER_COLS = "id, customer_name, email, phone, measurement_id";
 
-export async function ensureCustomer(userId: string, phone: string): Promise<Customer> {
-  const mine = await supabase
+export async function getCustomer(id: string): Promise<Customer | null> {
+  const { data, error } = await supabase.from("customers").select(CUSTOMER_COLS).eq("id", id).maybeSingle();
+  fail(error, "Could not load your account");
+  return (data as Customer | null) ?? null;
+}
+
+/**
+ * Number-only sign-in: finds the customer with this phone number, or creates one.
+ * There is no verification code yet (that comes later with the sign-in provider),
+ * so anyone who knows a number can open that account.
+ */
+export async function signInWithPhone(digits: string): Promise<Customer> {
+  const found = await supabase
     .from("customers")
     .select(CUSTOMER_COLS)
-    .eq("auth_user_id", userId)
-    .maybeSingle();
-  fail(mine.error, "Could not load your account");
-  if (mine.data) return mine.data as Customer;
-
-  // A customer the boutique already created with this phone number: claim it.
-  const digits = phoneDigits(phone);
-  if (digits.length === 10) {
-    const found = await supabase
-      .from("customers")
-      .select(CUSTOMER_COLS)
-      .is("auth_user_id", null)
-      .ilike("phone", `%${digits.slice(0, 5)}%${digits.slice(5)}`)
-      .limit(1);
-    fail(found.error, "Could not look up your account");
-    const hit = (found.data ?? [])[0] as Customer | undefined;
-    if (hit) {
-      const upd = await supabase
-        .from("customers")
-        .update({ auth_user_id: userId })
-        .eq("id", hit.id)
-        .select(CUSTOMER_COLS)
-        .single();
-      fail(upd.error, "Could not link your account");
-      return upd.data as Customer;
-    }
-  }
+    .ilike("phone", `%${digits.slice(0, 5)}%${digits.slice(5)}`)
+    .order("created_at")
+    .limit(1);
+  fail(found.error, "Could not look up your account");
+  const hit = (found.data ?? [])[0] as Customer | undefined;
+  if (hit) return hit;
 
   const created = await supabase
     .from("customers")
-    .insert({ auth_user_id: userId, customer_name: "", phone: digits, email: "" })
+    .insert({ customer_name: "", phone: digits, email: "" })
     .select(CUSTOMER_COLS)
     .single();
   fail(created.error, "Could not create your account");
@@ -384,13 +374,17 @@ async function compressImage(file: File): Promise<File> {
 
 export async function uploadPhoto(original: File, prefix: string): Promise<string> {
   const file = await compressImage(original);
-  const { data: sess } = await supabase.auth.getSession();
-  const token = sess.session?.access_token;
-  if (!token) throw new Error("Please sign in to add photos.");
+  let customerId = "";
+  try {
+    customerId = localStorage.getItem("varnika-customer") ?? "";
+  } catch {
+    /* ignore */
+  }
+  if (!customerId) throw new Error("Please sign in to add photos.");
   const form = new FormData();
   form.append("file", file);
   form.append("prefix", prefix);
-  const res = await fetch("/api/upload", { method: "POST", body: form, headers: { Authorization: `Bearer ${token}` } });
+  const res = await fetch("/api/upload", { method: "POST", body: form, headers: { "x-customer-id": customerId } });
   const json = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
   if (!res.ok || !json.url) throw new Error(json.error ?? `Upload failed (HTTP ${res.status})`);
   return json.url;

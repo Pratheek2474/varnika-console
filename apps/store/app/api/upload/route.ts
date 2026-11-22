@@ -4,19 +4,19 @@ import { NextRequest, NextResponse } from "next/server";
 const MAX_BYTES = 12 * 1024 * 1024;
 const PUBLIC_BASE = "https://pub-c6a6db3b19c848c49de9d1a9271f13e0.r2.dev"; // customerdata bucket
 
-/** Only signed-in customers may upload, and only images. */
-async function signedIn(token: string): Promise<boolean> {
+/** Only known customers may upload, and only images. */
+async function knownCustomer(id: string): Promise<boolean> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key || !token) return false;
-  const res = await fetch(`${url}/auth/v1/user`, { headers: { apikey: key, Authorization: `Bearer ${token}` } });
-  return res.ok;
+  if (!url || !key || !/^[0-9a-f-]{36}$/i.test(id)) return false;
+  const res = await fetch(`${url}/rest/v1/customers?select=id&id=eq.${id}`, { headers: { apikey: key } });
+  if (!res.ok) return false;
+  return ((await res.json()) as unknown[]).length > 0;
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const token = (request.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
-    if (!(await signedIn(token))) {
+    if (!(await knownCustomer(request.headers.get("x-customer-id") ?? ""))) {
       return NextResponse.json({ error: "Please sign in to add photos." }, { status: 401 });
     }
 
