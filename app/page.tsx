@@ -110,7 +110,7 @@ export default function HomePage() {
                 {formatCurrency(monthRevenue)}
               </div>
               <div className="text-xs text-neutral-400 mt-1 font-mono">
-                {txnCount} transactions total
+                {txnCount} paid orders
               </div>
             </div>
           ) : (
@@ -218,7 +218,7 @@ export default function HomePage() {
                               Revenue: {formatCurrency(data.revenue)}
                             </div>
                             <div className="text-neutral-400 text-[10px]">
-                              Transactions: {data.orders}
+                              Paid orders: {data.orders}
                             </div>
                           </div>
                         );

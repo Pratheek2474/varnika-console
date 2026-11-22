@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/context/auth-context";
 import { OrderWithCustomer } from "@/lib/supabase/database.types";
 import {
   createOrder,
+  addOrderPhotos,
   isOrderPaid,
   listOrders,
   orderManualPaid,
@@ -17,7 +18,6 @@ import {
 import { OrderInput } from "@/lib/supabase/queries-orders";
 import { OrderItemInput } from "@/lib/supabase/database.types";
 import { listCustomers } from "@/lib/supabase/queries-customers";
-import { listTransactions } from "@/lib/supabase/queries-ops";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -97,7 +97,6 @@ export default function OrdersPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<OrderWithCustomer | null>(null);
-  const [paidSums, setPaidSums] = useState<Record<string, number>>({});
   const draggingRef = useRef(false);
 
   const showRevenue = permissions.includes("revenue.read");
@@ -115,8 +114,7 @@ export default function OrdersPage() {
       o.item_summary.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const isPaid = (o: OrderWithCustomer): boolean =>
-    isOrderPaid(o, paidSums[o.id] ?? 0);
+  const isPaid = (o: OrderWithCustomer): boolean => isOrderPaid(o);
 
   const refresh = async () => {
     setLoading(true);
@@ -130,16 +128,6 @@ export default function OrdersPage() {
       setCustomerOptions(
         customerRows.map((c) => ({ id: c.id, customer_name: c.customer_name }))
       );
-      try {
-        const txns = await listTransactions();
-        const sums: Record<string, number> = {};
-        for (const t of txns) {
-          if (t.order_id) sums[t.order_id] = (sums[t.order_id] ?? 0) + Number(t.amount);
-        }
-        setPaidSums(sums);
-      } catch {
-        // Transactions table may not be available — paid falls back to manual tick
-      }
     } catch (e) {
       setLoadError((e as Error).message);
     } finally {
@@ -230,11 +218,16 @@ export default function OrdersPage() {
     }
   };
 
-  const handleSaveOrder = async (values: OrderInput, items: OrderItemInput[]) => {
+  const handleSaveOrder = async (
+    values: OrderInput,
+    items: OrderItemInput[],
+    photos: { file: File; caption: string }[]
+  ) => {
     try {
       if (editing) {
         const updated = await updateOrder(editing.id, values);
         await saveOrderItems(editing.id, items);
+        if (photos.length > 0) await addOrderPhotos(editing.id, photos);
         if (selectedTicket?.id === editing.id) setSelectedTicket(updated);
         await logActivity({
           actor,
@@ -251,6 +244,7 @@ export default function OrdersPage() {
       } else {
         const created = await createOrder(values);
         await saveOrderItems(created.id, items);
+        if (photos.length > 0) await addOrderPhotos(created.id, photos);
         await logActivity({
           actor,
           action: "added",

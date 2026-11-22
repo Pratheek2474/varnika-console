@@ -148,22 +148,6 @@ export const MASTER_NAVIGATION: NavigationItem[] = [
     keywords: ["chat", "messages", "conversations", "support", "photos", "files"],
   },
   {
-    id: "transactions",
-    label: "Transactions",
-    shortLabel: "Payments",
-    iconName: "ArrowLeftRight",
-    href: "/transactions",
-    permission: "transactions.read",
-    feature: null,
-    group: "insights",
-    mobilePriority: 8,
-    mobile: {
-      primary: false,
-    },
-    description: "Payment records, transaction references, and settlement log",
-    keywords: ["transactions", "payments", "refunds", "settlement", "ledger"],
-  },
-  {
     id: "updates",
     label: "Updates Feed",
     shortLabel: "Updates",

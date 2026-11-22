@@ -26,23 +26,30 @@ export function lastMonths(n: number): { key: string; label: string }[] {
 }
 
 export interface RevenueStats {
+  /** Total of all paid orders. */
   gross: number;
+  /** Number of paid orders. */
   count: number;
+  /** Average paid order value. */
   avg: number;
   thisMonth: number;
   byMonth: MonthBucket[];
-  byMode: { mode: string; total: number; count: number }[];
+  /** Total of orders not yet marked paid. */
+  outstanding: number;
+  unpaidCount: number;
 }
 
+/** Revenue = orders marked as paid, bucketed by the month they were marked paid. */
 export async function getRevenueStats(months = 6): Promise<RevenueStats> {
   const { data, error } = await supabase
-    .from("transactions")
-    .select("amount,occurred_at,payment_mode");
+    .from("orders")
+    .select("total,is_paid,paid_at,created_at");
   throwIf(error, "Failed to load revenue stats");
   const rows = (data ?? []) as {
-    amount: number;
-    occurred_at: string;
-    payment_mode: string;
+    total: number;
+    is_paid: boolean;
+    paid_at: string | null;
+    created_at: string;
   }[];
 
   const byMonth: MonthBucket[] = lastMonths(months).map((m) => ({
@@ -50,33 +57,35 @@ export async function getRevenueStats(months = 6): Promise<RevenueStats> {
     revenue: 0,
     count: 0,
   }));
-  const byMode = new Map<string, { mode: string; total: number; count: number }>();
   let gross = 0;
-  for (const t of rows) {
-    const amt = Number(t.amount) || 0;
+  let count = 0;
+  let outstanding = 0;
+  let unpaidCount = 0;
+  for (const o of rows) {
+    const amt = Number(o.total) || 0;
+    if (!o.is_paid) {
+      outstanding += amt;
+      unpaidCount += 1;
+      continue;
+    }
     gross += amt;
-    const bucket = byMonth.find((b) => b.key === String(t.occurred_at).slice(0, 7));
+    count += 1;
+    const when = String(o.paid_at ?? o.created_at).slice(0, 7);
+    const bucket = byMonth.find((b) => b.key === when);
     if (bucket) {
       bucket.revenue += amt;
       bucket.count += 1;
     }
-    const m = byMode.get(t.payment_mode) ?? {
-      mode: t.payment_mode,
-      total: 0,
-      count: 0,
-    };
-    m.total += amt;
-    m.count += 1;
-    byMode.set(t.payment_mode, m);
   }
 
   return {
     gross,
-    count: rows.length,
-    avg: rows.length > 0 ? gross / rows.length : 0,
+    count,
+    avg: count > 0 ? gross / count : 0,
     thisMonth: byMonth.length > 0 ? byMonth[byMonth.length - 1].revenue : 0,
     byMonth,
-    byMode: Array.from(byMode.values()),
+    outstanding,
+    unpaidCount,
   };
 }
 
@@ -222,16 +231,17 @@ export async function getNavCounts(): Promise<NavCounts> {
     const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const prevKey = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, "0")}`;
     const { data, error } = await supabase
-      .from("transactions")
-      .select("amount,occurred_at")
-      .gte("occurred_at", `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, "0")}-01`);
+      .from("orders")
+      .select("total,paid_at")
+      .eq("is_paid", true)
+      .gte("paid_at", `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, "0")}-01`);
     if (!error) {
       let thisMonth = 0;
       let lastMonth = 0;
-      for (const t of (data ?? []) as { amount: number; occurred_at: string }[]) {
-        const key = String(t.occurred_at).slice(0, 7);
-        if (key === thisKey) thisMonth += Number(t.amount) || 0;
-        else if (key === prevKey) lastMonth += Number(t.amount) || 0;
+      for (const t of (data ?? []) as { total: number; paid_at: string }[]) {
+        const key = String(t.paid_at).slice(0, 7);
+        if (key === thisKey) thisMonth += Number(t.total) || 0;
+        else if (key === prevKey) lastMonth += Number(t.total) || 0;
       }
       if (lastMonth > 0) {
         const pct = Math.round(((thisMonth - lastMonth) / lastMonth) * 100);

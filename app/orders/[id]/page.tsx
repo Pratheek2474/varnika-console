@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/context/auth-context";
 import {
   addOrderDocument,
   addOrderPhoto,
+  addOrderPhotos,
   getOrderDetail,
   isOrderPaid,
   orderManualPaid,
@@ -20,11 +21,8 @@ import { OrderInput } from "@/lib/supabase/queries-orders";
 import { OrderItemInput } from "@/lib/supabase/database.types";
 import {
   createShipment,
-  createTransaction,
   listShipments,
-  listTransactions,
   ShipmentInput,
-  TransactionInput,
 } from "@/lib/supabase/queries-ops";
 import { DocumentKind } from "@/lib/supabase/database.types";
 import { Badge } from "@/components/ui/badge";
@@ -48,7 +46,6 @@ import {
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { toast } from "sonner";
 import { OrderFormDialog } from "@/components/forms/OrderFormDialog";
-import { TransactionFormDialog } from "@/components/forms/TransactionFormDialog";
 import { ShipmentFormDialog } from "@/components/forms/ShipmentFormDialog";
 import {
   Dialog,
@@ -75,9 +72,6 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
   const [notFound, setNotFound] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [lightbox, setLightbox] = useState<{ url: string; label: string } | null>(null);
-  const [transactions, setTransactions] = useState<
-    { id: string; amount: number; currency: string; payment_mode: string; payment_ref: string; occurred_at: string }[]
-  >([]);
   const [shipments, setShipments] = useState<
     {
       id: string;
@@ -91,11 +85,9 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
       shipment_milestones: { id: string; status_text: string; location: string; time_text: string }[];
     }[]
   >([]);
-  const [txnOpen, setTxnOpen] = useState(false);
   const [shipOpen, setShipOpen] = useState(false);
 
   const canWrite = permissions.includes("orders.write");
-  const canTransact = permissions.includes("transactions.write");
   const canShip = permissions.includes("delivery.write");
   const showRevenue = permissions.includes("revenue.read");
 
@@ -113,23 +105,6 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
           return;
         }
         setDetail(row);
-        try {
-          const txns = await listTransactions();
-          setTransactions(
-            txns
-              .filter((t) => t.order_id === params.id)
-              .map((t) => ({
-                id: t.id,
-                amount: Number(t.amount),
-                currency: t.currency,
-                payment_mode: t.payment_mode,
-                payment_ref: t.payment_ref,
-                occurred_at: t.occurred_at,
-              }))
-          );
-        } catch {
-          // Transactions table may not be available
-        }
         try {
           const ships = await listShipments();
           setShipments(
@@ -164,11 +139,16 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
     })();
   }, [params.id]);
 
-  const handleSave = async (values: OrderInput, items: OrderItemInput[]) => {
+  const handleSave = async (
+    values: OrderInput,
+    items: OrderItemInput[],
+    newPhotos: { file: File; caption: string }[]
+  ) => {
     if (!detail) return;
     try {
       const updated = await updateOrder(detail.order.id, values);
       await saveOrderItems(detail.order.id, items);
+      if (newPhotos.length > 0) await addOrderPhotos(detail.order.id, newPhotos);
       const row = await getOrderDetail(detail.order.id);
       if (row) setDetail({ ...row, order: { ...row.order, ...updated } });
       await logActivity({
@@ -189,23 +169,6 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
 
   const refreshFinance = async () => {
     if (!detail) return;
-    try {
-      const txns = await listTransactions();
-      setTransactions(
-        txns
-          .filter((t) => t.order_id === detail.order.id)
-          .map((t) => ({
-            id: t.id,
-            amount: Number(t.amount),
-            currency: t.currency,
-            payment_mode: t.payment_mode,
-            payment_ref: t.payment_ref,
-            occurred_at: t.occurred_at,
-          }))
-      );
-    } catch (e) {
-      console.error(e);
-    }
     try {
       const ships = await listShipments();
       setShipments(
@@ -231,24 +194,6 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
     } catch (e) {
       console.error(e);
     }
-  };
-
-  const handleSaveTransaction = async (values: TransactionInput) => {
-    if (!detail) return;
-    await createTransaction(values);
-    await logActivity({
-      actor,
-      action: "added",
-      entityType: "transaction",
-      entityId: detail.order.id,
-      entityLabel: values.payment_ref,
-      detail: `${values.amount} INR`,
-      customerId: values.customer_id,
-      customerName: detail.order.customers?.customer_name ?? "",
-      orderId: detail.order.id,
-      orderNumber: detail.order.order_number,
-    });
-    await refreshFinance();
   };
 
   const handleSaveShipment = async (
@@ -292,9 +237,8 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
 
   const { order, timeline, photos, documents, items } = detail;
 
-  const paidSum = transactions.reduce((s, t) => s + Number(t.amount), 0);
   const manualPaid = orderManualPaid(order);
-  const paid = isOrderPaid(order, paidSum);
+  const paid = isOrderPaid(order);
 
   const togglePaid = async () => {
     try {
@@ -656,76 +600,31 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                 <CardTitle className="text-sm font-semibold text-black flex items-center gap-2">
                   <CreditCard className="w-4 h-4" />
                   Payment
-                  <span className="text-[10px] font-mono font-normal text-neutral-400 ml-auto">
-                    {transactions.length > 0 ? `${transactions.length} record${transactions.length === 1 ? "" : "s"}` : "not paid"}
-                  </span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="flex items-center justify-between p-2.5 border border-line bg-white rounded-xs text-xs">
                   <span className="text-neutral-500">Status</span>
                   {paid ? (
-                    <Badge className="text-[10px] border-green-300 bg-green-50 text-green-700">
-                      Paid{manualPaid ? " · manual" : paidSum > 0 ? " · via transactions" : ""}
-                    </Badge>
+                    <Badge className="text-[10px] border-green-300 bg-green-50 text-green-700">Paid</Badge>
                   ) : (
                     <Badge variant="secondary" className="text-[10px]">Unpaid</Badge>
                   )}
                 </div>
-                {transactions.length > 0 ? (
-                  <>
-                    {transactions.map((t) => (
-                      <div key={t.id} className="p-3 bg-ivory border border-line rounded-xs space-y-1.5 text-xs">
-                        <div className="flex items-center justify-between">
-                          <span className="text-neutral-500">Amount</span>
-                          <span className="font-mono font-semibold text-black">
-                            {showRevenue ? formatCurrency(t.amount, t.currency) : "—"}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-neutral-500">Mode</span>
-                          <Badge variant="secondary" className="text-[10px] capitalize">
-                            {t.payment_mode.replace(/_/g, " ")}
-                          </Badge>
-                        </div>
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-neutral-500">Ref</span>
-                          <span className="font-mono text-[11px] text-neutral-700 truncate">{t.payment_ref}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-neutral-500">Date</span>
-                          <span className="font-mono text-[11px] text-neutral-700">{formatDateTime(t.occurred_at)}</span>
-                        </div>
-                      </div>
-                    ))}
-                    {canTransact && (
-                      <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => setTxnOpen(true)}>
-                        <Plus className="w-3.5 h-3.5 mr-1.5" />
-                        Add Transaction
-                      </Button>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <div className="p-3 bg-ivory border border-line rounded-xs text-xs text-neutral-500 text-center">
-                      Not paid yet.
-                    </div>
-                    {canTransact && (
-                      <Button variant="default" size="sm" className="w-full text-xs" onClick={() => setTxnOpen(true)}>
-                        <Plus className="w-3.5 h-3.5 mr-1.5" />
-                        Add Transaction
-                      </Button>
-                    )}
-                  </>
-                )}
+                <div className="flex items-center justify-between p-2.5 border border-line bg-white rounded-xs text-xs">
+                  <span className="text-neutral-500">Order total</span>
+                  <span className="font-mono font-semibold text-black">
+                    {showRevenue ? formatCurrency(Number(order.total)) : "—"}
+                  </span>
+                </div>
                 {canWrite && (
                   <Button
-                    variant={manualPaid ? "outline" : "default"}
+                    variant={paid ? "outline" : "default"}
                     size="sm"
                     className="w-full text-xs"
                     onClick={togglePaid}
                   >
-                    {manualPaid ? "Untick — Mark as Unpaid" : "Tick as Paid"}
+                    {paid ? "Mark as Unpaid" : "Mark as Paid"}
                   </Button>
                 )}
               </CardContent>
@@ -908,28 +807,6 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
             )}
           </DialogContent>
         </Dialog>
-
-        {canTransact && order.customer_id && (
-          <TransactionFormDialog
-            open={txnOpen}
-            onOpenChange={setTxnOpen}
-            initial={null}
-            customers={
-              order.customers
-                ? [{ id: order.customers.id, customer_name: order.customers.customer_name }]
-                : []
-            }
-            orders={[
-              {
-                id: order.id,
-                order_number: order.order_number,
-                customer_id: order.customer_id,
-                total: Number(order.total),
-              },
-            ]}
-            onSave={handleSaveTransaction}
-          />
-        )}
 
         {canShip && (
           <ShipmentFormDialog

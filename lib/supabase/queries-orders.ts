@@ -1,4 +1,5 @@
 import { supabase } from "./client";
+import { compressImage } from "./queries-products";
 import {
   OrderDocumentRow,
   OrderItemInput,
@@ -244,13 +245,9 @@ export function orderManualPaid(order: { is_paid?: boolean } | null | undefined)
   return Boolean(order?.is_paid);
 }
 
-/** Paid = manual tick OR linked transactions covering the order total. */
-export function isOrderPaid(
-  order: { is_paid?: boolean; total: number | string },
-  paidSum: number
-): boolean {
-  if (orderManualPaid(order)) return true;
-  return paidSum >= Number(order.total);
+/** Paid is tracked on the order itself. */
+export function isOrderPaid(order: { is_paid?: boolean } | null | undefined): boolean {
+  return Boolean(order?.is_paid);
 }
 
 function formatFileSize(bytes: number): string {
@@ -303,7 +300,7 @@ export async function addOrderPhoto(
   file: File,
   caption?: string
 ): Promise<OrderPhotoRow> {
-  const url = await uploadToR2(file, "customerdata", `orders/${orderId}/images`);
+  const url = await uploadToR2(await compressImage(file), "customerdata", `orders/${orderId}/images`);
   const { data, error } = await supabase
     .from("order_photos")
     .insert({ order_id: orderId, url, caption: caption ?? file.name })
@@ -311,6 +308,16 @@ export async function addOrderPhoto(
     .single();
   throwIf(error, "Failed to save photo");
   return data as OrderPhotoRow;
+}
+
+/** Upload several reference photos (sketches, cloth samples…) and link them to the order. */
+export async function addOrderPhotos(
+  orderId: string,
+  photos: { file: File; caption: string }[]
+): Promise<void> {
+  for (const ph of photos) {
+    await addOrderPhoto(orderId, ph.file, ph.caption || ph.file.name);
+  }
 }
 
 /** Upload a file to R2 (customerdata/files) and link it to the order. */

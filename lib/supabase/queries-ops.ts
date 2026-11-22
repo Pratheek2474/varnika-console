@@ -1,77 +1,13 @@
 import { supabase } from "./client";
 import {
-  PaymentMode,
   ShipmentStatus,
   ShipmentWithMilestones,
   TicketStatus,
   TicketWithLinks,
-  TransactionRow,
-  TransactionWithLinks,
 } from "./database.types";
 
 function throwIf(error: unknown, action: string): void {
   if (error) throw new Error(`${action}: ${(error as Error).message}`);
-}
-
-// ─── Transactions ────────────────────────────────────────────────────────────
-
-const TXN_SELECT =
-  "*, customers (id, customer_name, email), orders (id, order_number)";
-
-export async function listTransactions(): Promise<TransactionWithLinks[]> {
-  const { data, error } = await supabase
-    .from("transactions")
-    .select(TXN_SELECT)
-    .order("occurred_at", { ascending: false });
-  throwIf(error, "Failed to load transactions");
-  return (data ?? []) as TransactionWithLinks[];
-}
-
-export interface TransactionInput {
-  customer_id: string;
-  order_id: string;
-  amount: number;
-  payment_mode: PaymentMode;
-  payment_ref: string;
-  date: string; // YYYY-MM-DD
-}
-
-export async function createTransaction(
-  input: TransactionInput
-): Promise<TransactionRow> {
-  const { data, error } = await supabase
-    .from("transactions")
-    .insert({
-      customer_id: input.customer_id,
-      order_id: input.order_id,
-      amount: input.amount,
-      currency: "INR",
-      payment_mode: input.payment_mode,
-      payment_ref: input.payment_ref,
-      occurred_at: new Date(input.date).toISOString(),
-    })
-    .select()
-    .single();
-  throwIf(error, "Failed to create transaction");
-  return data as TransactionRow;
-}
-
-export async function updateTransaction(
-  id: string,
-  input: TransactionInput
-): Promise<void> {
-  const { error } = await supabase
-    .from("transactions")
-    .update({
-      customer_id: input.customer_id,
-      order_id: input.order_id,
-      amount: input.amount,
-      payment_mode: input.payment_mode,
-      payment_ref: input.payment_ref,
-      occurred_at: new Date(input.date).toISOString(),
-    })
-    .eq("id", id);
-  throwIf(error, "Failed to update transaction");
 }
 
 // ─── Shipments ───────────────────────────────────────────────────────────────
