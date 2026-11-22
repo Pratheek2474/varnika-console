@@ -12,13 +12,11 @@ import {
   getOrderDetail,
   isOrderPaid,
   orderManualPaid,
-  saveOrderItems,
   setOrderPaid,
   updateOrder,
   OrderDetail as OrderDetailData,
 } from "@/lib/supabase/queries-orders";
 import { OrderInput } from "@/lib/supabase/queries-orders";
-import { OrderItemInput } from "@/lib/supabase/database.types";
 import {
   createShipment,
   listShipments,
@@ -141,13 +139,11 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
 
   const handleSave = async (
     values: OrderInput,
-    items: OrderItemInput[],
     newPhotos: { file: File; caption: string }[]
   ) => {
     if (!detail) return;
     try {
       const updated = await updateOrder(detail.order.id, values);
-      await saveOrderItems(detail.order.id, items);
       if (newPhotos.length > 0) await addOrderPhotos(detail.order.id, newPhotos);
       const row = await getOrderDetail(detail.order.id);
       if (row) setDetail({ ...row, order: { ...row.order, ...updated } });
@@ -235,7 +231,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
     );
   }
 
-  const { order, timeline, photos, documents, items } = detail;
+  const { order, timeline, photos, documents } = detail;
 
   const manualPaid = orderManualPaid(order);
   const paid = isOrderPaid(order);
@@ -420,45 +416,6 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                 ) : (
                   <div className="text-center py-8 text-xs text-neutral-400">
                     No timeline events available.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Order Contents */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold text-black flex items-center gap-2">
-                  <Package className="w-4 h-4" />
-                  Order Contents
-                  <span className="text-[10px] font-mono font-normal text-neutral-400 ml-auto">
-                    {items.length} item{items.length === 1 ? "" : "s"}
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {items.length > 0 ? (
-                  <div className="divide-y divide-line-soft border border-line rounded-xs overflow-hidden">
-                    {items.map((it) => (
-                      <div key={it.id} className="p-3 bg-white flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="text-xs font-medium text-black truncate">
-                            {it.name}
-                            <span className="ml-2 font-mono font-normal text-neutral-400">× {Number(it.qty)}</span>
-                          </div>
-                          {it.detail && (
-                            <div className="text-[11px] text-neutral-500 truncate">{it.detail}</div>
-                          )}
-                        </div>
-                        <span className="font-mono text-xs font-medium text-black shrink-0">
-                          {showRevenue ? formatCurrency(Number(it.price) * Number(it.qty)) : "—"}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-xs text-neutral-400">
-                    No items listed — use Edit Order to add contents.
                   </div>
                 )}
               </CardContent>

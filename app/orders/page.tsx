@@ -11,12 +11,10 @@ import {
   isOrderPaid,
   listOrders,
   orderManualPaid,
-  saveOrderItems,
   setOrderPaid,
   updateOrder,
 } from "@/lib/supabase/queries-orders";
 import { OrderInput } from "@/lib/supabase/queries-orders";
-import { OrderItemInput } from "@/lib/supabase/database.types";
 import { listCustomers } from "@/lib/supabase/queries-customers";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -220,13 +218,11 @@ export default function OrdersPage() {
 
   const handleSaveOrder = async (
     values: OrderInput,
-    items: OrderItemInput[],
     photos: { file: File; caption: string }[]
   ) => {
     try {
       if (editing) {
         const updated = await updateOrder(editing.id, values);
-        await saveOrderItems(editing.id, items);
         if (photos.length > 0) await addOrderPhotos(editing.id, photos);
         if (selectedTicket?.id === editing.id) setSelectedTicket(updated);
         await logActivity({
@@ -243,7 +239,6 @@ export default function OrdersPage() {
         setEditing(null);
       } else {
         const created = await createOrder(values);
-        await saveOrderItems(created.id, items);
         if (photos.length > 0) await addOrderPhotos(created.id, photos);
         await logActivity({
           actor,

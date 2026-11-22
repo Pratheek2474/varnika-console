@@ -10,10 +10,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { OrderRow, OrderStatus, PriorityLevel, OrderItemInput } from "@/lib/supabase/database.types";
-import { OrderInput, listOrderItems } from "@/lib/supabase/queries-orders";
+import { OrderRow, OrderStatus, PriorityLevel } from "@/lib/supabase/database.types";
+import { OrderInput } from "@/lib/supabase/queries-orders";
 import { Field, NumberField, inputCls, selectCls } from "./fields";
-import { Plus, Trash2 } from "lucide-react";
 
 type PendingPhoto = { key: string; url: string; file: File; caption: string };
 const PHOTO_KINDS = ["Design sketch", "Cloth sample", "Reference"];
@@ -23,11 +22,7 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   initial?: OrderRow | null;
   customers: { id: string; customer_name: string }[];
-  onSave: (
-    values: OrderInput,
-    items: OrderItemInput[],
-    photos: { file: File; caption: string }[]
-  ) => void;
+  onSave: (values: OrderInput, photos: { file: File; caption: string }[]) => void;
 }
 
 const STATUSES: { value: OrderStatus; label: string }[] = [
@@ -41,7 +36,6 @@ const STATUSES: { value: OrderStatus; label: string }[] = [
 export function OrderFormDialog({ open, onOpenChange, initial, customers, onSave }: Props) {
   const [customerId, setCustomerId] = useState("");
   const [itemSummary, setItemSummary] = useState("");
-  const [items, setItems] = useState<{ name: string; detail: string; qty: string; price: string }[]>([{ name: "", detail: "", qty: "", price: "" }]);
   const [total, setTotal] = useState("");
   const [status, setStatus] = useState<OrderStatus>("new");
   const [priority, setPriority] = useState<PriorityLevel>("medium");
@@ -60,17 +54,9 @@ export function OrderFormDialog({ open, onOpenChange, initial, customers, onSave
       setPriority(initial.priority);
       setDeliveryDate(initial.delivery_date ?? new Date().toISOString().slice(0, 10));
       setNotes(initial.notes);
-      setItems([{ name: "", detail: "", qty: "", price: "" }]);
-      listOrderItems(initial.id).then((rows) => {
-        if (rows.length > 0) {
-          setItems(rows.map((r) => ({ name: r.name, detail: r.detail, qty: String(Number(r.qty)), price: String(Number(r.price)) })));
-          setTotal(String(rows.reduce((s, r) => s + Number(r.qty) * Number(r.price), 0)));
-        }
-      });
     } else {
       setCustomerId(customers[0]?.id ?? "");
       setItemSummary("");
-      setItems([{ name: "", detail: "", qty: "", price: "" }]);
       setTotal("");
       setStatus("new");
       setPriority("medium");
@@ -78,20 +64,6 @@ export function OrderFormDialog({ open, onOpenChange, initial, customers, onSave
       setNotes("");
     }
   }, [open, initial, customers]);
-
-  const itemsTotal = items.reduce((s, i) => s + (Number(i.qty) || 0) * (Number(i.price) || 0), 0);
-  const namedItems: OrderItemInput[] = items
-    .filter((i) => i.name.trim())
-    .map((i) => ({ name: i.name.trim(), detail: i.detail.trim(), qty: Number(i.qty) || 0, price: Number(i.price) || 0 }));
-
-  const updateItem = (idx: number, patch: Partial<{ name: string; detail: string; qty: string; price: string }>) => {
-    setItems((prev) => {
-      const next = prev.map((it, j) => (j === idx ? { ...it, ...patch } : it));
-      const sum = next.reduce((s, i) => s + (Number(i.qty) || 0) * (Number(i.price) || 0), 0);
-      if (next.some((i) => i.name.trim())) setTotal(sum ? String(sum) : "");
-      return next;
-    });
-  };
 
   const addFiles = (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -131,66 +103,6 @@ export function OrderFormDialog({ open, onOpenChange, initial, customers, onSave
           <Field label="Item Summary" className="col-span-2">
             <input className={inputCls} value={itemSummary} onChange={(e) => setItemSummary(e.target.value)} placeholder="Bespoke Blouse (Custom)" />
           </Field>
-
-          {/* Order Contents — line items */}
-          <div className="col-span-2 space-y-2 pt-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-medium text-neutral-600">Order Contents</span>
-              <button
-                type="button"
-                onClick={() => setItems((prev) => [...prev, { name: "", detail: "", qty: "", price: "" }])}
-                className="inline-flex items-center gap-1 text-[11px] font-medium text-black hover:underline"
-              >
-                <Plus className="w-3 h-3" /> Add item
-              </button>
-            </div>
-            {items.map((it, idx) => (
-              <div key={idx} className="p-2 bg-ivory border border-line rounded-xs space-y-2">
-                <div className="flex items-center gap-2">
-                  <input
-                    className={inputCls}
-                    value={it.name}
-                    onChange={(e) => updateItem(idx, { name: e.target.value })}
-                    placeholder={`Item ${idx + 1} — e.g. Silk Blouse`}
-                  />
-                  {items.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => setItems((prev) => prev.filter((_, j) => j !== idx))}
-                      className="p-1.5 text-neutral-400 hover:text-red-600 shrink-0"
-                      title="Remove item"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <input
-                    className={inputCls}
-                    value={it.detail}
-                    onChange={(e) => updateItem(idx, { detail: e.target.value })}
-                    placeholder="Details (fabric, size…)"
-                  />
-                  <NumberField
-                    value={it.qty}
-                    allowDecimals={false}
-                    onChange={(v) => updateItem(idx, { qty: v })}
-                    placeholder="Qty"
-                  />
-                  <NumberField
-                    value={it.price}
-                    onChange={(v) => updateItem(idx, { price: v })}
-                    placeholder="Price"
-                  />
-                </div>
-              </div>
-            ))}
-            {namedItems.length > 0 && (
-              <div className="text-[11px] font-mono text-neutral-500 text-right">
-                Items total: {itemsTotal.toFixed(0)}
-              </div>
-            )}
-          </div>
 
           <Field label="Total (₹)">
             <NumberField value={total} onChange={setTotal} placeholder="0" />
@@ -273,7 +185,7 @@ export function OrderFormDialog({ open, onOpenChange, initial, customers, onSave
             size="sm"
             disabled={!itemSummary.trim() || !customerId}
             onClick={() => {
-              onSave({ customer_id: customerId, item_summary: itemSummary.trim(), total: Number(total) || 0, status, priority, delivery_date: deliveryDate, notes }, namedItems, photos.map((p) => ({ file: p.file, caption: p.caption })));
+              onSave({ customer_id: customerId, item_summary: itemSummary.trim(), total: Number(total) || 0, status, priority, delivery_date: deliveryDate, notes }, photos.map((p) => ({ file: p.file, caption: p.caption })));
               onOpenChange(false);
             }}
           >
