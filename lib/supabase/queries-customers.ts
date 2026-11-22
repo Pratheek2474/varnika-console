@@ -31,7 +31,7 @@ function throwIf(error: unknown, action: string): void {
 }
 
 const CUSTOMER_SELECT =
-  "*, measurements (*)";
+  "*, measurements!measurement_id (*)";
 
 export async function listCustomers(): Promise<CustomerWithMeasurement[]> {
   const { data, error } = await supabase
